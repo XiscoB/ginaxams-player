@@ -1,0 +1,69 @@
+{
+  "title": "Test exam",
+  "url": "https://example.com/exam",
+  "timestamp": "2025-12-05T14:11:59.851Z",
+  "total_questions": 2,
+  "questions": [
+    {
+      "number": 1,
+      "text": "Text for question 1",
+      "answers": [
+        {
+          "letter": "A",
+          "text": "Response A",
+          "isCorrect": false
+        },
+        {
+          "letter": "B",
+          "text": "Response B",
+          "isCorrect": false
+        },
+        {
+          "letter": "C",
+          "text": "Response C",
+          "isCorrect": true
+        },
+        {
+          "letter": "D",
+          "text": "Response D",
+          "isCorrect": false
+        }
+      ],
+      "wasCorrect": true,
+      "correctAnswerText": "Response C",
+      "images": []
+    },
+    {
+      "number": 2,
+      "text": "Text for question 2",
+      "answers": [
+        {
+          "letter": "A",
+          "text": "Response A",
+          "isCorrect": false
+        },
+        {
+          "letter": "B",
+          "text": "Response B",
+          "isCorrect": true
+        },
+        {
+          "letter": "C",
+          "text": "Response C",
+          "isCorrect": false
+        },
+        {
+          "letter": "D",
+          "text": "Response D",
+          "isCorrect": false
+        }
+      ],
+      "wasCorrect": true,
+      "correctAnswerText": "Response B",
+      "images": []
+    }
+  ],
+  "source_file": "capture_002.json",
+  "exam_id": "randomexamid123456",
+  "captured_at": "2025-12-05T15:11:12.401738"
+}

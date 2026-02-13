@@ -1,0 +1,3340 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ginaxams</title>
+    <!-- Languages -->
+    <script src="practice/lang/en.js"></script>
+    <script src="practice/lang/es.js"></script>
+    <!-- App Logic -->
+    <script src="src/js/db.js"></script>
+    <script src="src/js/practice.js"></script>
+    <script src="src/js/app.js"></script>
+
+    <style>
+      :root {
+        --bg-primary: #0f0f1a;
+        --bg-secondary: rgba(20, 20, 35, 0.6);
+        --bg-card: rgba(30, 30, 50, 0.4);
+        --accent-primary: #00d4ff;
+        --accent-secondary: #00ff88;
+        --accent-gradient: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0b0;
+        --border-color: rgba(255, 255, 255, 0.1);
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        --glass: backdrop-filter: blur(20px);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: var(--bg-primary);
+        background-image:
+          radial-gradient(
+            ellipse at top left,
+            rgba(0, 212, 255, 0.15) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at bottom right,
+            rgba(0, 255, 136, 0.1) 0%,
+            transparent 50%
+          );
+        color: var(--text-primary);
+        min-height: 100vh;
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        position: relative;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        font-weight: 800;
+        margin-bottom: 8px;
+        cursor: pointer;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -1px;
+        transition: transform 0.3s ease;
+      }
+
+      h1:hover {
+        transform: scale(1.02);
+        filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.5));
+      }
+
+      .exam-title {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        font-weight: 400;
+      }
+
+      .lang-switch {
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: flex;
+        gap: 8px;
+      }
+
+      .lang-btn {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 6px 14px;
+        cursor: pointer;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .lang-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+      }
+
+      .lang-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+        font-weight: 600;
+      }
+
+      .lang-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      /* Screens */
+      .hidden {
+        display: none !important;
+      }
+
+      /* --- Library Styles (New) --- */
+      .library-container {
+        position: relative;
+        /* padding: 10px; */
+      }
+
+      .file-input-area {
+        position: relative;
+        background: var(--bg-card);
+        border: 2px dashed var(--border-color);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(20px);
+        box-shadow: var(--shadow);
+      }
+
+      .file-input-area:hover {
+        border-color: var(--accent-primary);
+        background: rgba(30, 30, 50, 0.6);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 212, 255, 0.15);
+      }
+
+      .file-label {
+        display: block;
+        cursor: pointer;
+      }
+
+      .upload-icon {
+        font-size: 3.5em;
+        margin-bottom: 20px;
+        display: block;
+        filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.3));
+      }
+
+      .upload-main-text {
+        font-size: 1.3em;
+        font-weight: 600;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 8px;
+      }
+
+      .upload-sub-text {
+        font-size: 0.95em;
+        color: var(--text-secondary);
+      }
+
+      .exam-list-container {
+        margin-top: 20px;
+      }
+
+      .category-section {
+        margin-bottom: 12px;
+      }
+
+      .category-header {
+        background: var(--bg-card);
+        padding: 14px 18px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        transition: all 0.2s ease;
+      }
+      .category-header:hover {
+        background: rgba(40, 40, 65, 0.5);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .category-icon {
+        margin-right: 12px;
+        font-size: 1.2em;
+      }
+      .category-name {
+        flex: 1;
+        font-weight: 600;
+        font-size: 1.05em;
+      }
+      .category-count {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        margin-right: 12px;
+        font-weight: 500;
+      }
+      .category-toggle {
+        font-size: 0.9em;
+        transition: transform 0.3s ease;
+        opacity: 0.7;
+      }
+
+      .category-section.collapsed .category-exams {
+        display: none;
+      }
+      .category-section.collapsed .category-toggle {
+        transform: rotate(-90deg);
+      }
+
+      .category-section.drop-target {
+        background: rgba(0, 212, 255, 0.08);
+        border-radius: 16px;
+        box-shadow:
+          0 0 0 2px var(--accent-primary),
+          0 0 30px rgba(0, 212, 255, 0.2);
+      }
+
+      .category-section.drop-target .category-header {
+        background: rgba(40, 40, 65, 0.8);
+      }
+
+      .category-exams {
+        padding: 12px 0 12px 20px;
+      }
+
+      .exam-item {
+        background: var(--bg-card);
+        padding: 16px 20px;
+        border-radius: 14px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        justify-content: space-between;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .exam-item:hover {
+        background: rgba(40, 40, 65, 0.6);
+        border-color: var(--accent-primary);
+        transform: translateX(4px);
+        box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+      }
+
+      body.dragging .exam-item {
+        opacity: 0.5;
+      }
+
+      .exam-item[draggable="true"]:active {
+        cursor: grabbing;
+      }
+
+      .exam-item-info {
+        flex: 1;
+      }
+      .exam-item-title {
+        font-weight: 600;
+        font-size: 1.1em;
+        margin-bottom: 10px;
+      }
+
+      .exam-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: 10px;
+      }
+
+      .exam-item-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .exam-item-meta {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+      }
+
+      /* Exam Stats Container */
+      .exam-stats-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .exam-stats-row {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+      }
+
+      .stat-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .stat-icon {
+        font-size: 1.1em;
+      }
+
+      .stat-value {
+        font-weight: 700;
+        font-size: 1em;
+        color: var(--text-primary);
+        white-space: nowrap;
+      }
+
+      .stat-label {
+        font-size: 0.75em;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .attempts-stat .stat-value {
+        color: var(--accent-primary);
+      }
+
+      .last-stat {
+        background: rgba(0, 212, 255, 0.08);
+        border-color: rgba(0, 212, 255, 0.2);
+      }
+
+      .best-stat {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1) 0%,
+          rgba(0, 255, 136, 0.1) 100%
+        );
+        border-color: rgba(0, 212, 255, 0.3);
+      }
+
+      .best-stat .stat-value {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* Best Score Progress Bar */
+      .best-score-bar {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+
+      .best-score-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s ease;
+        box-shadow: 0 0 10px currentColor;
+      }
+
+      .exam-score-placeholder {
+        margin-left: 10px;
+      }
+      .exam-score-placeholder.good {
+        color: #00ff88;
+      }
+      .exam-score-placeholder.medium {
+        color: #ffd700;
+      }
+      .exam-score-placeholder.bad {
+        color: #ff4757;
+      }
+
+      .no-exams {
+        text-align: center;
+        padding: 50px 40px;
+        color: var(--text-secondary);
+        background: var(--bg-card);
+        border-radius: 20px;
+        border: 1px dashed var(--border-color);
+        backdrop-filter: blur(10px);
+      }
+
+      /* --- Existing Styles --- */
+
+      .mode-select {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      .mode-btn {
+        padding: 12px 24px;
+        font-size: 0.95em;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .mode-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2);
+      }
+
+      .mode-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+        box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+      }
+
+      /* Progress Bar */
+      .progress-container {
+        background: #333;
+        border-radius: 10px;
+        height: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #00d4ff, #00ff88);
+        transition: width 0.3s;
+      }
+
+      .progress-text {
+        text-align: center;
+        color: #888;
+        font-size: 0.9em;
+        margin-bottom: 15px;
+      }
+
+      /* Question Minimap */
+      .question-minimap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 15px;
+        padding: 12px;
+        background: #16213e;
+        border-radius: 8px;
+        justify-content: center;
+      }
+
+      .minimap-item {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75em;
+        font-weight: bold;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+      }
+
+      .minimap-item:hover {
+        transform: scale(1.15);
+        z-index: 10;
+      }
+
+      .minimap-item.current {
+        border-color: #00d4ff;
+        box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+      }
+
+      .minimap-item.was-correct {
+        background: #1a3d2e;
+        color: #00ff88;
+      }
+
+      .minimap-item.was-incorrect {
+        background: #3d1a1a;
+        color: #ff4757;
+      }
+
+      .minimap-item.user-correct {
+        background: #00ff88;
+        color: #1a1a2e;
+      }
+
+      .minimap-item.user-incorrect {
+        background: #ff4757;
+        color: #fff;
+      }
+
+      .minimap-item.unanswered {
+        background: #333;
+        color: #888;
+      }
+
+      /* Navigation at Top */
+      .nav-buttons-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      /* Question Card */
+      .question-card {
+        background: #16213e;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .question-number {
+        color: #00d4ff;
+        font-size: 0.9em;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .question-status {
+        font-size: 0.8em;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+
+      .question-status.was-correct {
+        background: #1a3d2e;
+        color: #00ff88;
+      }
+
+      .question-status.was-incorrect {
+        background: #3d1a1a;
+        color: #ff4757;
+      }
+
+      .question-text {
+        font-size: 1.2em;
+        line-height: 1.6;
+        margin-bottom: 25px;
+      }
+
+      .question-images {
+        margin: 15px 0;
+        text-align: center;
+      }
+
+      .question-images img {
+        max-width: 100%;
+        border-radius: 8px;
+        margin: 10px 0;
+        background: #fff;
+        padding: 10px;
+      }
+
+      /* Answer Options */
+      .answers {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .answer-option {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        background: #1a1a2e;
+        border: 2px solid #333;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .answer-option:hover {
+        border-color: #00d4ff;
+        background: #1f2844;
+      }
+
+      .answer-option.selected {
+        border-color: #00d4ff;
+        background: #1f3a5f;
+      }
+
+      .answer-option.correct {
+        border-color: #00ff88;
+        background: #1a3d2e;
+      }
+
+      .answer-option.incorrect {
+        border-color: #ff4757;
+        background: #3d1a1a;
+      }
+
+      .answer-option.show-correct {
+        border-color: #00ff88;
+        background: #1a3d2e;
+      }
+
+      .answer-letter {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #333;
+        border-radius: 50%;
+        margin-right: 15px;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .answer-text {
+        flex: 1;
+      }
+
+      .answer-icon {
+        margin-left: 10px;
+        font-size: 1.2em;
+      }
+
+      /* Navigation */
+      .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+      }
+
+      .nav-btn {
+        padding: 12px 25px;
+        font-size: 1em;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
+        background: #333;
+        color: #eee;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+      }
+
+      .nav-btn.next {
+        background: #00d4ff;
+        color: #1a1a2e;
+      }
+
+      .nav-btn.finish {
+        background: #00ff88;
+        color: #1a1a2e;
+      }
+
+      .nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Results */
+      /* Score Display - Modern Circle Design */
+      .score-circle-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 25px;
+      }
+
+      .score-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: conic-gradient(
+          var(--score-color, var(--accent-primary)) var(--score-percent, 0%),
+          var(--bg-card) 0
+        );
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: 0 0 40px rgba(0, 212, 255, 0.2);
+        transition: all 0.5s ease;
+      }
+
+      .score-circle::before {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: var(--bg-primary);
+      }
+
+      .score-percentage {
+        font-size: 3em;
+        font-weight: 800;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        position: relative;
+        z-index: 1;
+      }
+
+      .score-label {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        margin-top: 5px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .score-circle.good {
+        --score-color: var(--accent-secondary);
+      }
+      .score-circle.medium {
+        --score-color: #ffd700;
+      }
+      .score-circle.bad {
+        --score-color: #ff6b6b;
+      }
+
+      /* Score Comparison - Last vs Best */
+      .score-comparison {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+
+      .score-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 24px;
+        min-width: 120px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
+
+      .score-box.best {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1) 0%,
+          rgba(0, 255, 136, 0.1) 100%
+        );
+        border-color: var(--accent-primary);
+      }
+
+      .score-box-label {
+        display: block;
+        font-size: 0.75em;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+      }
+
+      .score-box-value {
+        display: block;
+        font-size: 1.5em;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .score-box.best .score-box-value {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .review-summary-title {
+        margin-top: 30px;
+        margin-bottom: 15px;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+
+      /* Legacy score display (for backward compatibility) */
+      .score-display {
+        text-align: center;
+        padding: 40px;
+        background: var(--bg-card);
+        border-radius: 20px;
+        margin-bottom: 30px;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+      }
+
+      .score {
+        font-size: 4em;
+        font-weight: bold;
+        margin: 20px 0;
+        color: #fff;
+      }
+
+      .score.good {
+        color: var(--accent-secondary);
+      }
+      .score.medium {
+        color: #ffd700;
+      }
+      .score.bad {
+        color: #ff6b6b;
+      }
+
+      .review-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .review-item {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .review-item:hover {
+        transform: scale(1.1);
+      }
+
+      .review-item.correct {
+        background: #1a3d2e;
+        color: #00ff88;
+      }
+
+      .review-item.incorrect {
+        background: #3d1a1a;
+        color: #ff4757;
+      }
+
+      .review-item.unanswered {
+        background: #333;
+        color: #888;
+      }
+
+      /* Options */
+      .options-container {
+        background: #16213e;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+
+      .options-title {
+        color: #00d4ff;
+        margin-bottom: 15px;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .checkbox-option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        cursor: pointer;
+      }
+
+      .checkbox-option input {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+        accent-color: #00d4ff;
+      }
+
+      .main-menu-link {
+        text-align: center;
+        margin-top: 20px;
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+      .main-menu-link:hover {
+        color: var(--accent-primary);
+        text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+      }
+
+      /* icon-btn for library */
+      .icon-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        font-size: 1em;
+        opacity: 0.7;
+        transition: all 0.2s ease;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 6px;
+      }
+      .icon-btn:hover {
+        opacity: 1;
+        background: rgba(0, 212, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: scale(1.05);
+      }
+
+      /* Template Section */
+      .template-section {
+        background: var(--bg-card);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 25px;
+        border: 1px solid var(--border-color);
+        animation: fadeIn 0.3s ease;
+        backdrop-filter: blur(20px);
+        box-shadow: var(--shadow);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .template-title {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 1.2em;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+      }
+
+      .template-desc {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        margin-bottom: 18px;
+        line-height: 1.6;
+      }
+
+      .template-code-container {
+        position: relative;
+        margin-bottom: 18px;
+      }
+
+      .template-code {
+        background: rgba(10, 10, 20, 0.6);
+        border-radius: 12px;
+        padding: 20px;
+        padding-right: 110px;
+        font-family: "JetBrains Mono", "Consolas", "Monaco", monospace;
+        font-size: 0.8em;
+        color: var(--accent-secondary);
+        overflow-x: auto;
+        border: 1px solid var(--border-color);
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        line-height: 1.5;
+      }
+
+      .template-code .key {
+        color: var(--accent-primary);
+      }
+
+      .template-code .string {
+        color: #ffd700;
+      }
+
+      .template-code .boolean {
+        color: #ff6b9d;
+      }
+
+      .template-code .number {
+        color: #ff9f43;
+      }
+
+      .template-copy-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 8px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        backdrop-filter: blur(10px);
+      }
+
+      .template-copy-btn:hover {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+        border-color: var(--accent-primary);
+        transform: translateY(-1px);
+      }
+
+      .template-copy-btn.copied {
+        background: var(--accent-secondary);
+        color: var(--bg-primary);
+        border-color: var(--accent-secondary);
+      }
+
+      .template-ai-note {
+        background: rgba(0, 212, 255, 0.08);
+        border-radius: 12px;
+        padding: 16px 20px;
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        border-left: 3px solid var(--accent-primary);
+        margin-bottom: 18px;
+      }
+
+      .template-ai-note strong {
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      /* AI Prompt Section in Template */
+      .ai-prompt-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .ai-prompt-divider {
+        text-align: center;
+        margin-bottom: 15px;
+        color: var(--text-muted);
+        font-size: 0.9em;
+        position: relative;
+      }
+
+      .ai-prompt-divider::before,
+      .ai-prompt-divider::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 30%;
+        height: 1px;
+        background: var(--border-color);
+      }
+
+      .ai-prompt-divider::before {
+        left: 0;
+      }
+      .ai-prompt-divider::after {
+        right: 0;
+      }
+
+      .mode-btn-accent {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.15),
+          rgba(157, 0, 255, 0.15)
+        ) !important;
+        border-color: rgba(0, 212, 255, 0.4) !important;
+      }
+
+      .mode-btn-accent:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.25),
+          rgba(157, 0, 255, 0.25)
+        ) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 212, 255, 0.2);
+      }
+
+      /* AI Prompt Modal */
+      .ai-prompt-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .ai-prompt-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .ai-prompt-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 550px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        padding: 35px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .ai-prompt-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.5em;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+      }
+
+      .ai-prompt-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .ai-prompt-icon {
+        font-size: 3.5em;
+        display: block;
+        margin-bottom: 15px;
+      }
+
+      .ai-prompt-title {
+        font-size: 1.6em;
+        font-weight: 700;
+        margin-bottom: 8px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .ai-prompt-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+      }
+
+      .ai-prompt-form {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .ai-prompt-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .ai-prompt-field label {
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 0.95em;
+      }
+
+      .ai-prompt-input,
+      .ai-prompt-select {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: var(--text-primary);
+        font-size: 1em;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-input:focus,
+      .ai-prompt-select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-prompt-textarea {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 16px;
+        color: var(--text-primary);
+        font-size: 0.95em;
+        min-height: 120px;
+        resize: vertical;
+        font-family: inherit;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-textarea:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-prompt-textarea::placeholder {
+        color: var(--text-muted);
+      }
+
+      .ai-prompt-generate-btn {
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
+        border: none;
+        border-radius: 14px;
+        padding: 16px 24px;
+        color: var(--bg-primary);
+        font-weight: 700;
+        font-size: 1.05em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-generate-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(0, 212, 255, 0.3);
+      }
+
+      .ai-prompt-result {
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 1px solid var(--border-color);
+        animation: fadeIn 0.4s ease;
+      }
+
+      .ai-prompt-result-header {
+        text-align: center;
+        margin-bottom: 15px;
+      }
+
+      .ai-prompt-result-header span {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 600;
+        font-size: 1.1em;
+      }
+
+      .ai-prompt-result-info {
+        text-align: center;
+        margin-bottom: 15px;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+      }
+
+      .ai-prompt-tools {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .ai-tool-tag {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        color: var(--text-secondary);
+      }
+
+      .ai-tool-kimi {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.2),
+          rgba(157, 0, 255, 0.2)
+        );
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      .ai-prompt-output {
+        width: 100%;
+        min-height: 200px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        color: var(--text-primary);
+        font-size: 0.9em;
+        font-family: "JetBrains Mono", "Consolas", monospace;
+        resize: vertical;
+        margin-bottom: 15px;
+        line-height: 1.6;
+      }
+
+      .ai-prompt-copy-btn {
+        width: 100%;
+        background: var(--bg-card);
+        border: 2px solid var(--accent-primary);
+        border-radius: 12px;
+        padding: 14px;
+        color: var(--accent-primary);
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-copy-btn:hover {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+      }
+
+      /* Material checkbox */
+      .ai-prompt-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+        background: rgba(0, 212, 255, 0.05);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-checkbox:hover {
+        background: rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-prompt-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: var(--accent-primary);
+        cursor: pointer;
+      }
+
+      .ai-prompt-checkbox label {
+        cursor: pointer;
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .ai-prompt-checkbox strong {
+        color: var(--accent-primary);
+      }
+
+      /* AI Tool Links */
+      .ai-prompt-tools {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .ai-tool-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+
+      .ai-tool-link:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        transform: translateY(-2px);
+      }
+
+      .ai-tool-link.kimi {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.15),
+          rgba(157, 0, 255, 0.15)
+        );
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      .ai-tool-link.kimi:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.25),
+          rgba(157, 0, 255, 0.25)
+        );
+      }
+
+      /* Kimi suggestion below prompt */
+      .ai-prompt-suggestion {
+        text-align: center;
+        margin-top: 15px;
+        padding: 12px;
+        background: rgba(0, 212, 255, 0.05);
+        border-radius: 10px;
+        border-left: 3px solid var(--accent-primary);
+      }
+
+      .ai-prompt-suggestion-text {
+        color: var(--text-muted);
+        font-size: 0.85em;
+        line-height: 1.5;
+      }
+
+      .ai-prompt-suggestion-text a {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .ai-prompt-suggestion-text a:hover {
+        text-decoration: underline;
+      }
+
+      /* AI Destinations (shown after copy) */
+      .ai-destinations {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+        animation: fadeInUp 0.4s ease;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .ai-destinations-title {
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        margin-bottom: 15px;
+      }
+
+      .ai-destinations-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .ai-destination-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.95em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+      }
+
+      .ai-destination-btn:hover {
+        border-color: var(--accent-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 212, 255, 0.15);
+      }
+
+      .ai-destination-icon {
+        font-size: 1.3em;
+      }
+
+      .ai-destination-btn span:nth-child(2) {
+        flex: 1;
+        font-weight: 500;
+      }
+
+      .ai-destination-arrow {
+        color: var(--text-muted);
+        font-size: 1.1em;
+        transition: all 0.2s ease;
+      }
+
+      .ai-destination-btn:hover .ai-destination-arrow {
+        color: var(--accent-primary);
+        transform: translate(2px, -2px);
+      }
+
+      .ai-destination-btn.kimi {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1),
+          rgba(157, 0, 255, 0.1)
+        );
+        border-color: rgba(0, 212, 255, 0.3);
+      }
+
+      .ai-destination-btn.kimi:hover {
+        border-color: var(--accent-primary);
+        box-shadow: 0 5px 15px rgba(0, 212, 255, 0.25);
+      }
+
+      /* Template Modal */
+      .template-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .template-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .template-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 700px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        padding: 30px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      .template-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.5em;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .template-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+      }
+
+      .template-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .template-modal-icon {
+        font-size: 2em;
+      }
+
+      .template-modal-title {
+        font-size: 1.5em;
+        font-weight: 700;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* Choice Modal */
+      .choice-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .choice-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .choice-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 500px;
+        width: 100%;
+        position: relative;
+        padding: 35px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      .choice-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.5em;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .choice-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+      }
+
+      .choice-modal-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .choice-modal-icon {
+        font-size: 3.5em;
+        display: block;
+        margin-bottom: 15px;
+      }
+
+      .choice-modal-title {
+        font-size: 1.6em;
+        font-weight: 700;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .choice-options {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .choice-option {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        width: 100%;
+      }
+
+      .choice-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+
+      .choice-option-icon {
+        font-size: 2.5em;
+        flex-shrink: 0;
+      }
+
+      .choice-option-content {
+        flex: 1;
+      }
+
+      .choice-option h3 {
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--text-primary);
+      }
+
+      .choice-option p {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .choice-arrow {
+        font-size: 1.5em;
+        color: var(--text-muted);
+        transition: all 0.2s ease;
+      }
+
+      .choice-option:hover .choice-arrow {
+        color: var(--accent-primary);
+        transform: translateX(5px);
+      }
+
+      .choice-option.easy {
+        border-color: rgba(0, 212, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.05),
+          rgba(0, 212, 255, 0.02)
+        );
+      }
+
+      .choice-option.easy:hover {
+        border-color: var(--accent-primary);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1),
+          rgba(0, 212, 255, 0.05)
+        );
+      }
+
+      .choice-option.advanced {
+        border-color: rgba(157, 0, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.05),
+          rgba(157, 0, 255, 0.02)
+        );
+      }
+
+      .choice-option.advanced:hover {
+        border-color: #9d00ff;
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.1),
+          rgba(157, 0, 255, 0.05)
+        );
+      }
+
+      /* External Link Modal */
+      .external-link-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(15px);
+        z-index: 30000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .external-link-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .external-link-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 400px;
+        width: 100%;
+        padding: 35px;
+        text-align: center;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      .external-link-icon {
+        font-size: 4em;
+        margin-bottom: 15px;
+        animation: bounce 1s infinite;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .external-link-title {
+        font-size: 1.4em;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--text-primary);
+      }
+
+      .external-link-text {
+        color: var(--text-secondary);
+        margin-bottom: 15px;
+      }
+
+      .external-link-url {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-family: monospace;
+        font-size: 0.9em;
+        color: var(--accent-primary);
+        word-break: break-all;
+        margin-bottom: 25px;
+      }
+
+      .external-link-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .external-link-btn {
+        flex: 1;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        font-size: 1em;
+      }
+
+      .external-link-btn.secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      .external-link-btn.secondary:hover {
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+      }
+
+      .external-link-btn.primary {
+        background: var(--accent-gradient);
+        color: var(--bg-primary);
+      }
+
+      .external-link-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+      }
+
+      @media (max-width: 600px) {
+        .ai-prompt-modal {
+          padding: 25px 20px;
+          max-height: 95vh;
+          max-width: 95%;
+        }
+        .ai-prompt-title {
+          font-size: 1.4em;
+        }
+        .ai-prompt-tools {
+          gap: 6px;
+        }
+        .ai-tool-tag {
+          padding: 4px 10px;
+          font-size: 0.75em;
+        }
+        .ai-destinations-grid {
+          grid-template-columns: 1fr;
+        }
+        .ai-destination-btn {
+          padding: 12px 14px;
+        }
+        .template-modal {
+          padding: 25px 20px;
+          max-width: 95%;
+        }
+        .template-modal-title {
+          font-size: 1.3em;
+        }
+        .choice-modal {
+          padding: 30px 20px;
+          max-width: 95%;
+        }
+        .choice-modal-title {
+          font-size: 1.4em;
+        }
+        .choice-option {
+          padding: 16px;
+        }
+        .choice-option-icon {
+          font-size: 2em;
+        }
+        .external-link-modal {
+          padding: 30px 20px;
+          max-width: 95%;
+        }
+        .external-link-buttons {
+          flex-direction: column;
+        }
+        .external-link-btn {
+          width: 100%;
+        }
+      }
+
+      /* Help Button */
+      .help-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.2em;
+        transition: all 0.2s ease;
+        z-index: 10000;
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+      }
+
+      .help-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+
+      .help-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+      }
+
+      /* Onboarding Modal */
+      .onboarding-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .onboarding-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .onboarding-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 500px;
+        width: 100%;
+        padding: 40px;
+        text-align: center;
+        position: relative;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.3s ease;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      }
+
+      .onboarding-overlay.active .onboarding-modal {
+        transform: translateY(0) scale(1);
+      }
+
+      .onboarding-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .onboarding-title {
+        font-size: 1.8em;
+        font-weight: 700;
+        margin-bottom: 15px;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .onboarding-text {
+        color: var(--text-secondary);
+        line-height: 1.7;
+        margin-bottom: 30px;
+        font-size: 1.05em;
+      }
+
+      .onboarding-steps {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 25px;
+        margin-bottom: 30px;
+      }
+
+      .onboarding-step {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--border-color);
+        transition: all 0.3s ease;
+      }
+
+      .onboarding-step.active {
+        background: var(--accent-primary);
+        width: 30px;
+        border-radius: 5px;
+      }
+
+      .onboarding-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+      }
+
+      .onboarding-btn {
+        padding: 12px 30px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        font-size: 1em;
+      }
+
+      .onboarding-btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      .onboarding-btn-secondary:hover {
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .onboarding-btn-primary {
+        background: var(--accent-gradient);
+        color: var(--bg-primary);
+      }
+
+      .onboarding-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+      }
+
+      .onboarding-skip {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 0.9em;
+        padding: 5px 10px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .onboarding-skip:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .onboarding-highlight {
+        background: rgba(0, 212, 255, 0.15);
+        padding: 2px 8px;
+        border-radius: 6px;
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      /* Onboarding Choice Buttons (in last step) */
+      .onboarding-choices {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .onboarding-choice {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 18px;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        width: 100%;
+        animation: fadeInUp 0.5s ease forwards;
+      }
+
+      .onboarding-choice:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .onboarding-choice:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      .onboarding-choice:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+
+      .onboarding-choice-icon {
+        font-size: 2.2em;
+        flex-shrink: 0;
+      }
+
+      .onboarding-choice-content {
+        flex: 1;
+      }
+
+      .onboarding-choice h4 {
+        font-size: 1.15em;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text-primary);
+      }
+
+      .onboarding-choice p {
+        font-size: 0.85em;
+        color: var(--text-secondary);
+        line-height: 1.3;
+      }
+
+      .onboarding-choice-arrow {
+        font-size: 1.5em;
+        color: var(--text-muted);
+        transition: all 0.2s ease;
+      }
+
+      .onboarding-choice:hover .onboarding-choice-arrow {
+        color: var(--accent-primary);
+        transform: translateX(5px);
+      }
+
+      .onboarding-choice.easy {
+        border-color: rgba(0, 212, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.05),
+          rgba(0, 212, 255, 0.02)
+        );
+      }
+
+      .onboarding-choice.easy:hover {
+        border-color: var(--accent-primary);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1),
+          rgba(0, 212, 255, 0.05)
+        );
+      }
+
+      .onboarding-choice.advanced {
+        border-color: rgba(157, 0, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.05),
+          rgba(157, 0, 255, 0.02)
+        );
+      }
+
+      .onboarding-choice.advanced:hover {
+        border-color: #9d00ff;
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.1),
+          rgba(157, 0, 255, 0.05)
+        );
+      }
+
+      @media (max-width: 600px) {
+        .onboarding-modal {
+          padding: 30px 20px;
+          max-width: 95%;
+        }
+        .onboarding-title {
+          font-size: 1.4em;
+        }
+        .onboarding-text {
+          font-size: 0.95em;
+        }
+        .onboarding-buttons {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .onboarding-btn {
+          width: 100%;
+        }
+        .onboarding-choices {
+          gap: 10px;
+        }
+        .onboarding-choice {
+          padding: 14px;
+        }
+        .onboarding-choice-icon {
+          font-size: 1.8em;
+        }
+        .onboarding-choice h4 {
+          font-size: 1em;
+        }
+        .onboarding-choice p {
+          font-size: 0.8em;
+        }
+        .onboarding-steps {
+          margin-top: 20px;
+          margin-bottom: 20px;
+        }
+      }
+
+      .help-btn-inline {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.1em;
+        transition: all 0.2s ease;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+      }
+
+      .help-btn-inline:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: scale(1.1);
+      }
+
+      .help-btn-inline.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+      }
+
+      /* Help Menu Popup */
+      .help-menu-popup {
+        position: absolute;
+        top: 55px;
+        right: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 8px;
+        min-width: 200px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        z-index: 100;
+        backdrop-filter: blur(20px);
+        animation: menuFadeIn 0.2s ease;
+      }
+
+      @keyframes menuFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .help-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px 16px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.95em;
+        cursor: pointer;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        text-align: left;
+      }
+
+      .help-menu-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateX(4px);
+      }
+
+      .help-menu-item span:first-child {
+        font-size: 1.3em;
+      }
+
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 1.5em;
+        }
+        .question-text {
+          font-size: 1.1em;
+        }
+        .mode-btn {
+          padding: 12px 20px;
+        }
+
+        /* Container padding for small screens */
+        .container {
+          padding: 15px;
+        }
+
+        /* Library container */
+        .library-container {
+          padding: 0;
+        }
+
+        /* File input area */
+        .file-input-area {
+          padding: 30px 20px;
+        }
+
+        /* Exam items */
+        .exam-item {
+          padding: 12px;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+
+        .exam-item-info {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .exam-item-title {
+          margin-bottom: 8px;
+          word-break: break-word;
+        }
+
+        .exam-stats-row {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .stat-item {
+          flex: 1 1 calc(50% - 4px);
+          min-width: 0;
+          justify-content: flex-start;
+        }
+
+        .exam-stats-row .best-stat {
+          flex-basis: 100%;
+        }
+
+        .stat-label {
+          font-size: 0.7em;
+        }
+
+        .best-score-bar {
+          margin-top: 2px;
+        }
+
+        /* Exam actions */
+        .exam-actions {
+          width: 100%;
+          justify-content: flex-end;
+          gap: 4px;
+          margin-left: 0;
+        }
+
+        .icon-btn {
+          width: 32px;
+          height: 32px;
+          font-size: 0.9em;
+        }
+
+        /* Help menu popup */
+        .help-menu-popup {
+          right: 5px;
+          min-width: 180px;
+        }
+
+        /* Folder header */
+        .folder-header {
+          padding: 12px;
+        }
+
+        /* Library controls */
+        .library-controls {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .library-controls button {
+          flex: 1;
+          min-width: 120px;
+          font-size: 0.85em;
+          padding: 8px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Onboarding Modal -->
+    <div id="onboardingOverlay" class="onboarding-overlay">
+      <div class="onboarding-modal">
+        <button
+          class="onboarding-skip"
+          onclick="window.app.skipOnboarding()"
+          id="txtOnboardingSkip"
+        >
+          Skip
+        </button>
+
+        <div id="onboardingContent">
+          <!-- Step 1: Welcome -->
+          <div class="onboarding-step-content" data-step="1">
+            <span class="onboarding-icon">📚</span>
+            <h2 class="onboarding-title" id="txtOnboardingWelcomeTitle">
+              Welcome to Ginaxams
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingWelcomeText">
+              Your personal exam practice companion. Import exams, practice with
+              different modes, and track your progress over time.
+            </p>
+          </div>
+
+          <!-- Step 2: Local Storage & Backup -->
+          <div class="onboarding-step-content hidden" data-step="2">
+            <span class="onboarding-icon">🔒</span>
+            <h2 class="onboarding-title" id="txtOnboardingStorageTitle">
+              Your Data Stays Private
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingStorageText">
+              All your exams, progress and scores are stored
+              <strong>only on your device</strong> for complete privacy. Use
+              <span class="onboarding-highlight">⬇ Copia de Seguridad</span> to
+              export your data and
+              <span class="onboarding-highlight">⬆ Restaurar</span> to import it
+              on another device.
+            </p>
+          </div>
+
+          <!-- Step 3: Import -->
+          <div class="onboarding-step-content hidden" data-step="3">
+            <span class="onboarding-icon">📂</span>
+            <h2 class="onboarding-title" id="txtOnboardingImportTitle">
+              Import Your Exams
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingImportText">
+              Once you have your exam file (in JSON format), click the
+              <span class="onboarding-highlight">📂 Import Exam</span> area to
+              load it. You can also drag & drop files directly!
+            </p>
+          </div>
+
+          <!-- Step 4: Practice -->
+          <div class="onboarding-step-content hidden" data-step="4">
+            <span class="onboarding-icon">🎯</span>
+            <h2 class="onboarding-title" id="txtOnboardingPracticeTitle">
+              Practice & Learn
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingPracticeText">
+              Use <span class="onboarding-highlight">Practice Mode</span> to
+              test yourself with shuffled questions and track your scores.
+              Review your mistakes with the
+              <span class="onboarding-highlight">Falladas</span> filter to focus
+              on what needs improvement.
+            </p>
+          </div>
+
+          <!-- Step 5: Create Your First Exam (with choice buttons) -->
+          <div class="onboarding-step-content hidden" data-step="5">
+            <span class="onboarding-icon">💡</span>
+            <h2 class="onboarding-title" id="txtOnboardingCreateTitle">
+              Create Your First Exam
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingCreateText">
+              Ready to create your own exam? Choose how you want to do it:
+            </p>
+            <div class="onboarding-choices">
+              <button
+                class="onboarding-choice easy"
+                onclick="window.app.finishOnboardingAndShowAIPrompt()"
+              >
+                <span class="onboarding-choice-icon">🤖</span>
+                <div class="onboarding-choice-content">
+                  <h4 id="txtOnboardingEasyTitle">Easy Way</h4>
+                  <p id="txtOnboardingEasyDesc">
+                    Generate a custom AI prompt with your preferences
+                  </p>
+                </div>
+                <span class="onboarding-choice-arrow">→</span>
+              </button>
+              <button
+                class="onboarding-choice advanced"
+                onclick="window.app.finishOnboardingAndShowTemplate()"
+              >
+                <span class="onboarding-choice-icon">💻</span>
+                <div class="onboarding-choice-content">
+                  <h4 id="txtOnboardingAdvancedTitle">Advanced Way</h4>
+                  <p id="txtOnboardingAdvancedDesc">
+                    View and edit the JSON template directly
+                  </p>
+                </div>
+                <span class="onboarding-choice-arrow">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="onboarding-steps">
+          <div class="onboarding-step active" data-step="1"></div>
+          <div class="onboarding-step" data-step="2"></div>
+          <div class="onboarding-step" data-step="3"></div>
+          <div class="onboarding-step" data-step="4"></div>
+          <div class="onboarding-step" data-step="5"></div>
+        </div>
+
+        <div class="onboarding-buttons">
+          <button
+            id="onboardingPrevBtn"
+            class="onboarding-btn onboarding-btn-secondary hidden"
+            onclick="window.app.prevOnboardingStep()"
+          >
+            <span id="txtOnboardingBack">Back</span>
+          </button>
+          <button
+            id="onboardingNextBtn"
+            class="onboarding-btn onboarding-btn-primary"
+            onclick="window.app.nextOnboardingStep()"
+          >
+            <span id="txtOnboardingNext">Next</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Prompt Generator Modal -->
+    <div id="aiPromptModal" class="ai-prompt-modal-overlay hidden">
+      <div class="ai-prompt-modal">
+        <button
+          class="ai-prompt-close"
+          onclick="window.app.closeAIPromptGenerator()"
+        >
+          ✕
+        </button>
+
+        <div class="ai-prompt-header">
+          <span class="ai-prompt-icon">🤖</span>
+          <h2 class="ai-prompt-title" id="txtAIPromptTitle">
+            Generate AI Prompt
+          </h2>
+          <p class="ai-prompt-subtitle" id="txtAIPromptSubtitle">
+            Fill in the details and we'll create a perfect prompt for you
+          </p>
+        </div>
+
+        <div class="ai-prompt-form">
+          <div class="ai-prompt-field">
+            <label id="txtNumQuestionsLabel">Number of questions</label>
+            <input
+              type="number"
+              id="aiNumQuestions"
+              min="1"
+              max="100"
+              value="10"
+              class="ai-prompt-input"
+            />
+          </div>
+
+          <div class="ai-prompt-field">
+            <label id="txtNumAnswersLabel">Answers per question</label>
+            <input
+              type="number"
+              id="aiNumAnswers"
+              min="2"
+              max="6"
+              value="4"
+              class="ai-prompt-input"
+            />
+          </div>
+
+          <div class="ai-prompt-field">
+            <label id="txtDifficultyLabel">Difficulty level</label>
+            <select id="aiDifficulty" class="ai-prompt-select">
+              <option value="easy" id="txtDifficultyEasy">Easy</option>
+              <option value="medium" id="txtDifficultyMedium" selected>
+                Medium
+              </option>
+              <option value="hard" id="txtDifficultyHard">Hard</option>
+              <option value="mixed" id="txtDifficultyMixed">
+                Mixed (varied levels)
+              </option>
+            </select>
+          </div>
+
+          <div class="ai-prompt-checkbox">
+            <input
+              type="checkbox"
+              id="aiMaterialInChat"
+              onchange="window.app.toggleMaterialField()"
+            />
+            <label for="aiMaterialInChat" id="txtMaterialInChatLabel">
+              <strong>I have the material as a file.</strong> I'll paste it
+              directly in the AI chat after the prompt.
+            </label>
+          </div>
+
+          <div class="ai-prompt-field" id="aiMaterialField">
+            <label id="txtMaterialLabel">Your study material</label>
+            <textarea
+              id="aiMaterial"
+              class="ai-prompt-textarea"
+              data-placeholder="materialPlaceholder"
+            ></textarea>
+          </div>
+
+          <button
+            class="ai-prompt-generate-btn"
+            onclick="window.app.generateAIPrompt()"
+          >
+            <span>✨</span>
+            <span id="txtGeneratePromptBtn">Generate Prompt</span>
+          </button>
+        </div>
+
+        <!-- Generated Prompt Result -->
+        <div id="aiPromptResult" class="ai-prompt-result hidden">
+          <div class="ai-prompt-result-header">
+            <span id="txtYourPrompt">Your custom prompt is ready!</span>
+          </div>
+          <textarea
+            id="aiGeneratedPrompt"
+            class="ai-prompt-output"
+            readonly
+          ></textarea>
+          <button
+            class="ai-prompt-copy-btn"
+            onclick="window.app.copyGeneratedPrompt()"
+          >
+            <span>📋</span>
+            <span id="txtCopyGeneratedPrompt">Copy Prompt</span>
+          </button>
+
+          <!-- AI Destinations (shown after copy) -->
+          <div id="aiDestinations" class="ai-destinations hidden">
+            <div class="ai-destinations-title" id="txtNowPaste">
+              Now paste it into your favorite AI:
+            </div>
+            <div class="ai-destinations-grid">
+              <button
+                class="ai-destination-btn"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://chat.openai.com',
+                    'ChatGPT',
+                  )
+                "
+              >
+                <span class="ai-destination-icon">🗨️</span>
+                <span>ChatGPT</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+              <button
+                class="ai-destination-btn"
+                onclick="
+                  window.app.openExternalLink('https://claude.ai', 'Claude')
+                "
+              >
+                <span class="ai-destination-icon">🎭</span>
+                <span>Claude</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+              <button
+                class="ai-destination-btn"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://notebooklm.google.com',
+                    'NotebookLM',
+                  )
+                "
+              >
+                <span class="ai-destination-icon">📖</span>
+                <span>NotebookLM</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+              <button
+                class="ai-destination-btn kimi"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://kimi.moonshot.cn',
+                    'Kimi',
+                  )
+                "
+              >
+                <span class="ai-destination-icon">✨</span>
+                <span>Kimi</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Kimi suggestion outside the prompt -->
+          <div class="ai-prompt-suggestion">
+            <p class="ai-prompt-suggestion-text" id="txtKimiSuggestion">
+              💡 <strong>Tip:</strong> This prompt was generated with
+              <a
+                href="#"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://kimi.moonshot.cn',
+                    'Kimi',
+                  );
+                  return false;
+                "
+                >Kimi AI</a
+              >
+              in mind - give it a try for even better results!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="lang-switch">
+          <button id="langEn" class="lang-btn">EN</button>
+          <button id="langEs" class="lang-btn">ES</button>
+        </div>
+        <h1 id="appTitle" onclick="window.app.showFileScreen()">Ginaxams</h1>
+        <div id="examTitle" class="exam-title"></div>
+      </header>
+
+      <!-- SCREEN 1: LIBRARY / FILE LOAD -->
+      <div id="fileScreen">
+        <div class="library-container">
+          <!-- Template Modal (Popup) -->
+          <div id="templateModal" class="template-modal-overlay hidden">
+            <div class="template-modal">
+              <button
+                class="template-modal-close"
+                onclick="window.app.closeTemplateModal()"
+              >
+                ✕
+              </button>
+              <div class="template-modal-header">
+                <span class="template-modal-icon">📋</span>
+                <h2 class="template-modal-title" id="txtExamFormat">
+                  Exam Format
+                </h2>
+              </div>
+              <div class="template-desc" id="txtExamFormatDesc">
+                Exams are JSON files with questions, answers and correct
+                answers.
+              </div>
+              <div class="template-ai-note">
+                <strong id="txtUseWithAI">💡 Use with AI</strong>
+                <p id="txtAIHelpText">
+                  You can use this template with AI tools like NotebookLM,
+                  ChatGPT or Claude to create your own exams. Just copy the JSON
+                  below and paste it to the AI, asking it to create questions in
+                  the same format.
+                </p>
+              </div>
+              <div class="template-code-container">
+                <pre class="template-code" id="templateCode"></pre>
+                <button
+                  class="template-copy-btn"
+                  onclick="window.app.copyTemplate()"
+                  title="Copy to clipboard"
+                >
+                  📋 <span id="txtCopyTemplate">Copy JSON</span>
+                </button>
+              </div>
+              <div
+                class="template-desc"
+                id="txtCopyInstead"
+                style="margin-top: 10px; text-align: center"
+              >
+                Or copy the JSON directly to paste into an AI chat
+              </div>
+              <div style="display: flex; gap: 10px; margin-top: 15px">
+                <button
+                  class="mode-btn"
+                  onclick="window.app.downloadTemplate()"
+                  style="flex: 1"
+                >
+                  <span id="txtDownloadTemplate">📥 Download Template</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Choice Modal: Advanced vs Easy -->
+          <div id="choiceModal" class="choice-modal-overlay hidden">
+            <div class="choice-modal">
+              <button
+                class="choice-modal-close"
+                onclick="window.app.closeChoiceModal()"
+              >
+                ✕
+              </button>
+              <div class="choice-modal-header">
+                <span class="choice-modal-icon">💡</span>
+                <h2 class="choice-modal-title" id="txtHowToCreate">
+                  How do you want to create your exam?
+                </h2>
+              </div>
+              <div class="choice-options">
+                <button
+                  class="choice-option easy"
+                  onclick="
+                    window.app.showAIPromptGenerator();
+                    window.app.closeChoiceModal();
+                  "
+                >
+                  <span class="choice-option-icon">🤖</span>
+                  <div class="choice-option-content">
+                    <h3 id="txtEasyWay">Easy Way</h3>
+                    <p id="txtEasyWayDesc">
+                      Generate a custom AI prompt. Just fill in your preferences
+                      and paste it to any AI assistant.
+                    </p>
+                  </div>
+                  <span class="choice-arrow">→</span>
+                </button>
+                <button
+                  class="choice-option advanced"
+                  onclick="
+                    window.app.showTemplateModal();
+                    window.app.closeChoiceModal();
+                  "
+                >
+                  <span class="choice-option-icon">💻</span>
+                  <div class="choice-option-content">
+                    <h3 id="txtAdvancedWay">Advanced Way</h3>
+                    <p id="txtAdvancedWayDesc">
+                      View the JSON template directly. For users comfortable
+                      with editing code.
+                    </p>
+                  </div>
+                  <span class="choice-arrow">→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- External Link Confirmation Modal -->
+          <div
+            id="externalLinkModal"
+            class="external-link-modal-overlay hidden"
+          >
+            <div class="external-link-modal">
+              <div class="external-link-icon">🚀</div>
+              <h3 class="external-link-title" id="txtLeavingSite">
+                You're about to leave Ginaxams
+              </h3>
+              <p class="external-link-text" id="txtExternalLinkConfirm">
+                You'll be redirected to:
+              </p>
+              <div class="external-link-url" id="externalLinkUrl">
+                https://...
+              </div>
+              <div class="external-link-buttons">
+                <button
+                  class="external-link-btn secondary"
+                  onclick="window.app.closeExternalLinkModal()"
+                  id="txtStayHere"
+                >
+                  Stay Here
+                </button>
+                <button
+                  class="external-link-btn primary"
+                  onclick="window.app.confirmExternalLink()"
+                  id="txtContinue"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="file-input-area">
+            <button
+              id="helpToggleBtn"
+              class="help-btn-inline"
+              onclick="window.app.toggleHelpMenu()"
+              title="Help"
+            >
+              ❓
+            </button>
+            <!-- Help Menu Popup -->
+            <div id="helpMenuPopup" class="help-menu-popup hidden">
+              <button
+                class="help-menu-item"
+                onclick="
+                  window.app.showOnboarding();
+                  window.app.toggleHelpMenu();
+                "
+              >
+                <span>📖</span>
+                <span id="txtShowOnboarding">Show Tutorial</span>
+              </button>
+              <button
+                class="help-menu-item"
+                onclick="
+                  window.app.showChoiceModal();
+                  window.app.toggleHelpMenu();
+                "
+              >
+                <span>📋</span>
+                <span id="txtExamFormat">Exam Format</span>
+              </button>
+            </div>
+            <input type="file" id="fileInput" accept=".json" class="hidden" />
+            <label for="fileInput" class="file-label">
+              <span class="upload-icon">📂</span>
+              <div class="upload-main-text" id="txtLoadExamFile">
+                Import Exam
+              </div>
+              <div class="upload-sub-text" id="txtClickToSelect">
+                Click or drag & drop JSON here
+              </div>
+            </label>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+            "
+          >
+            <h3 id="txtAvailableExams" style="color: #888">Library</h3>
+            <span
+              class="main-menu-link"
+              id="txtRefresh"
+              style="margin: 0; font-size: 0.9em"
+              >Refresh</span
+            >
+          </div>
+
+          <div id="examList" class="exam-list-container">
+            <!-- Exam items injected here -->
+            <div class="no-exams" id="txtLoading">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: MODE SELECTION (OPTIONS) -->
+      <div id="modeScreen" class="hidden">
+        <div class="options-container">
+          <div class="options-title" id="txtOptions">Options</div>
+
+          <label class="checkbox-option">
+            <input type="checkbox" id="shuffleQuestions" checked />
+            <span id="txtShuffleQuestions">Shuffle questions</span>
+          </label>
+
+          <label class="checkbox-option">
+            <input type="checkbox" id="shuffleAnswers" checked />
+            <span id="txtShuffleAnswers">Shuffle answers</span>
+          </label>
+
+          <label class="checkbox-option">
+            <input type="checkbox" id="showFeedback" checked />
+            <span id="txtShowFeedback">Show feedback</span>
+          </label>
+        </div>
+
+        <div id="examStats" class="progress-text"></div>
+
+        <div class="mode-select">
+          <button
+            class="mode-btn active"
+            onclick="
+              window.app.practiceManager.startPractice(
+                window.app.practiceManager.examData,
+                {
+                  shuffleQuestions:
+                    document.getElementById('shuffleQuestions').checked,
+                  shuffleAnswers:
+                    document.getElementById('shuffleAnswers').checked,
+                  showFeedback: document.getElementById('showFeedback').checked,
+                },
+              )
+            "
+          >
+            <span id="btnPracticeMode">Start Practice</span>
+          </button>
+
+          <!-- Review All - loads review mode for entire exam immediately? Only useful if we have history. 
+               For now, we can hide direct Review Mode start or implement startReview() 
+               App.js references startPractice which handles options.
+          -->
+        </div>
+
+        <div class="main-menu-link">
+          <span onclick="window.app.showFileScreen()" id="txtBackToMenu"
+            >← Back to Library</span
+          >
+        </div>
+      </div>
+
+      <!-- SCREEN 3: PRACTICE -->
+      <div id="practiceScreen" class="hidden">
+        <div class="nav-buttons-top">
+          <button
+            class="nav-btn prev"
+            id="btnExit"
+            onclick="window.app.showFileScreen()"
+          >
+            <span id="txtExitReview">Menu</span>
+          </button>
+          <div
+            id="progressText"
+            class="progress-text"
+            style="align-self: center; margin: 0"
+          >
+            Question 1/1
+          </div>
+        </div>
+
+        <div class="progress-container">
+          <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+
+        <div id="practiceMinimapContainer" class="question-minimap"></div>
+
+        <div class="question-card">
+          <div id="questionNumber" class="question-number">Question 1</div>
+          <div id="questionText" class="question-text"></div>
+          <div id="questionImages" class="question-images"></div>
+
+          <div id="answersContainer" class="answers"></div>
+        </div>
+
+        <div class="nav-buttons">
+          <button id="prevBtn" class="nav-btn prev" disabled>
+            <span id="txtPrevious">Previous</span>
+          </button>
+          <button id="nextBtn" class="nav-btn next">
+            <span id="txtNext">Next</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: RESULTS -->
+      <div id="resultsScreen" class="hidden">
+        <h2 style="text-align: center; margin-bottom: 25px" id="txtResults">
+          🏆 Results
+        </h2>
+
+        <!-- Main Score Circle -->
+        <div class="score-circle-container">
+          <div class="score-circle" id="scoreCircle">
+            <span class="score-percentage" id="finalScore">0%</span>
+            <span class="score-label" id="scoreDetails">0 correct</span>
+          </div>
+        </div>
+
+        <!-- Last vs Best Score -->
+        <div class="score-comparison" id="scoreComparison">
+          <div class="score-box">
+            <span class="score-box-label" id="txtLastScore">Last Score</span>
+            <span class="score-box-value" id="lastScoreValue">-</span>
+          </div>
+          <div class="score-box best">
+            <span class="score-box-label" id="txtBestScore">Best Score</span>
+            <span class="score-box-value" id="bestScoreValue">-</span>
+          </div>
+        </div>
+
+        <div class="mode-select">
+          <button id="btnTryAgain" class="mode-btn">
+            <span id="lblTryAgain">Try Again</span>
+          </button>
+          <button id="btnReviewAnswers" class="mode-btn">
+            <span id="lblReviewAnswers">Review Answers</span>
+          </button>
+        </div>
+
+        <h3 class="review-summary-title" id="txtReviewSummaryTitle">
+          Review Summary
+        </h3>
+        <div id="reviewSummary" class="review-summary"></div>
+
+        <div style="margin-top: 30px; text-align: center">
+          <button
+            class="mode-btn"
+            onclick="window.app.showFileScreen()"
+            style="min-width: 200px"
+          >
+            <span id="txtBackToLibraryBtn">📚 Back to Library</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SCREEN 5: REVIEW -->
+      <div id="reviewScreen" class="hidden">
+        <div class="nav-buttons-top">
+          <button
+            class="nav-btn prev"
+            onclick="window.app.practiceManager?.showResults()"
+          >
+            <span id="txtBackReview">Back</span>
+          </button>
+          <div class="filters" style="display: flex; gap: 10px">
+            <button id="filterAll" class="lang-btn active">
+              <span id="txtFilterAll">All</span>
+            </button>
+            <button id="filterWrong" class="lang-btn">
+              <span id="txtFilterWrong">Wrong</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="progress-container">
+          <div
+            id="reviewProgressBar"
+            class="progress-bar"
+            style="width: 0%"
+          ></div>
+        </div>
+        <div id="reviewProgressText" class="progress-text"></div>
+
+        <div id="reviewMinimapContainer" class="question-minimap"></div>
+
+        <div class="question-card">
+          <div id="reviewQuestionNumber" class="question-number">Question</div>
+          <div id="reviewQuestionText" class="question-text"></div>
+          <div id="reviewQuestionImages" class="question-images"></div>
+
+          <div
+            class="options-title"
+            style="margin-top: 20px; color: #00ff88; font-size: 0.8em"
+            id="txtCorrectAnswer"
+          >
+            Correct Answer:
+          </div>
+          <div
+            id="correctAnswerText"
+            style="margin-bottom: 20px; font-weight: bold"
+          ></div>
+
+          <div id="reviewAnswersContainer" class="answers"></div>
+        </div>
+
+        <div class="nav-buttons">
+          <button
+            onclick="window.app.practiceManager.prevQuestion()"
+            class="nav-btn prev"
+          >
+            <span id="txtReviewPrevious">Prev</span>
+          </button>
+          <button
+            onclick="window.app.practiceManager.nextQuestion()"
+            class="nav-btn next"
+          >
+            <span id="txtReviewNext">Next</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

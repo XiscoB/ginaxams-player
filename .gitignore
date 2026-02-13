@@ -1,0 +1,11 @@
+# Python environment and cache
+venv/
+__pycache__/
+*.py[cod]
+
+# Ignore all captured exam data by default
+captures/*
+
+# Keep the bundled example exam in this repo
+!practice/examples/
+!practice/examples/**
