@@ -101,7 +101,7 @@ export const LANG_ES = {
   errorDeletingExam: "Error al eliminar examen",
   importFailed: "Error al importar",
   exportFailed: "Error al exportar",
-  invalidExamFormat: "Formato inválido: falta el array 'questions'.",
+  invalidExamFormat: "Formato de examen inválido",
   errorRenaming: "Error al renombrar",
   errorMovingExam: "Error al mover examen",
   errorLoadingExample: "Error al cargar examen de ejemplo",
@@ -211,4 +211,9 @@ export const LANG_ES = {
 
   // AI Destinations
   nowPaste: "Ahora pégalo en tu IA favorita:",
+
+  // Tarjeta Roja (Wrong Answer Feedback)
+  referenceArticle: "Referencia",
+  literalCitation: "Cita",
+  explanation: "Explicación",
 } as const;

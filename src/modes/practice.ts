@@ -6,7 +6,7 @@
  */
 
 import type {
-  ExamData,
+  Exam,
   Question,
   PracticeOptions,
   UserAnswers,
@@ -16,6 +16,15 @@ import { shuffleArray } from "../domain/scoring.js";
 
 export type PracticeMode = "practice" | "review";
 export type FilterType = "all" | "wrong";
+
+/**
+ * Runtime question type that extends Question with practice-mode properties
+ * These are ephemeral properties added during practice, not part of the strict schema
+ */
+interface RuntimeQuestion extends Question {
+  wasCorrect?: boolean;
+  images?: string[];
+}
 
 export interface PracticeManagerConfig {
   getQuestionResult: (examId: string, questionNum: number) => boolean | null;
@@ -34,9 +43,9 @@ export class PracticeManager {
   private config: PracticeManagerConfig;
 
   // State
-  private examData: ExamData | null = null;
-  private currentQuestions: Question[] = [];
-  private filteredQuestions: Question[] = [];
+  private examData: Exam | null = null;
+  private currentQuestions: RuntimeQuestion[] = [];
+  private filteredQuestions: RuntimeQuestion[] = [];
   private currentIndex = 0;
   private userAnswers: UserAnswers = {};
   private mode: PracticeMode = "practice";
@@ -51,7 +60,7 @@ export class PracticeManager {
   /**
    * Get current exam data
    */
-  getExamData(): ExamData | null {
+  getExamData(): Exam | null {
     return this.examData;
   }
 
@@ -92,7 +101,7 @@ export class PracticeManager {
   /**
    * Start practice mode with the given exam
    */
-  startPractice(examData: ExamData, options: Partial<PracticeOptions> = {}): void {
+  startPractice(examData: Exam, options: Partial<PracticeOptions> = {}): void {
     this.examData = examData;
     this.mode = "practice";
     this.currentQuestions = [...examData.questions];
@@ -123,7 +132,7 @@ export class PracticeManager {
   /**
    * Start review mode
    */
-  startReview(examData: ExamData | null = this.examData): void {
+  startReview(examData: Exam | null = this.examData): void {
     if (!examData) return;
 
     this.examData = examData;
@@ -283,7 +292,7 @@ export class PracticeManager {
   /**
    * Render images for a question
    */
-  private renderImages(containerId: string, question: Question): void {
+  private renderImages(containerId: string, question: RuntimeQuestion): void {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -306,7 +315,7 @@ export class PracticeManager {
    */
   private renderMinimap(
     containerId: string,
-    questions: Question[],
+    questions: RuntimeQuestion[],
     getCurrentFn: () => number
   ): void {
     const container = document.getElementById(containerId);
@@ -455,6 +464,120 @@ export class PracticeManager {
         nextBtnSpan.textContent = T.next;
         nextBtn.className = "nav-btn next";
       }
+    }
+
+    // Tarjeta Roja: Show detailed feedback on wrong answer in free mode
+    this.renderWrongAnswerFeedback(q, hasAnswered);
+  }
+
+  /**
+   * Render "Tarjeta Roja" - detailed feedback when answer is wrong in practice mode
+   * This shows: correct answer, articulo_referencia, cita_literal, explicacion_fallo
+   */
+  private renderWrongAnswerFeedback(question: RuntimeQuestion, hasAnswered: boolean): void {
+    const feedbackContainer = document.getElementById("wrongAnswerFeedback");
+    if (!feedbackContainer) return;
+
+    // Only show in practice mode (free mode), not in review mode
+    if (this.mode !== "practice") {
+      feedbackContainer.classList.add("hidden");
+      return;
+    }
+
+    // Check if user answered and if it was wrong
+    const userAnswerIndex = this.userAnswers[this.currentIndex];
+    if (!hasAnswered || userAnswerIndex === undefined) {
+      feedbackContainer.classList.add("hidden");
+      return;
+    }
+
+    const selectedAnswer = question.answers[userAnswerIndex];
+    const isCorrect = selectedAnswer?.isCorrect ?? false;
+
+    // Only show for wrong answers
+    if (isCorrect) {
+      feedbackContainer.classList.add("hidden");
+      return;
+    }
+
+    // Get correct answer
+    const correctAnswer = question.answers.find((a) => a.isCorrect);
+    if (!correctAnswer) {
+      feedbackContainer.classList.add("hidden");
+      return;
+    }
+
+    // Get schema v2.0 fields (guaranteed to exist on Question)
+    const articuloReferencia = question.articulo_referencia;
+    const feedback = question.feedback;
+
+    // Build the feedback card HTML
+    const T = this.config.getTranslations();
+
+    let html = `
+      <div class="wrong-feedback-card">
+        <div class="wrong-feedback-header">
+          <span class="wrong-feedback-icon">🟥</span>
+          <span class="wrong-feedback-title">${T.correctAnswer || "Correct Answer"}</span>
+        </div>
+        <div class="wrong-feedback-content">
+          <div class="correct-answer-section">
+            <span class="answer-letter-large">${correctAnswer.letter}</span>
+            <span class="answer-text">${correctAnswer.text}</span>
+          </div>
+    `;
+
+    // Only show v2.0 fields if they exist
+    if (articuloReferencia) {
+      html += `
+          <div class="feedback-section">
+            <div class="feedback-label">${T.referenceArticle || "Reference"}</div>
+            <div class="feedback-text">${articuloReferencia}</div>
+          </div>
+      `;
+    }
+
+    if (feedback?.cita_literal) {
+      html += `
+          <div class="feedback-section">
+            <div class="feedback-label">${T.literalCitation || "Citation"}</div>
+            <blockquote class="feedback-quote">${feedback.cita_literal}</blockquote>
+          </div>
+      `;
+    }
+
+    if (feedback?.explicacion_fallo) {
+      html += `
+          <div class="feedback-section">
+            <div class="feedback-label">${T.explanation || "Explanation"}</div>
+            <div class="feedback-explanation">${feedback.explicacion_fallo}</div>
+          </div>
+      `;
+    }
+
+    html += `
+        </div>
+        <div class="wrong-feedback-actions">
+          <button class="continue-btn" onclick="window.app.practiceManager?.continueAfterWrong()">
+            ${T.next || "Continue"} →
+          </button>
+        </div>
+      </div>
+    `;
+
+    feedbackContainer.innerHTML = html;
+    feedbackContainer.classList.remove("hidden");
+  }
+
+  /**
+   * Continue to next question after viewing wrong answer feedback
+   */
+  continueAfterWrong(): void {
+    if (this.currentIndex < this.currentQuestions.length - 1) {
+      this.currentIndex++;
+      this.renderQuestion();
+    } else {
+      this.showResults();
     }
   }
 

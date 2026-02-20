@@ -31,50 +31,64 @@ export interface Attempt {
 }
 
 // ============================================================================
-// Exam Types
+// Exam Types - Schema v2.0 (STRICT - NO OPTIONAL FIELDS)
 // ============================================================================
 
+/**
+ * Answer option for a question
+ * Strict definition - all fields required
+ */
 export interface Answer {
   letter: string;
   text: string;
   isCorrect: boolean;
 }
 
+/**
+ * Question - Core domain type (Schema v2.0)
+ * Strict schema with no optional fields
+ */
 export interface Question {
   number: number;
   text: string;
-  answers: Answer[];
-  images?: string[];
-  wasCorrect?: boolean;
-  correctAnswerText?: string;
-  categoria?: string[];
-  articulo_referencia?: string;
-  feedback?: {
+  categoria: string[];
+  articulo_referencia: string;
+  feedback: {
     cita_literal: string;
     explicacion_fallo: string;
   };
+  answers: Answer[];
 }
 
-export interface ExamData {
-  schema_version?: string;
+/**
+ * Exam - Core domain type (Schema v2.0)
+ * Strict schema with no optional fields
+ * schema_version literal enforces v2.0 compliance
+ */
+export interface Exam {
+  schema_version: "2.0";
   exam_id: string;
   title: string;
+  categorias: string[];
   total_questions: number;
-  categorias?: string[];
   questions: Question[];
-}
-
-export interface Exam {
-  id: string;
-  title: string;
-  data: ExamData;
-  addedAt: string;
-  folderId?: string;
 }
 
 // ============================================================================
 // Storage Types
 // ============================================================================
+
+/**
+ * StoredExam - Internal storage wrapper for Exam
+ * Contains metadata (id, title, folder) + the validated exam data
+ */
+export interface StoredExam {
+  id: string;
+  title: string;
+  data: Exam;
+  addedAt: string;
+  folderId: string;
+}
 
 export interface Folder {
   id: string;
@@ -102,7 +116,7 @@ export interface ExamProgress {
 export interface ExportData {
   version: number;
   exportedAt: string;
-  exams: Exam[];
+  exams: StoredExam[];
   folders: Folder[];
   progress: ExamProgress[];
 }
@@ -276,6 +290,12 @@ export interface Translations {
   stayHere: string;
   continue: string;
   nowPaste: string;
+
+  // Tarjeta Roja (Wrong Answer Feedback)
+  referenceArticle: string;
+  literalCitation: string;
+  explanation: string;
+
   [key: string]: string;
 }
 

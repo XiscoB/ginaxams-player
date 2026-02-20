@@ -9,14 +9,15 @@
  */
 
 import type {
+  StoredExam,
   Exam,
-  ExamData,
   Folder,
   ExamProgress,
   ExportData,
   Translations,
 } from "../domain/types.js";
 import { storage } from "../storage/db.js";
+import { validateExam } from "../domain/validation.js";
 import { PracticeManager } from "../modes/practice.js";
 import { getTranslations, detectBrowserLanguage, type LanguageCode } from "../i18n/index.js";
 import { calculatePercentage } from "../domain/scoring.js";
@@ -25,12 +26,12 @@ import { calculatePercentage } from "../domain/scoring.js";
  * Main Application Class
  */
 export class App {
-  // Core components
-  private practiceManager: PracticeManager;
+  // Core components - practiceManager is public for inline event handlers (Tarjeta Roja)
+  practiceManager: PracticeManager;
   private storage = storage;
 
   // State
-  private exams: Exam[] = [];
+  private exams: StoredExam[] = [];
   private folders: Folder[] = [];
   private translations: Translations = getTranslations("en");
   private currentLang: LanguageCode = "en";
@@ -436,39 +437,49 @@ ${material}
 
 DIFFICULTY LEVEL: ${difficulty}
 LANGUAGE: ${lang}
+SCHEMA VERSION: 2.0 (STRICT)
 
 ${materialSection}
 
-Please generate a JSON object in this exact format:
+Please generate a JSON object following this EXACT schema:
 
 {
-  "title": "[Descriptive exam title based on the material]",
+  "schema_version": "2.0",
   "exam_id": "${examId}",
+  "title": "[Descriptive exam title based on the material]",
+  "categorias": ["[Category 1]", "[Category 2]"],
   "total_questions": ${numQuestions},
   "questions": [
     {
       "number": 1,
       "text": "[Question text here]",
+      "categoria": ["[Category from categorias array]"],
+      "articulo_referencia": "[Reference to relevant article/section]",
+      "feedback": {
+        "cita_literal": "[Direct quote or citation from source material]",
+        "explicacion_fallo": "[Explanation of why other answers are wrong and why the correct one is right]"
+      },
       "answers": [
         {"letter": "A", "text": "[Answer text]", "isCorrect": true},
         {"letter": "B", "text": "[Answer text]", "isCorrect": false},
         {"letter": "C", "text": "[Answer text]", "isCorrect": false}${extraAnswers}${extraAnswers2}${extraAnswers3}
-      ],
-      "wasCorrect": true,
-      "correctAnswerText": "[The correct answer text]",
-      "images": []
+      ]
     }
     // ... repeat for all ${numQuestions} questions
   ]
 }
 
-IMPORTANT REQUIREMENTS:
-1. Questions should test understanding, not just memorization
-2. Distractors (wrong answers) should be plausible
-3. Include a mix of question types (conceptual, application, analysis)
-4. Make sure questions match the ${difficulty} difficulty level
-5. Only ONE answer per question should have "isCorrect": true
-6. Return ONLY the JSON, no markdown formatting or explanations`;
+STRICT REQUIREMENTS (Schema 2.0):
+1. schema_version MUST be exactly "2.0"
+2. categorias array must have at least one category, referenced by questions
+3. Each question MUST have: number, text, categoria, articulo_referencia, feedback, answers
+4. feedback MUST have: cita_literal (direct quote), explicacion_fallo (detailed explanation)
+5. Each question's categoria values must exist in the exam's categorias array
+6. Each question must have exactly ONE answer with "isCorrect": true
+7. Each question must have at least 2 answers
+8. Questions should test understanding, not just memorization
+9. Distractors (wrong answers) should be plausible
+10. Return ONLY the JSON, no markdown formatting or explanations`;
   }
 
   private generateSpanishPrompt(
@@ -495,39 +506,49 @@ ${material}
 
 NIVEL DE DIFICULTAD: ${difficulty}
 IDIOMA: ${lang}
+VERSIÓN DE ESQUEMA: 2.0 (ESTRICTO)
 
 ${materialSection}
 
-Por favor genera un objeto JSON en este formato exacto:
+Por favor genera un objeto JSON siguiendo este esquema EXACTO:
 
 {
-  "title": "[Título descriptivo del examen basado en el material]",
+  "schema_version": "2.0",
   "exam_id": "${examId}",
+  "title": "[Título descriptivo del examen basado en el material]",
+  "categorias": ["[Categoría 1]", "[Categoría 2]"],
   "total_questions": ${numQuestions},
   "questions": [
     {
       "number": 1,
       "text": "[Texto de la pregunta aquí]",
+      "categoria": ["[Categoría del array categorias]"],
+      "articulo_referencia": "[Referencia al artículo/sección relevante]",
+      "feedback": {
+        "cita_literal": "[Cita directa del material fuente]",
+        "explicacion_fallo": "[Explicación de por qué otras respuestas son incorrectas y por qué la correcta es la adecuada]"
+      },
       "answers": [
         {"letter": "A", "text": "[Texto de respuesta]", "isCorrect": true},
         {"letter": "B", "text": "[Texto de respuesta]", "isCorrect": false},
         {"letter": "C", "text": "[Texto de respuesta]", "isCorrect": false}${extraAnswers}${extraAnswers2}${extraAnswers3}
-      ],
-      "wasCorrect": true,
-      "correctAnswerText": "[El texto de la respuesta correcta]",
-      "images": []
+      ]
     }
     // ... repetir para las ${numQuestions} preguntas
   ]
 }
 
-REQUISITOS IMPORTANTES:
-1. Las preguntas deben evaluar comprensión, no solo memorización
-2. Los distractores (respuestas incorrectas) deben ser plausibles
-3. Incluye una mezcla de tipos de preguntas (conceptuales, aplicación, análisis)
-4. Asegúrate de que las preguntas correspondan al nivel de dificultad: ${difficulty}
-5. Solo UNA respuesta por pregunta debe tener "isCorrect": true
-6. Devuelve SOLO el JSON, sin formato markdown ni explicaciones`;
+REQUISITOS ESTRICTOS (Esquema 2.0):
+1. schema_version DEBE ser exactamente "2.0"
+2. El array categorias debe tener al menos una categoría, referenciada por las preguntas
+3. Cada pregunta DEBE tener: number, text, categoria, articulo_referencia, feedback, answers
+4. feedback DEBE tener: cita_literal (cita directa), explicacion_fallo (explicación detallada)
+5. Los valores de categoria de cada pregunta deben existir en el array categorias del examen
+6. Cada pregunta debe tener exactamente UNA respuesta con "isCorrect": true
+7. Cada pregunta debe tener al menos 2 respuestas
+8. Las preguntas deben evaluar comprensión, no solo memorización
+9. Los distractores (respuestas incorrectas) deben ser plausibles
+10. Devuelve SOLO el JSON, sin formato markdown ni explicaciones`;
   }
 
   private generateExamId(material: string, numQuestions: string, difficulty: string): string {
@@ -870,7 +891,7 @@ REQUISITOS IMPORTANTES:
     if (!listEl) return;
 
     // Build folder map including all folders (even empty ones)
-    const map: Record<string, Exam[]> = { uncategorized: [] };
+    const map: Record<string, StoredExam[]> = { uncategorized: [] };
     this.folders.forEach((f) => (map[f.id] = []));
 
     const hasAnyExams = this.exams.length > 0;
@@ -903,7 +924,7 @@ REQUISITOS IMPORTANTES:
 
     let html = "";
 
-    const renderExam = (exam: Exam): string => {
+    const renderExam = (exam: StoredExam): string => {
       const progress = progressMap[exam.id];
       const attempts = progress?.attempts ?? 0;
       const lastScore = progress?.lastScore;
@@ -1054,31 +1075,32 @@ REQUISITOS IMPORTANTES:
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const json = JSON.parse(e.target?.result as string) as ExamData;
-        await this.importExam(json);
+        // Parse as unknown first, then validate strictly
+        const json = JSON.parse(e.target?.result as string) as unknown;
+        // Strict v2.0 validation
+        const validatedExam = validateExam(json);
+        await this.importExam(validatedExam);
       } catch (err) {
-        alert("Error parsing JSON: " + (err as Error).message);
+        // Show user-friendly error message
+        const errorMsg = err instanceof Error ? err.message : "Unknown error";
+        alert(`${this.translations.invalidExamFormat}: ${errorMsg}`);
       }
     };
     reader.readAsText(file);
   }
 
-  async importExam(json: ExamData, folderId = "uncategorized"): Promise<void> {
-    if (!json.questions || !Array.isArray(json.questions)) {
-      alert(this.translations.invalidExamFormat);
-      return;
-    }
-
-    const exam: Exam = {
-      id: json.exam_id || crypto.randomUUID(),
-      title: json.title || "Untitled Exam",
-      data: json,
+  async importExam(exam: Exam, folderId = "uncategorized"): Promise<void> {
+    // Create StoredExam wrapper for validated Exam
+    const storedExam: StoredExam = {
+      id: exam.exam_id,
+      title: exam.title,
+      data: exam,
       addedAt: new Date().toISOString(),
       folderId: folderId,
     };
 
     try {
-      await this.storage.saveExam(exam);
+      await this.storage.saveExam(storedExam);
       this.refreshLibrary();
     } catch (e) {
       console.error(e);
@@ -1091,7 +1113,9 @@ REQUISITOS IMPORTANTES:
       const response = await fetch("practice/examples/example_exam.json");
       if (!response.ok) throw new Error("Failed to load example exam");
 
-      const json = (await response.json()) as ExamData;
+      // Parse as unknown and validate strictly
+      const json = (await response.json()) as unknown;
+      const validatedExam = validateExam(json);
 
       // Create a folder for the example
       const exampleFolderId = "example-folder";
@@ -1104,17 +1128,8 @@ REQUISITOS IMPORTANTES:
         });
       }
 
-      // Import the exam
-      const exam: Exam = {
-        id: json.exam_id || crypto.randomUUID(),
-        title: json.title || (this.currentLang === "es" ? "Examen de Ejemplo" : "Example Exam"),
-        data: json,
-        addedAt: new Date().toISOString(),
-        folderId: exampleFolderId,
-      };
-
-      await this.storage.saveExam(exam);
-      this.refreshLibrary();
+      // Import the validated exam
+      await this.importExam(validatedExam, exampleFolderId);
     } catch (e) {
       console.error("Failed to load example exam:", e);
       alert(this.translations.errorLoadingExample);

@@ -5,10 +5,10 @@
  * exams, folders, and progress data using IndexedDB.
  */
 
-import type { Exam, Folder, ExamProgress, ExportData } from "../domain/types.js";
+import type { StoredExam, Folder, ExamProgress, ExportData } from "../domain/types.js";
 
 const DB_NAME = "ginax_db";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented for schema v2.0 - clean break from legacy
 
 // Store names
 const STORES = {
@@ -49,24 +49,34 @@ export class ExamStorage {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const oldVersion = event.oldVersion;
 
-        // Exams store: keyPath = id
-        if (!db.objectStoreNames.contains(STORES.EXAMS)) {
-          const examStore = db.createObjectStore(STORES.EXAMS, { keyPath: "id" });
-          examStore.createIndex("folderId", "folderId", { unique: false });
-          examStore.createIndex("addedAt", "addedAt", { unique: false });
+        // Schema v2.0 - Clean break from legacy
+        // Delete existing stores to ensure clean schema
+        if (oldVersion > 0) {
+          // Delete existing stores for clean upgrade
+          if (db.objectStoreNames.contains(STORES.EXAMS)) {
+            db.deleteObjectStore(STORES.EXAMS);
+          }
+          if (db.objectStoreNames.contains(STORES.FOLDERS)) {
+            db.deleteObjectStore(STORES.FOLDERS);
+          }
+          if (db.objectStoreNames.contains(STORES.PROGRESS)) {
+            db.deleteObjectStore(STORES.PROGRESS);
+          }
         }
 
-        // Folders store: keyPath = id
-        if (!db.objectStoreNames.contains(STORES.FOLDERS)) {
-          const folderStore = db.createObjectStore(STORES.FOLDERS, { keyPath: "id" });
-          folderStore.createIndex("name", "name", { unique: false });
-        }
+        // Create Exams store: keyPath = id
+        const examStore = db.createObjectStore(STORES.EXAMS, { keyPath: "id" });
+        examStore.createIndex("folderId", "folderId", { unique: false });
+        examStore.createIndex("addedAt", "addedAt", { unique: false });
 
-        // Progress store: keyPath = examId
-        if (!db.objectStoreNames.contains(STORES.PROGRESS)) {
-          db.createObjectStore(STORES.PROGRESS, { keyPath: "examId" });
-        }
+        // Create Folders store: keyPath = id
+        const folderStore = db.createObjectStore(STORES.FOLDERS, { keyPath: "id" });
+        folderStore.createIndex("name", "name", { unique: false });
+
+        // Create Progress store: keyPath = examId
+        db.createObjectStore(STORES.PROGRESS, { keyPath: "examId" });
       };
     });
   }
@@ -96,7 +106,7 @@ export class ExamStorage {
   /**
    * Save or update an exam
    */
-  async saveExam(exam: Exam): Promise<string> {
+  async saveExam(exam: StoredExam): Promise<string> {
     await this.ready();
 
     // Ensure exam has an ID and timestamp
@@ -126,7 +136,7 @@ export class ExamStorage {
   /**
    * Get all exams
    */
-  async getExams(): Promise<Exam[]> {
+  async getExams(): Promise<StoredExam[]> {
     await this.ready();
 
     return new Promise((resolve, reject) => {
@@ -135,7 +145,7 @@ export class ExamStorage {
           const store = tx.objectStore(STORES.EXAMS);
           const request = store.getAll();
 
-          request.onsuccess = () => resolve(request.result as Exam[]);
+          request.onsuccess = () => resolve(request.result as StoredExam[]);
           request.onerror = () => reject(request.error);
         })
         .catch(reject);
@@ -145,7 +155,7 @@ export class ExamStorage {
   /**
    * Get a single exam by ID
    */
-  async getExam(id: string): Promise<Exam | undefined> {
+  async getExam(id: string): Promise<StoredExam | undefined> {
     await this.ready();
 
     return new Promise((resolve, reject) => {
@@ -154,7 +164,7 @@ export class ExamStorage {
           const store = tx.objectStore(STORES.EXAMS);
           const request = store.get(id);
 
-          request.onsuccess = () => resolve(request.result as Exam | undefined);
+          request.onsuccess = () => resolve(request.result as StoredExam | undefined);
           request.onerror = () => reject(request.error);
         })
         .catch(reject);

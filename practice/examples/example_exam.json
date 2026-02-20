@@ -1,69 +1,73 @@
 {
-  "title": "Test exam",
-  "url": "https://example.com/exam",
-  "timestamp": "2025-12-05T14:11:59.851Z",
+  "schema_version": "2.0",
+  "exam_id": "example-exam-001",
+  "title": "Example Exam - Schema v2.0",
+  "categorias": ["General Knowledge", "Logical Reasoning"],
   "total_questions": 2,
   "questions": [
     {
       "number": 1,
-      "text": "Text for question 1",
+      "text": "What is the capital of France?",
+      "categoria": ["General Knowledge"],
+      "articulo_referencia": "European Geography - Section 3.2",
+      "feedback": {
+        "cita_literal": "Paris is the capital and most populous city of France, with an estimated population of 2,165,423 residents in 2019.",
+        "explicacion_fallo": "London is the capital of the UK, Berlin is the capital of Germany, and Madrid is the capital of Spain. Paris has been the capital of France since 987 CE."
+      },
       "answers": [
         {
           "letter": "A",
-          "text": "Response A",
+          "text": "London",
           "isCorrect": false
         },
         {
           "letter": "B",
-          "text": "Response B",
-          "isCorrect": false
-        },
-        {
-          "letter": "C",
-          "text": "Response C",
+          "text": "Paris",
           "isCorrect": true
         },
         {
+          "letter": "C",
+          "text": "Berlin",
+          "isCorrect": false
+        },
+        {
           "letter": "D",
-          "text": "Response D",
+          "text": "Madrid",
           "isCorrect": false
         }
-      ],
-      "wasCorrect": true,
-      "correctAnswerText": "Response C",
-      "images": []
+      ]
     },
     {
       "number": 2,
-      "text": "Text for question 2",
+      "text": "If all roses are flowers and some flowers fade quickly, then which statement must be true?",
+      "categoria": ["Logical Reasoning"],
+      "articulo_referencia": "Logic Fundamentals - Chapter 2",
+      "feedback": {
+        "cita_literal": "In syllogistic logic, if A is a subset of B, and some B have property C, we cannot conclude that A has property C without additional premises.",
+        "explicacion_fallo": "This is a classic logical reasoning question. Just because some flowers fade quickly doesn't mean roses specifically do. We cannot deduce anything specific about roses fading from the given premises."
+      },
       "answers": [
         {
           "letter": "A",
-          "text": "Response A",
+          "text": "All roses fade quickly",
           "isCorrect": false
         },
         {
           "letter": "B",
-          "text": "Response B",
-          "isCorrect": true
+          "text": "Some roses are not flowers",
+          "isCorrect": false
         },
         {
           "letter": "C",
-          "text": "Response C",
-          "isCorrect": false
+          "text": "Nothing can be determined about roses fading",
+          "isCorrect": true
         },
         {
           "letter": "D",
-          "text": "Response D",
+          "text": "All flowers are roses",
           "isCorrect": false
         }
-      ],
-      "wasCorrect": true,
-      "correctAnswerText": "Response B",
-      "images": []
+      ]
     }
-  ],
-  "source_file": "capture_002.json",
-  "exam_id": "randomexamid123456",
-  "captured_at": "2025-12-05T15:11:12.401738"
+  ]
 }

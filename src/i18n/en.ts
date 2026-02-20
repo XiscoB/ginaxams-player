@@ -209,6 +209,11 @@ export const LANG_EN = {
 
   // AI Destinations
   nowPaste: "Now paste it into your favorite AI:",
-} as const;
+
+  // Tarjeta Roja (Wrong Answer Feedback)
+  referenceArticle: "Reference",
+  literalCitation: "Citation",
+  explanation: "Explanation",
+}
 
 export type TranslationKey = keyof typeof LANG_EN;

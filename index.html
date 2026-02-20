@@ -2563,6 +2563,177 @@
           padding: 8px 12px;
         }
       }
+
+      /* ==========================================================================
+         Wrong Answer Feedback (Tarjeta Roja) - Schema v2.0
+         ========================================================================== */
+      .wrong-answer-feedback {
+        margin-top: 20px;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      .wrong-answer-feedback.hidden {
+        display: none;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .wrong-feedback-card {
+        background: linear-gradient(135deg, #1a0f0f 0%, #2d1f1f 100%);
+        border: 2px solid #ff4757;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(255, 71, 87, 0.3);
+      }
+
+      .wrong-feedback-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 71, 87, 0.3);
+      }
+
+      .wrong-feedback-icon {
+        font-size: 24px;
+      }
+
+      .wrong-feedback-title {
+        font-size: 1.2em;
+        font-weight: 600;
+        color: #ff6b7a;
+      }
+
+      .wrong-feedback-content {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .correct-answer-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+      }
+
+      .answer-letter-large {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+        color: #0a0e27;
+        font-size: 1.3em;
+        font-weight: 700;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .answer-letter-large + .answer-text {
+        color: #fff;
+        font-size: 1.1em;
+        font-weight: 500;
+      }
+
+      .feedback-section {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        padding: 12px 15px;
+      }
+
+      .feedback-label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #888;
+        margin-bottom: 6px;
+      }
+
+      .feedback-text {
+        color: #ccc;
+        font-size: 0.95em;
+        line-height: 1.5;
+      }
+
+      .feedback-quote {
+        margin: 0;
+        padding: 10px 15px;
+        border-left: 3px solid #ffd700;
+        background: rgba(255, 215, 0, 0.05);
+        color: #ddd;
+        font-style: italic;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .feedback-explanation {
+        color: #ccc;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .wrong-feedback-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .continue-btn {
+        background: linear-gradient(135deg, #ff4757 0%, #ff3344 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+      }
+
+      .continue-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 71, 87, 0.5);
+      }
+
+      .continue-btn:active {
+        transform: translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        .wrong-feedback-card {
+          padding: 15px;
+        }
+
+        .correct-answer-section {
+          padding: 12px;
+        }
+
+        .answer-letter-large {
+          width: 36px;
+          height: 36px;
+          font-size: 1.1em;
+        }
+
+        .wrong-feedback-title {
+          font-size: 1.1em;
+        }
+      }
     </style>
   </head>
   <body>
@@ -3150,6 +3321,9 @@
           <div id="questionImages" class="question-images"></div>
 
           <div id="answersContainer" class="answers"></div>
+
+          <!-- Wrong Answer Feedback (Tarjeta Roja) - Shown only in free mode when answer is wrong -->
+          <div id="wrongAnswerFeedback" class="wrong-answer-feedback hidden"></div>
         </div>
 
         <div class="nav-buttons">
