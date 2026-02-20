@@ -4,13 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ginaxams</title>
-    <!-- Languages -->
-    <script src="practice/lang/en.js"></script>
-    <script src="practice/lang/es.js"></script>
-    <!-- App Logic -->
-    <script src="src/js/db.js"></script>
-    <script src="src/js/practice.js"></script>
-    <script src="src/js/app.js"></script>
+    <!-- Main entry point -->
+    <script type="module" src="/src/main.ts"></script>
 
     <style>
       :root {
@@ -143,7 +138,6 @@
       /* --- Library Styles (New) --- */
       .library-container {
         position: relative;
-        /* padding: 10px; */
       }
 
       .file-input-area {
@@ -1115,7 +1109,7 @@
       .ai-prompt-divider {
         text-align: center;
         margin-bottom: 15px;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         font-size: 0.9em;
         position: relative;
       }
@@ -1211,7 +1205,7 @@
         right: 15px;
         background: none;
         border: none;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         font-size: 1.5em;
         cursor: pointer;
         width: 40px;
@@ -1314,7 +1308,7 @@
       }
 
       .ai-prompt-textarea::placeholder {
-        color: var(--text-muted);
+        color: var(--text-secondary);
       }
 
       .ai-prompt-generate-btn {
@@ -1530,7 +1524,7 @@
       }
 
       .ai-prompt-suggestion-text {
-        color: var(--text-muted);
+        color: var(--text-secondary);
         font-size: 0.85em;
         line-height: 1.5;
       }
@@ -1608,7 +1602,7 @@
       }
 
       .ai-destination-arrow {
-        color: var(--text-muted);
+        color: var(--text-secondary);
         font-size: 1.1em;
         transition: all 0.2s ease;
       }
@@ -1676,7 +1670,7 @@
         right: 15px;
         background: none;
         border: none;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         font-size: 1.5em;
         cursor: pointer;
         width: 40px;
@@ -1755,7 +1749,7 @@
         right: 15px;
         background: none;
         border: none;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         font-size: 1.5em;
         cursor: pointer;
         width: 40px;
@@ -1841,7 +1835,7 @@
 
       .choice-arrow {
         font-size: 1.5em;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         transition: all 0.2s ease;
       }
 
@@ -2217,7 +2211,7 @@
         right: 15px;
         background: none;
         border: none;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         cursor: pointer;
         font-size: 0.9em;
         padding: 5px 10px;
@@ -2297,7 +2291,7 @@
 
       .onboarding-choice-arrow {
         font-size: 1.5em;
-        color: var(--text-muted);
+        color: var(--text-secondary);
         transition: all 0.2s ease;
       }
 
@@ -2822,12 +2816,7 @@
             <div class="ai-destinations-grid">
               <button
                 class="ai-destination-btn"
-                onclick="
-                  window.app.openExternalLink(
-                    'https://chat.openai.com',
-                    'ChatGPT',
-                  )
-                "
+                onclick="window.app.openExternalLink('https://chat.openai.com', 'ChatGPT')"
               >
                 <span class="ai-destination-icon">🗨️</span>
                 <span>ChatGPT</span>
@@ -2835,9 +2824,7 @@
               </button>
               <button
                 class="ai-destination-btn"
-                onclick="
-                  window.app.openExternalLink('https://claude.ai', 'Claude')
-                "
+                onclick="window.app.openExternalLink('https://claude.ai', 'Claude')"
               >
                 <span class="ai-destination-icon">🎭</span>
                 <span>Claude</span>
@@ -2845,12 +2832,7 @@
               </button>
               <button
                 class="ai-destination-btn"
-                onclick="
-                  window.app.openExternalLink(
-                    'https://notebooklm.google.com',
-                    'NotebookLM',
-                  )
-                "
+                onclick="window.app.openExternalLink('https://notebooklm.google.com', 'NotebookLM')"
               >
                 <span class="ai-destination-icon">📖</span>
                 <span>NotebookLM</span>
@@ -2858,12 +2840,7 @@
               </button>
               <button
                 class="ai-destination-btn kimi"
-                onclick="
-                  window.app.openExternalLink(
-                    'https://kimi.moonshot.cn',
-                    'Kimi',
-                  )
-                "
+                onclick="window.app.openExternalLink('https://kimi.moonshot.cn', 'Kimi')"
               >
                 <span class="ai-destination-icon">✨</span>
                 <span>Kimi</span>
@@ -2878,13 +2855,7 @@
               💡 <strong>Tip:</strong> This prompt was generated with
               <a
                 href="#"
-                onclick="
-                  window.app.openExternalLink(
-                    'https://kimi.moonshot.cn',
-                    'Kimi',
-                  );
-                  return false;
-                "
+                onclick="window.app.openExternalLink('https://kimi.moonshot.cn', 'Kimi'); return false;"
                 >Kimi AI</a
               >
               in mind - give it a try for even better results!
@@ -2982,10 +2953,7 @@
               <div class="choice-options">
                 <button
                   class="choice-option easy"
-                  onclick="
-                    window.app.showAIPromptGenerator();
-                    window.app.closeChoiceModal();
-                  "
+                  onclick="window.app.showAIPromptGenerator(); window.app.closeChoiceModal();"
                 >
                   <span class="choice-option-icon">🤖</span>
                   <div class="choice-option-content">
@@ -2999,10 +2967,7 @@
                 </button>
                 <button
                   class="choice-option advanced"
-                  onclick="
-                    window.app.showTemplateModal();
-                    window.app.closeChoiceModal();
-                  "
+                  onclick="window.app.showTemplateModal(); window.app.closeChoiceModal();"
                 >
                   <span class="choice-option-icon">💻</span>
                   <div class="choice-option-content">
@@ -3066,20 +3031,14 @@
             <div id="helpMenuPopup" class="help-menu-popup hidden">
               <button
                 class="help-menu-item"
-                onclick="
-                  window.app.showOnboarding();
-                  window.app.toggleHelpMenu();
-                "
+                onclick="window.app.showOnboarding(); window.app.toggleHelpMenu();"
               >
                 <span>📖</span>
                 <span id="txtShowOnboarding">Show Tutorial</span>
               </button>
               <button
                 class="help-menu-item"
-                onclick="
-                  window.app.showChoiceModal();
-                  window.app.toggleHelpMenu();
-                "
+                onclick="window.app.showChoiceModal(); window.app.toggleHelpMenu();"
               >
                 <span>📋</span>
                 <span id="txtExamFormat">Exam Format</span>
@@ -3147,26 +3106,10 @@
         <div class="mode-select">
           <button
             class="mode-btn active"
-            onclick="
-              window.app.practiceManager.startPractice(
-                window.app.practiceManager.examData,
-                {
-                  shuffleQuestions:
-                    document.getElementById('shuffleQuestions').checked,
-                  shuffleAnswers:
-                    document.getElementById('shuffleAnswers').checked,
-                  showFeedback: document.getElementById('showFeedback').checked,
-                },
-              )
-            "
+            onclick="window.app.practiceManager.startPractice(window.app.practiceManager.getExamData(), {shuffleQuestions: document.getElementById('shuffleQuestions').checked, shuffleAnswers: document.getElementById('shuffleAnswers').checked, showFeedback: document.getElementById('showFeedback').checked})"
           >
             <span id="btnPracticeMode">Start Practice</span>
           </button>
-
-          <!-- Review All - loads review mode for entire exam immediately? Only useful if we have history. 
-               For now, we can hide direct Review Mode start or implement startReview() 
-               App.js references startPractice which handles options.
-          -->
         </div>
 
         <div class="main-menu-link">
@@ -3275,7 +3218,7 @@
         <div class="nav-buttons-top">
           <button
             class="nav-btn prev"
-            onclick="window.app.practiceManager?.showResults()"
+            onclick="window.app.practiceManager.showResults()"
           >
             <span id="txtBackReview">Back</span>
           </button>

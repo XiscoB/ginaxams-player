@@ -1,26 +1,80 @@
 /**
  * Main Application Logic
+ * 
+ * The App class coordinates all functionality:
+ * - Exam library management
+ * - File import/export
+ * - Language switching
+ * - UI navigation
  */
-class App {
+
+import type {
+  Exam,
+  ExamData,
+  Folder,
+  ExamProgress,
+  ExportData,
+  Translations,
+} from "../domain/types.js";
+import { storage } from "../storage/db.js";
+import { PracticeManager } from "../modes/practice.js";
+import { getTranslations, detectBrowserLanguage, type LanguageCode } from "../i18n/index.js";
+import { calculatePercentage } from "../domain/scoring.js";
+
+/**
+ * Main Application Class
+ */
+export class App {
+  // Core components
+  private practiceManager: PracticeManager;
+  private storage = storage;
+
+  // State
+  private exams: Exam[] = [];
+  private folders: Folder[] = [];
+  private translations: Translations = getTranslations("en");
+  private currentLang: LanguageCode = "en";
+  private templateJSON: Record<string, unknown> | null = null;
+
+  // UI State
+  private currentOnboardingStep = 1;
+  private totalOnboardingSteps = 5;
+  private pendingExternalLink: string | null = null;
+
   constructor() {
-    this.storage = window.storage;
-    // PracticeManager needs access to App for navigation and T
-    this.practiceManager = new window.PracticeManager(this);
-    this.exams = [];
-    this.folders = [];
-    this.T = window.LANG_EN || {}; // Default fallback
-    this.currentLang = "en";
+    // Initialize PracticeManager with callbacks
+    this.practiceManager = new PracticeManager({
+      getQuestionResult: (examId: string, questionNum: number) => {
+        return this.getQuestionResult(examId, questionNum);
+      },
+      saveProgress: async (examId: string, questionNum: number, wasCorrect: boolean) => {
+        await this.saveProgress(examId, questionNum, wasCorrect);
+      },
+      saveScore: async (examId: string, score: number) => {
+        return await this.saveScore(examId, score);
+      },
+      incrementAttempt: async (examId: string) => {
+        await this.incrementAttempt(examId);
+      },
+      onShowFileScreen: () => this.showFileScreen(),
+      onShowModeScreen: () => this.showModeScreen(),
+      getTranslations: () => this.translations,
+    });
 
     this.init();
   }
 
-  async init() {
+  // ============================================================================
+  // Initialization
+  // ============================================================================
+
+  private async init(): Promise<void> {
     try {
       await this.storage.ready();
 
-      // Load Language Preference - detect from browser if not set
-      const savedLang = localStorage.getItem("ginaxams_lang");
-      const detectedLang = this.detectBrowserLanguage();
+      // Load Language Preference
+      const savedLang = localStorage.getItem("ginaxams_lang") as LanguageCode | null;
+      const detectedLang = detectBrowserLanguage();
       this.setLanguage(savedLang || detectedLang);
 
       // Load template JSON for display
@@ -39,33 +93,23 @@ class App {
     }
   }
 
-  detectBrowserLanguage() {
-    // Get browser language (handles both 'es' and 'es-ES', 'es-MX', etc.)
-    const browserLang = navigator.language || navigator.userLanguage || "en";
-    const langCode = browserLang.toLowerCase().split("-")[0];
+  // ============================================================================
+  // Onboarding
+  // ============================================================================
 
-    // Spanish variants -> 'es', everything else -> 'en'
-    return langCode === "es" ? "es" : "en";
-  }
-
-  // --- Onboarding ---
-
-  checkOnboarding() {
+  private checkOnboarding(): void {
     const hasSeenOnboarding = localStorage.getItem("ginaxams_onboarding_seen");
     if (!hasSeenOnboarding) {
       this.showOnboarding();
     }
   }
 
-  showOnboarding() {
+  showOnboarding(): void {
     this.currentOnboardingStep = 1;
-    const totalSteps = 5;
-    this.totalOnboardingSteps = totalSteps;
 
     const overlay = document.getElementById("onboardingOverlay");
     if (overlay) {
       overlay.classList.remove("hidden");
-      // Small delay to allow display:block to apply before adding active for animation
       setTimeout(() => {
         overlay.classList.add("active");
         this.updateOnboardingUI();
@@ -73,16 +117,16 @@ class App {
     }
   }
 
-  updateOnboardingUI() {
+  private updateOnboardingUI(): void {
     // Update step visibility
-    document.querySelectorAll(".onboarding-step-content").forEach((el) => {
-      const step = parseInt(el.dataset.step);
+    document.querySelectorAll<HTMLElement>(".onboarding-step-content").forEach((el) => {
+      const step = parseInt(el.dataset.step ?? "1", 10);
       el.classList.toggle("hidden", step !== this.currentOnboardingStep);
     });
 
     // Update step indicators
-    document.querySelectorAll(".onboarding-step").forEach((el) => {
-      const step = parseInt(el.dataset.step);
+    document.querySelectorAll<HTMLElement>(".onboarding-step").forEach((el) => {
+      const step = parseInt(el.dataset.step ?? "1", 10);
       el.classList.toggle("active", step === this.currentOnboardingStep);
     });
 
@@ -95,70 +139,65 @@ class App {
     }
 
     if (nextBtn) {
-      const isLastStep =
-        this.currentOnboardingStep === this.totalOnboardingSteps;
+      const isLastStep = this.currentOnboardingStep === this.totalOnboardingSteps;
       const nextText = nextBtn.querySelector("span");
       if (nextText) {
         nextText.textContent = isLastStep
-          ? this.T?.onboardingFinish || "Get Started"
-          : this.T?.onboardingNext || "Next";
+          ? this.translations.onboardingFinish
+          : this.translations.onboardingNext;
       }
     }
   }
 
-  nextOnboardingStep() {
+  nextOnboardingStep(): void {
     if (this.currentOnboardingStep < this.totalOnboardingSteps) {
       this.currentOnboardingStep++;
       this.updateOnboardingUI();
     } else {
-      // On last step, clicking "Comenzar/Get Started" opens AI Prompt Generator by default
       this.finishOnboardingAndShowAIPrompt();
     }
   }
 
-  prevOnboardingStep() {
+  prevOnboardingStep(): void {
     if (this.currentOnboardingStep > 1) {
       this.currentOnboardingStep--;
       this.updateOnboardingUI();
     }
   }
 
-  skipOnboarding() {
+  skipOnboarding(): void {
     this.finishOnboarding();
   }
 
-  finishOnboarding() {
+  finishOnboarding(): void {
     localStorage.setItem("ginaxams_onboarding_seen", "true");
     const overlay = document.getElementById("onboardingOverlay");
     if (overlay) {
       overlay.classList.remove("active");
-      // Add hidden class immediately to allow reopening
       overlay.classList.add("hidden");
     }
   }
 
-  finishOnboardingAndShowAIPrompt() {
+  finishOnboardingAndShowAIPrompt(): void {
     this.finishOnboarding();
-    // Small delay to allow transition to complete
-    setTimeout(() => {
-      this.showAIPromptGenerator();
-    }, 100);
+    setTimeout(() => this.showAIPromptGenerator(), 100);
   }
 
-  finishOnboardingAndShowTemplate() {
+  finishOnboardingAndShowTemplate(): void {
     this.finishOnboarding();
-    // Small delay to allow transition to complete
-    setTimeout(() => {
-      this.showTemplateModal();
-    }, 100);
+    setTimeout(() => this.showTemplateModal(), 100);
   }
 
-  async loadTemplateJSON() {
+  // ============================================================================
+  // Template & AI Prompt
+  // ============================================================================
+
+  private async loadTemplateJSON(): Promise<void> {
     try {
       const response = await fetch("practice/examples/example_exam.json");
       if (!response.ok) return;
 
-      const json = await response.json();
+      const json = (await response.json()) as Record<string, unknown>;
       this.templateJSON = json;
 
       // Display formatted JSON
@@ -171,7 +210,7 @@ class App {
     }
   }
 
-  syntaxHighlightJSON(json) {
+  private syntaxHighlightJSON(json: Record<string, unknown>): string {
     const str = JSON.stringify(json, null, 2);
     return str
       .replace(/&/g, "&amp;")
@@ -183,7 +222,7 @@ class App {
       .replace(/: ([0-9]+)/g, ': <span class="number">$1</span>');
   }
 
-  toggleHelpMenu() {
+  toggleHelpMenu(): void {
     const menu = document.getElementById("helpMenuPopup");
     const btn = document.getElementById("helpToggleBtn");
 
@@ -199,13 +238,11 @@ class App {
     }
   }
 
-  toggleHelpSection() {
+  toggleHelpSection(): void {
     this.showChoiceModal();
   }
 
-  // --- Choice Modal (Easy vs Advanced) ---
-
-  showChoiceModal() {
+  showChoiceModal(): void {
     const modal = document.getElementById("choiceModal");
     if (modal) {
       modal.classList.remove("hidden");
@@ -213,7 +250,7 @@ class App {
     }
   }
 
-  closeChoiceModal() {
+  closeChoiceModal(): void {
     const modal = document.getElementById("choiceModal");
     if (modal) {
       modal.classList.remove("active");
@@ -221,9 +258,7 @@ class App {
     }
   }
 
-  // --- Template Modal ---
-
-  showTemplateModal() {
+  showTemplateModal(): void {
     const modal = document.getElementById("templateModal");
     if (modal) {
       modal.classList.remove("hidden");
@@ -231,7 +266,7 @@ class App {
     }
   }
 
-  closeTemplateModal() {
+  closeTemplateModal(): void {
     const modal = document.getElementById("templateModal");
     if (modal) {
       modal.classList.remove("active");
@@ -239,9 +274,7 @@ class App {
     }
   }
 
-  // --- External Link Handling ---
-
-  openExternalLink(url, name) {
+  openExternalLink(url: string, _name: string): void {
     this.pendingExternalLink = url;
     const modal = document.getElementById("externalLinkModal");
     const urlEl = document.getElementById("externalLinkUrl");
@@ -252,7 +285,7 @@ class App {
     }
   }
 
-  closeExternalLinkModal() {
+  closeExternalLinkModal(): void {
     const modal = document.getElementById("externalLinkModal");
     if (modal) {
       modal.classList.remove("active");
@@ -261,14 +294,14 @@ class App {
     this.pendingExternalLink = null;
   }
 
-  confirmExternalLink() {
+  confirmExternalLink(): void {
     if (this.pendingExternalLink) {
       window.open(this.pendingExternalLink, "_blank");
       this.closeExternalLinkModal();
     }
   }
 
-  async copyTemplate() {
+  async copyTemplate(): Promise<void> {
     if (!this.templateJSON) {
       await this.loadTemplateJSON();
     }
@@ -279,11 +312,11 @@ class App {
       await navigator.clipboard.writeText(jsonStr);
 
       // Show feedback
-      const btn = document.querySelector(".template-copy-btn");
+      const btn = document.querySelector<HTMLElement>(".template-copy-btn");
       if (btn) {
         const originalText = btn.innerHTML;
         btn.classList.add("copied");
-        btn.innerHTML = "✓ " + (this.T.copied || "Copied!");
+        btn.innerHTML = "✓ " + this.translations.copied;
 
         setTimeout(() => {
           btn.classList.remove("copied");
@@ -296,33 +329,44 @@ class App {
     }
   }
 
-  // --- AI Prompt Generator ---
+  // ============================================================================
+  // AI Prompt Generator
+  // ============================================================================
 
-  showAIPromptGenerator() {
+  showAIPromptGenerator(): void {
     const modal = document.getElementById("aiPromptModal");
     if (modal) {
       modal.classList.remove("hidden");
       modal.classList.add("active");
+
       // Reset form
-      document.getElementById("aiNumQuestions").value = "10";
-      document.getElementById("aiNumAnswers").value = "4";
-      document.getElementById("aiDifficulty").value = "medium";
-      document.getElementById("aiMaterial").value = "";
-      document.getElementById("aiMaterialInChat").checked = false;
-      document.getElementById("aiMaterialField").classList.remove("hidden");
-      document.getElementById("aiPromptResult").classList.add("hidden");
+      const numQuestions = document.getElementById("aiNumQuestions") as HTMLInputElement | null;
+      const numAnswers = document.getElementById("aiNumAnswers") as HTMLInputElement | null;
+      const difficulty = document.getElementById("aiDifficulty") as HTMLSelectElement | null;
+      const material = document.getElementById("aiMaterial") as HTMLTextAreaElement | null;
+      const materialInChat = document.getElementById("aiMaterialInChat") as HTMLInputElement | null;
+      const materialField = document.getElementById("aiMaterialField");
+      const result = document.getElementById("aiPromptResult");
+
+      if (numQuestions) numQuestions.value = "10";
+      if (numAnswers) numAnswers.value = "4";
+      if (difficulty) difficulty.value = "medium";
+      if (material) material.value = "";
+      if (materialInChat) materialInChat.checked = false;
+      materialField?.classList.remove("hidden");
+      result?.classList.add("hidden");
     }
   }
 
-  toggleMaterialField() {
-    const checkbox = document.getElementById("aiMaterialInChat");
+  toggleMaterialField(): void {
+    const checkbox = document.getElementById("aiMaterialInChat") as HTMLInputElement | null;
     const field = document.getElementById("aiMaterialField");
     if (checkbox && field) {
       field.classList.toggle("hidden", checkbox.checked);
     }
   }
 
-  closeAIPromptGenerator() {
+  closeAIPromptGenerator(): void {
     const modal = document.getElementById("aiPromptModal");
     if (modal) {
       modal.classList.remove("active");
@@ -330,80 +374,53 @@ class App {
     }
   }
 
-  generateAIPrompt() {
-    const numQuestions =
-      document.getElementById("aiNumQuestions").value || "10";
-    const numAnswers = document.getElementById("aiNumAnswers").value || "4";
-    const difficulty = document.getElementById("aiDifficulty").value;
-    const materialInChat = document.getElementById("aiMaterialInChat").checked;
-    const material = document.getElementById("aiMaterial").value.trim();
+  generateAIPrompt(): void {
+    const numQuestions = (document.getElementById("aiNumQuestions") as HTMLInputElement | null)?.value || "10";
+    const numAnswers = (document.getElementById("aiNumAnswers") as HTMLInputElement | null)?.value || "4";
+    const difficulty = (document.getElementById("aiDifficulty") as HTMLSelectElement | null)?.value || "medium";
+    const materialInChat = (document.getElementById("aiMaterialInChat") as HTMLInputElement | null)?.checked ?? false;
+    const material = (document.getElementById("aiMaterial") as HTMLTextAreaElement | null)?.value.trim() ?? "";
 
-    // Only require material if not using the "in chat" option
     if (!materialInChat && !material) {
-      alert(
-        this.T?.aiPromptNoMaterial || "Please enter your study material first!",
-      );
+      alert(this.translations.aiPromptNoMaterial);
       return;
     }
 
-    // Generate unique exam ID based on content hash + settings
-    const examId = this.generateExamId(
-      material || "in-chat",
-      numQuestions,
-      difficulty,
-    );
+    const examId = this.generateExamId(material || "in-chat", numQuestions, difficulty);
 
     const difficultyText = {
-      easy: this.T?.difficultyEasy || "easy",
-      medium: this.T?.difficultyMedium || "medium",
-      hard: this.T?.difficultyHard || "hard",
-      mixed: this.T?.difficultyMixed || "mixed difficulty levels",
-    }[difficulty];
+      easy: this.translations.difficultyEasy,
+      medium: this.translations.difficultyMedium,
+      hard: this.translations.difficultyHard,
+      mixed: this.translations.difficultyMixed,
+    }[difficulty] ?? this.translations.difficultyMedium;
 
     const langText = this.currentLang === "es" ? "español" : "English";
 
-    const prompt =
-      this.currentLang === "es"
-        ? this.generateSpanishPrompt(
-            numQuestions,
-            numAnswers,
-            difficultyText,
-            material,
-            examId,
-            langText,
-            materialInChat,
-          )
-        : this.generateEnglishPrompt(
-            numQuestions,
-            numAnswers,
-            difficultyText,
-            material,
-            examId,
-            langText,
-            materialInChat,
-          );
+    const prompt = this.currentLang === "es"
+      ? this.generateSpanishPrompt(numQuestions, numAnswers, difficultyText, material, examId, langText, materialInChat)
+      : this.generateEnglishPrompt(numQuestions, numAnswers, difficultyText, material, examId, langText, materialInChat);
 
-    // Show result
-    document.getElementById("aiGeneratedPrompt").value = prompt;
-    document.getElementById("aiPromptResult").classList.remove("hidden");
+    const generatedPrompt = document.getElementById("aiGeneratedPrompt") as HTMLTextAreaElement | null;
+    const result = document.getElementById("aiPromptResult");
 
-    // Scroll to result
+    if (generatedPrompt) generatedPrompt.value = prompt;
+    result?.classList.remove("hidden");
+
     setTimeout(() => {
-      document
-        .getElementById("aiPromptResult")
-        .scrollIntoView({ behavior: "smooth" });
+      result?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   }
 
-  generateEnglishPrompt(
-    numQuestions,
-    numAnswers,
-    difficulty,
-    material,
-    examId,
-    lang,
-    materialInChat,
-  ) {
+  private generateEnglishPrompt(
+    numQuestions: string,
+    numAnswers: string,
+    difficulty: string,
+    material: string,
+    examId: string,
+    lang: string,
+    materialInChat: boolean
+  ): string {
     const materialSection = materialInChat
       ? `I'll paste the study material in the chat below this prompt.`
       : `STUDY MATERIAL:
@@ -411,7 +428,11 @@ class App {
 ${material}
 """`;
 
-    return `Based on the following study material, create a multiple-choice exam with ${numQuestions} questions. Each question must have ${numAnswers} possible answers (labeled A, B, C${numAnswers >= 4 ? ", D" : ""}${numAnswers >= 5 ? ", E" : ""}${numAnswers >= 6 ? ", F" : ""}), with only ONE correct answer per question.
+    const extraAnswers = numAnswers >= "4" ? ',\n        {"letter": "D", "text": "[Answer text]", "isCorrect": false}' : "";
+    const extraAnswers2 = numAnswers >= "5" ? ',\n        {"letter": "E", "text": "[Answer text]", "isCorrect": false}' : "";
+    const extraAnswers3 = numAnswers >= "6" ? ',\n        {"letter": "F", "text": "[Answer text]", "isCorrect": false}' : "";
+
+    return `Based on the following study material, create a multiple-choice exam with ${numQuestions} questions. Each question must have ${numAnswers} possible answers (labeled A, B, C${numAnswers >= "4" ? ", D" : ""}${numAnswers >= "5" ? ", E" : ""}${numAnswers >= "6" ? ", F" : ""}), with only ONE correct answer per question.
 
 DIFFICULTY LEVEL: ${difficulty}
 LANGUAGE: ${lang}
@@ -431,7 +452,7 @@ Please generate a JSON object in this exact format:
       "answers": [
         {"letter": "A", "text": "[Answer text]", "isCorrect": true},
         {"letter": "B", "text": "[Answer text]", "isCorrect": false},
-        {"letter": "C", "text": "[Answer text]", "isCorrect": false}${numAnswers >= 4 ? ',\n        {"letter": "D", "text": "[Answer text]", "isCorrect": false}' : ""}${numAnswers >= 5 ? ',\n        {"letter": "E", "text": "[Answer text]", "isCorrect": false}' : ""}${numAnswers >= 6 ? ',\n        {"letter": "F", "text": "[Answer text]", "isCorrect": false}' : ""}
+        {"letter": "C", "text": "[Answer text]", "isCorrect": false}${extraAnswers}${extraAnswers2}${extraAnswers3}
       ],
       "wasCorrect": true,
       "correctAnswerText": "[The correct answer text]",
@@ -450,15 +471,15 @@ IMPORTANT REQUIREMENTS:
 6. Return ONLY the JSON, no markdown formatting or explanations`;
   }
 
-  generateSpanishPrompt(
-    numQuestions,
-    numAnswers,
-    difficulty,
-    material,
-    examId,
-    lang,
-    materialInChat,
-  ) {
+  private generateSpanishPrompt(
+    numQuestions: string,
+    numAnswers: string,
+    difficulty: string,
+    material: string,
+    examId: string,
+    lang: string,
+    materialInChat: boolean
+  ): string {
     const materialSection = materialInChat
       ? `Pegaré el material de estudio en el chat debajo de este prompt.`
       : `MATERIAL DE ESTUDIO:
@@ -466,7 +487,11 @@ IMPORTANT REQUIREMENTS:
 ${material}
 """`;
 
-    return `Basándome en el siguiente material de estudio, quiero que me generes un examen de opción múltiple con ${numQuestions} preguntas. Cada pregunta debe tener ${numAnswers} respuestas posibles (etiquetadas A, B, C${numAnswers >= 4 ? ", D" : ""}${numAnswers >= 5 ? ", E" : ""}${numAnswers >= 6 ? ", F" : ""}), con UNA sola respuesta correcta por pregunta.
+    const extraAnswers = numAnswers >= "4" ? ',\n        {"letter": "D", "text": "[Texto de respuesta]", "isCorrect": false}' : "";
+    const extraAnswers2 = numAnswers >= "5" ? ',\n        {"letter": "E", "text": "[Texto de respuesta]", "isCorrect": false}' : "";
+    const extraAnswers3 = numAnswers >= "6" ? ',\n        {"letter": "F", "text": "[Texto de respuesta]", "isCorrect": false}' : "";
+
+    return `Basándome en el siguiente material de estudio, quiero que me generes un examen de opción múltiple con ${numQuestions} preguntas. Cada pregunta debe tener ${numAnswers} respuestas posibles (etiquetadas A, B, C${numAnswers >= "4" ? ", D" : ""}${numAnswers >= "5" ? ", E" : ""}${numAnswers >= "6" ? ", F" : ""}), con UNA sola respuesta correcta por pregunta.
 
 NIVEL DE DIFICULTAD: ${difficulty}
 IDIOMA: ${lang}
@@ -486,7 +511,7 @@ Por favor genera un objeto JSON en este formato exacto:
       "answers": [
         {"letter": "A", "text": "[Texto de respuesta]", "isCorrect": true},
         {"letter": "B", "text": "[Texto de respuesta]", "isCorrect": false},
-        {"letter": "C", "text": "[Texto de respuesta]", "isCorrect": false}${numAnswers >= 4 ? ',\n        {"letter": "D", "text": "[Texto de respuesta]", "isCorrect": false}' : ""}${numAnswers >= 5 ? ',\n        {"letter": "E", "text": "[Texto de respuesta]", "isCorrect": false}' : ""}${numAnswers >= 6 ? ',\n        {"letter": "F", "text": "[Texto de respuesta]", "isCorrect": false}' : ""}
+        {"letter": "C", "text": "[Texto de respuesta]", "isCorrect": false}${extraAnswers}${extraAnswers2}${extraAnswers3}
       ],
       "wasCorrect": true,
       "correctAnswerText": "[El texto de la respuesta correcta]",
@@ -505,8 +530,7 @@ REQUISITOS IMPORTANTES:
 6. Devuelve SOLO el JSON, sin formato markdown ni explicaciones`;
   }
 
-  generateExamId(material, numQuestions, difficulty) {
-    // Create a simple hash from material + settings
+  private generateExamId(material: string, numQuestions: string, difficulty: string): string {
     const str = material + numQuestions + difficulty;
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -519,21 +543,20 @@ REQUISITOS IMPORTANTES:
     return `exam_${difficulty.charAt(0)}_${hashStr}_${timestamp}`;
   }
 
-  async copyGeneratedPrompt() {
-    const textarea = document.getElementById("aiGeneratedPrompt");
+  async copyGeneratedPrompt(): Promise<void> {
+    const textarea = document.getElementById("aiGeneratedPrompt") as HTMLTextAreaElement | null;
     if (!textarea) return;
 
     try {
       await navigator.clipboard.writeText(textarea.value);
-      const btn = document.querySelector(".ai-prompt-copy-btn");
+      const btn = document.querySelector<HTMLElement>(".ai-prompt-copy-btn");
       if (btn) {
         const originalText = btn.innerHTML;
-        btn.innerHTML = "✅ " + (this.T?.copied || "Copied!");
+        btn.innerHTML = "✅ " + this.translations.copied;
         btn.style.background = "var(--accent-secondary)";
         btn.style.color = "var(--bg-primary)";
         btn.style.borderColor = "var(--accent-secondary)";
 
-        // Show AI destinations after copying
         const destinations = document.getElementById("aiDestinations");
         if (destinations) {
           destinations.classList.remove("hidden");
@@ -553,28 +576,28 @@ REQUISITOS IMPORTANTES:
     }
   }
 
-  bindEvents() {
+  // ============================================================================
+  // Events
+  // ============================================================================
+
+  private bindEvents(): void {
     // Import File Input
     const fileInput = document.getElementById("fileInput");
     if (fileInput) {
-      fileInput.addEventListener("change", (e) => this.handleFileSelect(e));
+      fileInput.addEventListener("change", (e) => this.handleFileSelect(e as Event & { target: HTMLInputElement }));
     }
 
     // Drag & Drop
     this.setupDragAndDrop();
 
     // Refresh
-    document
-      .getElementById("txtRefresh")
-      ?.parentElement.addEventListener("click", () => this.refreshLibrary());
+    document.getElementById("txtRefresh")?.parentElement?.addEventListener("click", () => {
+      this.refreshLibrary();
+    });
 
     // Language Switcher
-    document
-      .getElementById("langEn")
-      ?.addEventListener("click", () => this.setLanguage("en"));
-    document
-      .getElementById("langEs")
-      ?.addEventListener("click", () => this.setLanguage("es"));
+    document.getElementById("langEn")?.addEventListener("click", () => this.setLanguage("en"));
+    document.getElementById("langEs")?.addEventListener("click", () => this.setLanguage("es"));
 
     // Close help menu when clicking outside
     document.addEventListener("click", (e) => {
@@ -583,8 +606,9 @@ REQUISITOS IMPORTANTES:
       if (
         menu &&
         !menu.classList.contains("hidden") &&
-        !menu.contains(e.target) &&
-        !btn.contains(e.target)
+        !menu.contains(e.target as Node) &&
+        btn &&
+        !btn.contains(e.target as Node)
       ) {
         this.toggleHelpMenu();
       }
@@ -592,111 +616,82 @@ REQUISITOS IMPORTANTES:
 
     // Close modals when clicking outside
     document.addEventListener("click", (e) => {
-      // AI Prompt Modal
+      const target = e.target as HTMLElement;
+
       const aiPromptModal = document.getElementById("aiPromptModal");
-      if (
-        aiPromptModal &&
-        aiPromptModal.classList.contains("active") &&
-        e.target === aiPromptModal
-      ) {
+      if (aiPromptModal?.classList.contains("active") && target === aiPromptModal) {
         this.closeAIPromptGenerator();
       }
 
-      // Choice Modal
       const choiceModal = document.getElementById("choiceModal");
-      if (
-        choiceModal &&
-        choiceModal.classList.contains("active") &&
-        e.target === choiceModal
-      ) {
+      if (choiceModal?.classList.contains("active") && target === choiceModal) {
         this.closeChoiceModal();
       }
 
-      // Template Modal
       const templateModal = document.getElementById("templateModal");
-      if (
-        templateModal &&
-        templateModal.classList.contains("active") &&
-        e.target === templateModal
-      ) {
+      if (templateModal?.classList.contains("active") && target === templateModal) {
         this.closeTemplateModal();
       }
-
-      // External Link Modal (don't close on outside click for safety)
     });
   }
 
-  setupDragAndDrop() {
-    const dropArea = document.querySelector(".file-input-area");
-    const fileInput = document.getElementById("fileInput");
+  private setupDragAndDrop(): void {
+    const dropArea = document.querySelector<HTMLElement>(".file-input-area");
+    const fileInput = document.getElementById("fileInput") as HTMLInputElement | null;
     if (!dropArea || !fileInput) return;
 
     ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-      dropArea.addEventListener(
-        eventName,
-        (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        false,
-      );
+      dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
     });
 
     ["dragenter", "dragover"].forEach((eventName) => {
-      dropArea.addEventListener(
-        eventName,
-        () => {
-          dropArea.style.borderColor = "#00d4ff";
-          dropArea.style.background = "#1a264a";
-        },
-        false,
-      );
+      dropArea.addEventListener(eventName, () => {
+        dropArea.style.borderColor = "#00d4ff";
+        dropArea.style.background = "#1a264a";
+      });
     });
 
     ["dragleave", "drop"].forEach((eventName) => {
-      dropArea.addEventListener(
-        eventName,
-        () => {
-          dropArea.style.borderColor = "";
-          dropArea.style.background = "";
-        },
-        false,
-      );
+      dropArea.addEventListener(eventName, () => {
+        dropArea.style.borderColor = "";
+        dropArea.style.background = "";
+      });
     });
 
-    dropArea.addEventListener(
-      "drop",
-      (e) => {
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-          fileInput.files = files;
-          this.handleFileSelect({ target: fileInput });
-        }
-      },
-      false,
-    );
+    dropArea.addEventListener("drop", (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        // Simulate file input change
+        const dt = new DataTransfer();
+        dt.items.add(files[0]);
+        fileInput.files = dt.files;
+        this.handleFileSelect({ target: fileInput } as unknown as Event & { target: HTMLInputElement });
+      }
+    });
   }
 
-  // --- I18n ---
+  // ============================================================================
+  // Internationalization
+  // ============================================================================
 
-  setLanguage(lang) {
+  setLanguage(lang: LanguageCode): void {
     this.currentLang = lang;
-    this.T = window[`LANG_${lang.toUpperCase()}`] || window.LANG_EN;
+    this.translations = getTranslations(lang);
     localStorage.setItem("ginaxams_lang", lang);
 
-    document
-      .getElementById("langEn")
-      ?.classList.toggle("active", lang === "en");
-    document
-      .getElementById("langEs")
-      ?.classList.toggle("active", lang === "es");
+    document.getElementById("langEn")?.classList.toggle("active", lang === "en");
+    document.getElementById("langEs")?.classList.toggle("active", lang === "es");
 
     this.updateReflections();
     this.renderLibrary();
   }
 
-  updateReflections() {
-    const map = {
+  private updateReflections(): void {
+    const T = this.translations;
+    const map: Record<string, keyof Translations> = {
       appTitle: "appTitle",
       examTitle: "practiceModeSubtitle",
       txtAvailableExams: "availableExams",
@@ -789,7 +784,7 @@ REQUISITOS IMPORTANTES:
 
     for (const [id, key] of Object.entries(map)) {
       const el = document.getElementById(id);
-      if (el && this.T[key]) {
+      if (el && T[key]) {
         // Use innerHTML for elements that contain HTML tags
         if (
           [
@@ -799,55 +794,64 @@ REQUISITOS IMPORTANTES:
             "txtAdvancedWayDesc",
           ].includes(id)
         ) {
-          el.innerHTML = this.T[key];
+          el.innerHTML = T[key];
         } else {
-          el.textContent = this.T[key];
+          el.textContent = T[key];
         }
       }
     }
 
     // Update placeholders
-    document.querySelectorAll("[data-placeholder]").forEach((el) => {
-      const key = el.dataset.placeholder;
-      if (this.T[key]) el.placeholder = this.T[key];
+    document.querySelectorAll<HTMLElement>("[data-placeholder]").forEach((el) => {
+      const key = el.dataset.placeholder as keyof Translations;
+      if (key && T[key]) {
+        (el as HTMLInputElement | HTMLTextAreaElement).placeholder = T[key];
+      }
     });
 
     // Update select options
-    const difficultySelect = document.getElementById("aiDifficulty");
+    const difficultySelect = document.getElementById("aiDifficulty") as HTMLSelectElement | null;
     if (difficultySelect) {
-      const options = difficultySelect.querySelectorAll("option");
-      options.forEach((opt) => {
-        const key = opt.id;
-        if (key && this.T[key]) opt.textContent = this.T[key];
+      const options: Record<string, keyof Translations> = {
+        txtDifficultyEasy: "difficultyEasy",
+        txtDifficultyMedium: "difficultyMedium",
+        txtDifficultyHard: "difficultyHard",
+        txtDifficultyMixed: "difficultyMixed",
+      };
+      difficultySelect.querySelectorAll("option").forEach((opt) => {
+        const key = options[opt.id];
+        if (key && T[key]) {
+          opt.textContent = T[key];
+        }
       });
     }
 
-    // Nav buttons update - update the span inside the next button
+    // Nav buttons update
     const nextBtn = document.getElementById("nextBtn");
     const nextBtnSpan = document.getElementById("txtNext");
     if (nextBtnSpan && nextBtn) {
       const isFinish = nextBtn.classList.contains("finish");
-      nextBtnSpan.textContent = isFinish
-        ? this.T.finish || "Finish"
-        : this.T.next || "Next";
+      nextBtnSpan.textContent = isFinish ? T.finish : T.next;
     }
 
     // Update all prev buttons that don't have specific IDs
-    const prevBtns = document.querySelectorAll(".nav-btn.prev");
-    prevBtns.forEach((btn) => {
+    document.querySelectorAll<HTMLElement>(".nav-btn.prev").forEach((btn) => {
       const span = btn.querySelector("span");
       if (span && !span.id) {
-        span.textContent = this.T.back || "Back";
+        span.textContent = T.back;
       }
     });
   }
 
-  // --- Library Management ---
+  // ============================================================================
+  // Library Management
+  // ============================================================================
 
-  async refreshLibrary() {
+  async refreshLibrary(): Promise<void> {
     const listEl = document.getElementById("examList");
-    if (listEl)
-      listEl.innerHTML = `<div class="no-exams">${this.T.loading || "Loading..."}</div>`;
+    if (listEl) {
+      listEl.innerHTML = `<div class="no-exams">${this.translations.loading}</div>`;
+    }
 
     try {
       this.exams = await this.storage.getExams();
@@ -855,20 +859,20 @@ REQUISITOS IMPORTANTES:
       this.renderLibrary();
     } catch (e) {
       console.error("Load Error:", e);
-      if (listEl)
+      if (listEl) {
         listEl.innerHTML = `<div class="no-exams">Error loading library.</div>`;
+      }
     }
   }
 
-  async renderLibrary() {
+  private async renderLibrary(): Promise<void> {
     const listEl = document.getElementById("examList");
     if (!listEl) return;
 
     // Build folder map including all folders (even empty ones)
-    const map = { uncategorized: [] };
+    const map: Record<string, Exam[]> = { uncategorized: [] };
     this.folders.forEach((f) => (map[f.id] = []));
 
-    // If no exams at all, show message but still display empty folders
     const hasAnyExams = this.exams.length > 0;
 
     // Distribute exams into folders
@@ -881,39 +885,33 @@ REQUISITOS IMPORTANTES:
     // If truly empty (no exams and no folders), show the empty state
     if (!hasAnyExams && this.folders.length === 0) {
       listEl.innerHTML = `
-                <div class="no-exams">
-                    <p>${this.T.noExamsFound || "No exams found."}</p>
-                    <p style="font-size: 0.9em; margin-top: 10px; color: #888;">${this.T.importFirst || "Import an exam to start."}</p>
-                    <button onclick="window.app.importDemoData()" style="margin-top:15px; padding:8px 16px; cursor:pointer;" class="mode-btn">${this.T.loadExampleExam || this.T.loadDemoData || "Load Example Exam"}</button>
-                </div>
-            `;
+        <div class="no-exams">
+          <p>${this.translations.noExamsFound}</p>
+          <p style="font-size: 0.9em; margin-top: 10px; color: #888;">${this.translations.importFirst}</p>
+          <button onclick="window.app.importDemoData()" style="margin-top:15px; padding:8px 16px; cursor:pointer;" class="mode-btn">${this.translations.loadExampleExam}</button>
+        </div>
+      `;
       this.renderLibraryControls(listEl);
       return;
     }
 
     // Load all progress data
-    const progressMap = {};
+    const progressMap: Record<string, ExamProgress | undefined> = {};
     for (const exam of this.exams) {
       progressMap[exam.id] = await this.storage.getProgress(exam.id);
     }
 
     let html = "";
 
-    // Helper to render exam
-    const renderExam = (exam) => {
+    const renderExam = (exam: Exam): string => {
       const progress = progressMap[exam.id];
-      const attempts = progress?.attempts || 0;
+      const attempts = progress?.attempts ?? 0;
       const lastScore = progress?.lastScore;
       const bestScore = progress?.bestScore;
 
-      // Build stats display
       let statsHtml = "";
       if (attempts > 0) {
-        // Progress bar showing best score
-        const displayBestScore =
-          bestScore !== undefined && bestScore !== null ? bestScore : 0;
-        const displayLastScore =
-          lastScore !== undefined && lastScore !== null ? lastScore : 0;
+        const displayBestScore = bestScore ?? 0;
         const bestScoreColor =
           displayBestScore >= 70
             ? "var(--accent-secondary)"
@@ -921,115 +919,98 @@ REQUISITOS IMPORTANTES:
               ? "#ffd700"
               : "#ff6b6b";
         statsHtml = `
-                    <div class="exam-stats-container">
-                        <div class="exam-stats-row">
-                            <div class="stat-item attempts-stat">
-                                <span class="stat-icon">🎯</span>
-                                <span class="stat-value">${attempts}</span>
-                                <span class="stat-label">${attempts === 1 ? this.T.attempt || "attempt" : this.T.attempts || "attempts"}</span>
-                            </div>
-                            <div class="stat-item last-stat">
-                                <span class="stat-icon">⏱️</span>
-                                <span class="stat-value">${displayLastScore}%</span>
-                                <span class="stat-label">${this.T.lastScore || "Last"}</span>
-                            </div>
-                            <div class="stat-item best-stat">
-                                <span class="stat-icon">🏆</span>
-                                <span class="stat-value" style="color: ${bestScoreColor}">${displayBestScore}%</span>
-                                <span class="stat-label">${this.T.bestScore || "Best"}</span>
-                            </div>
-                        </div>
-                        <div class="best-score-bar">
-                            <div class="best-score-fill" style="width: ${displayBestScore}%; background: ${bestScoreColor}"></div>
-                        </div>
-                    </div>
-                `;
+          <div class="exam-stats-container">
+            <div class="exam-stats-row">
+              <div class="stat-item attempts-stat">
+                <span class="stat-icon">🎯</span>
+                <span class="stat-value">${attempts}</span>
+                <span class="stat-label">${attempts === 1 ? this.translations.attempt : this.translations.attempts}</span>
+              </div>
+              <div class="stat-item last-stat">
+                <span class="stat-icon">⏱️</span>
+                <span class="stat-value">${lastScore ?? 0}%</span>
+                <span class="stat-label">${this.translations.lastScore}</span>
+              </div>
+              <div class="stat-item best-stat">
+                <span class="stat-icon">🏆</span>
+                <span class="stat-value" style="color: ${bestScoreColor}">${displayBestScore}%</span>
+                <span class="stat-label">${this.translations.bestScore}</span>
+              </div>
+            </div>
+            <div class="best-score-bar">
+              <div class="best-score-fill" style="width: ${displayBestScore}%; background: ${bestScoreColor}"></div>
+            </div>
+          </div>
+        `;
       } else {
-        statsHtml = `<span class="exam-item-meta">${exam.data.total_questions || "?"} ${this.T.questions || "questions"}</span>`;
+        statsHtml = `<span class="exam-item-meta">${exam.data.total_questions ?? "?"} ${this.translations.questions}</span>`;
       }
 
       return `
-                <div class="exam-item" data-id="${exam.id}" draggable="true" ondragstart="window.app.handleDragStart(event, '${exam.id}')" ondragend="window.app.handleDragEnd(event)">
-                    <div class="exam-item-info" onclick="window.app.loadExam('${exam.id}')">
-                        <div class="exam-item-title">${exam.title || exam.id}</div>
-                        <div class="exam-item-stats">
-                            ${statsHtml}
-                        </div>
-                    </div>
-                    <div class="exam-actions">
-                        <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameExam('${exam.id}')" title="${this.T.rename || "Rename"}">✏️</button>
-                        <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptMoveExam('${exam.id}')" title="${this.T.move || "Move"}">📁</button>
-                        <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteExam('${exam.id}')" title="${this.T.delete || "Delete"}">🗑️</button>
-                    </div>
-                </div>
-            `;
+        <div class="exam-item" data-id="${exam.id}" draggable="true" 
+             ondragstart="window.app.handleDragStart(event, '${exam.id}')" 
+             ondragend="window.app.handleDragEnd(event)">
+          <div class="exam-item-info" onclick="window.app.loadExam('${exam.id}')">
+            <div class="exam-item-title">${exam.title || exam.id}</div>
+            <div class="exam-item-stats">
+              ${statsHtml}
+            </div>
+          </div>
+          <div class="exam-actions">
+            <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameExam('${exam.id}')" title="${this.translations.rename}">✏️</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptMoveExam('${exam.id}')" title="${this.translations.move}">📁</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteExam('${exam.id}')" title="${this.translations.delete}">🗑️</button>
+          </div>
+        </div>
+      `;
     };
 
-    // Render Folders - show all folders including empty ones
+    // Render Folders
     for (const [folderId, exams] of Object.entries(map)) {
-      // Skip uncategorized only if empty and there are user folders
-      if (
-        folderId === "uncategorized" &&
-        exams.length === 0 &&
-        this.folders.length > 0
-      )
+      if (folderId === "uncategorized" && exams.length === 0 && this.folders.length > 0) {
         continue;
+      }
 
-      let folderName =
-        this.folders.find((f) => f.id === folderId)?.name || folderId;
-      if (folderId === "uncategorized")
-        folderName = this.T.uncategorized || "Uncategorized";
+      let folderName = this.folders.find((f) => f.id === folderId)?.name || folderId;
+      if (folderId === "uncategorized") {
+        folderName = this.translations.uncategorized;
+      }
 
       const icon = folderId === "uncategorized" ? "📂" : "📁";
       const isUncat = folderId === "uncategorized";
 
       html += `
-                <div class="category-section" id="cat-${folderId}" data-folder-id="${folderId}"
-                     ondragover="window.app.handleDragOver(event, '${folderId}')" 
-                     ondragleave="window.app.handleDragLeave(event, '${folderId}')"
-                     ondrop="window.app.handleDrop(event, '${folderId}')">
-                    <div class="category-header">
-                        <div style="display:flex; align-items:center; flex:1; cursor:pointer;" onclick="document.getElementById('cat-${folderId}').classList.toggle('collapsed')">
-                            <span class="category-icon">${icon}</span>
-                            <span class="category-name">${folderName}</span>
-                            <span class="category-count">${exams.length}</span>
-                            <span class="category-toggle">▼</span>
-                        </div>
-                        ${
-                          !isUncat
-                            ? `
-                            <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameFolder('${folderId}')" title="${this.T.rename || "Rename"}">✏️</button>
-                            <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteFolder('${folderId}')" title="${this.T.delete || "Delete Folder"}">🗑️</button>
-                        `
-                            : ""
-                        }
-                    </div>
-                    <div class="category-exams">
-                        ${exams.map((e) => renderExam(e)).join("")}
-                    </div>
-                </div>
-            `;
+        <div class="category-section" id="cat-${folderId}" data-folder-id="${folderId}"
+             ondragover="window.app.handleDragOver(event, '${folderId}')" 
+             ondragleave="window.app.handleDragLeave(event, '${folderId}')"
+             ondrop="window.app.handleDrop(event, '${folderId}')">
+          <div class="category-header">
+            <div style="display:flex; align-items:center; flex:1; cursor:pointer;" onclick="document.getElementById('cat-${folderId}').classList.toggle('collapsed')">
+              <span class="category-icon">${icon}</span>
+              <span class="category-name">${folderName}</span>
+              <span class="category-count">${exams.length}</span>
+              <span class="category-toggle">▼</span>
+            </div>
+            ${!isUncat
+          ? `
+              <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameFolder('${folderId}')" title="${this.translations.rename}">✏️</button>
+              <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteFolder('${folderId}')" title="${this.translations.delete}">🗑️</button>
+            `
+          : ""
+        }
+          </div>
+          <div class="category-exams">
+            ${exams.map((e) => renderExam(e)).join("")}
+          </div>
+        </div>
+      `;
     }
 
     listEl.innerHTML = html;
     this.renderLibraryControls(listEl);
-
-    // Updates scores
-    this.exams.forEach(async (exam) => {
-      const p = await this.storage.getProgress(exam.id);
-      const el = document.getElementById(`score-${exam.id}`);
-      if (el && p) {
-        const total = exam.data.total_questions || p.total;
-        const pct = total > 0 ? Math.round((100 * p.correct) / total) : 0;
-        const scoreClass = pct >= 70 ? "good" : pct >= 50 ? "medium" : "bad";
-        el.innerHTML = `<span class="exam-item-score ${scoreClass}" style="font-size: 0.9em; padding: 2px 6px;">${pct}%</span>`;
-      } else if (el) {
-        el.textContent = "";
-      }
-    });
   }
 
-  renderLibraryControls(container) {
+  private renderLibraryControls(container: HTMLElement): void {
     const div = document.createElement("div");
     div.className = "library-controls";
     div.style.marginTop = "20px";
@@ -1041,57 +1022,54 @@ REQUISITOS IMPORTANTES:
     const hasData = this.exams.length > 0 || this.folders.length > 0;
 
     div.innerHTML = `
-            <button class="mode-btn" onclick="window.app.promptCreateFolder()" style="padding:10px 20px; font-size:0.9em;">
-                + ${this.T.newFolder || "New Folder"}
-            </button>
-            <button class="mode-btn" onclick="window.app.exportLibrary()" style="padding:10px 20px; font-size:0.9em;">
-                ⬇ ${this.T.export || "Backup"}
-            </button>
-            <button class="mode-btn" onclick="document.getElementById('backupInput').click()" style="padding:10px 20px; font-size:0.9em;">
-                ⬆ ${this.T.import || "Restore"}
-            </button>
-            ${
-              hasData
-                ? `
-            <button class="mode-btn" onclick="window.app.clearAllData()" style="padding:10px 20px; font-size:0.9em; color: #ff4757; border-color: #ff4757;">
-                🗑 ${this.T.clearData || "Clear All Data"}
-            </button>
-            `
-                : ""
-            }
-            <input type="file" id="backupInput" accept=".json" class="hidden" onchange="window.app.handleBackupImport(event)" />
-        `;
+      <button class="mode-btn" onclick="window.app.promptCreateFolder()" style="padding:10px 20px; font-size:0.9em;">
+        + ${this.translations.newFolder}
+      </button>
+      <button class="mode-btn" onclick="window.app.exportLibrary()" style="padding:10px 20px; font-size:0.9em;">
+        ⬇ ${this.translations.export}
+      </button>
+      <button class="mode-btn" onclick="document.getElementById('backupInput').click()" style="padding:10px 20px; font-size:0.9em;">
+        ⬆ ${this.translations.import}
+      </button>
+      ${hasData
+        ? `<button class="mode-btn" onclick="window.app.clearAllData()" style="padding:10px 20px; font-size:0.9em; color: #ff4757; border-color: #ff4757;">
+             🗑 ${this.translations.clearData}
+           </button>`
+        : ""
+      }
+      <input type="file" id="backupInput" accept=".json" class="hidden" onchange="window.app.handleBackupImport(event)" />
+    `;
+
     container.appendChild(div);
   }
 
-  // --- Actions ---
+  // ============================================================================
+  // Actions
+  // ============================================================================
 
-  async handleFileSelect(event) {
-    const file = event.target.files[0];
+  async handleFileSelect(event: Event & { target: HTMLInputElement }): Promise<void> {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const json = JSON.parse(e.target.result);
+        const json = JSON.parse(e.target?.result as string) as ExamData;
         await this.importExam(json);
       } catch (err) {
-        alert("Error parsing JSON: " + err.message);
+        alert("Error parsing JSON: " + (err as Error).message);
       }
     };
     reader.readAsText(file);
   }
 
-  async importExam(json, folderId = "uncategorized") {
+  async importExam(json: ExamData, folderId = "uncategorized"): Promise<void> {
     if (!json.questions || !Array.isArray(json.questions)) {
-      alert(
-        this.T.invalidExamFormat ||
-          "Invalid exam format: missing 'questions' array.",
-      );
+      alert(this.translations.invalidExamFormat);
       return;
     }
 
-    const exam = {
+    const exam: Exam = {
       id: json.exam_id || crypto.randomUUID(),
       title: json.title || "Untitled Exam",
       data: json,
@@ -1108,14 +1086,14 @@ REQUISITOS IMPORTANTES:
     }
   }
 
-  async importDemoData() {
+  async importDemoData(): Promise<void> {
     try {
       const response = await fetch("practice/examples/example_exam.json");
       if (!response.ok) throw new Error("Failed to load example exam");
 
-      const json = await response.json();
+      const json = (await response.json()) as ExamData;
 
-      // Create a folder for the example if it doesn't exist
+      // Create a folder for the example
       const exampleFolderId = "example-folder";
       const existingFolder = this.folders.find((f) => f.id === exampleFolderId);
       if (!existingFolder) {
@@ -1127,11 +1105,9 @@ REQUISITOS IMPORTANTES:
       }
 
       // Import the exam
-      const exam = {
+      const exam: Exam = {
         id: json.exam_id || crypto.randomUUID(),
-        title:
-          json.title ||
-          (this.currentLang === "es" ? "Examen de Ejemplo" : "Example Exam"),
+        title: json.title || (this.currentLang === "es" ? "Examen de Ejemplo" : "Example Exam"),
         data: json,
         addedAt: new Date().toISOString(),
         folderId: exampleFolderId,
@@ -1141,15 +1117,15 @@ REQUISITOS IMPORTANTES:
       this.refreshLibrary();
     } catch (e) {
       console.error("Failed to load example exam:", e);
-      alert(this.T.errorLoadingExample || "Failed to load example exam");
+      alert(this.translations.errorLoadingExample);
     }
   }
 
-  async loadExam(id) {
+  async loadExam(id: string): Promise<void> {
     try {
       const examWrapper = await this.storage.getExam(id);
       if (!examWrapper) {
-        alert(this.T.examNotFound || "Exam not found!");
+        alert(this.translations.examNotFound);
         return;
       }
 
@@ -1157,9 +1133,9 @@ REQUISITOS IMPORTANTES:
       examData.exam_id = examWrapper.id;
 
       this.practiceManager.startPractice(examData, {
-        shuffleQuestions: document.getElementById("shuffleQuestions")?.checked,
-        shuffleAnswers: document.getElementById("shuffleAnswers")?.checked,
-        showFeedback: document.getElementById("showFeedback")?.checked,
+        shuffleQuestions: (document.getElementById("shuffleQuestions") as HTMLInputElement | null)?.checked ?? false,
+        shuffleAnswers: (document.getElementById("shuffleAnswers") as HTMLInputElement | null)?.checked ?? false,
+        showFeedback: (document.getElementById("showFeedback") as HTMLInputElement | null)?.checked ?? true,
       });
     } catch (e) {
       console.error(e);
@@ -1167,113 +1143,106 @@ REQUISITOS IMPORTANTES:
     }
   }
 
-  // --- Management ---
+  // ============================================================================
+  // Management
+  // ============================================================================
 
-  async promptCreateFolder() {
-    const name = prompt(this.T.folderName || "Folder Name:");
+  async promptCreateFolder(): Promise<void> {
+    const name = prompt(this.translations.folderName);
     if (name && name.trim()) {
       try {
-        await this.storage.saveFolder({ name: name.trim(), order: 0 });
+        await this.storage.saveFolder({ id: crypto.randomUUID(), name: name.trim(), order: 0 });
         this.refreshLibrary();
       } catch (e) {
-        alert(this.T.errorCreatingFolder || "Failed to create folder");
+        alert(this.translations.errorCreatingFolder);
       }
     }
   }
 
-  async deleteFolder(id) {
+  async deleteFolder(id: string): Promise<void> {
     const folder = this.folders.find((f) => f.id === id);
     const folderName = folder ? folder.name : id;
-    if (
-      !confirm(
-        (this.T.delete || "Delete") +
-          ' "' +
-          folderName +
-          '"? ' +
-          (this.T.confirmDeleteFolder ||
-            "Exams will be moved to Uncategorized"),
-      )
-    )
+
+    if (!confirm(`${this.translations.delete} "${folderName}"? ${this.translations.confirmDeleteFolder}`)) {
       return;
+    }
+
     try {
       await this.storage.deleteFolder(id);
       this.refreshLibrary();
     } catch (e) {
-      alert(this.T.errorDeletingFolder || "Failed to delete folder");
+      alert(this.translations.errorDeletingFolder);
     }
   }
 
-  async deleteExam(id) {
+  async deleteExam(id: string): Promise<void> {
     const exam = this.exams.find((e) => e.id === id);
     const examTitle = exam ? exam.title || exam.id : id;
-    if (
-      !confirm(
-        (this.T.confirmDelete || "Delete exam?") + '\n"' + examTitle + '"',
-      )
-    )
+
+    if (!confirm(`${this.translations.confirmDelete}\n"${examTitle}"`)) {
       return;
+    }
+
     try {
       await this.storage.deleteExam(id);
       this.refreshLibrary();
     } catch (e) {
-      alert(this.T.errorDeletingExam || "Failed to delete exam");
+      alert(this.translations.errorDeletingExam);
     }
   }
 
-  async promptRenameExam(examId) {
+  async promptRenameExam(examId: string): Promise<void> {
     const exam = await this.storage.getExam(examId);
     if (!exam) return;
 
     const newName = prompt(
-      (this.T.newName || "New name:") + "\n" + (exam.title || exam.id),
-      exam.title || exam.id,
+      `${this.translations.newName}\n${exam.title || exam.id}`,
+      exam.title || exam.id
     );
+
     if (newName && newName.trim() && newName.trim() !== exam.title) {
       exam.title = newName.trim();
       try {
         await this.storage.saveExam(exam);
         this.refreshLibrary();
       } catch (e) {
-        alert(this.T.errorRenaming || "Failed to rename");
+        alert(this.translations.errorRenaming);
       }
     }
   }
 
-  async promptRenameFolder(folderId) {
+  async promptRenameFolder(folderId: string): Promise<void> {
     const folder = this.folders.find((f) => f.id === folderId);
     if (!folder) return;
 
     const newName = prompt(
-      (this.T.newName || "New name:") + "\n" + folder.name,
-      folder.name,
+      `${this.translations.newName}\n${folder.name}`,
+      folder.name
     );
+
     if (newName && newName.trim() && newName.trim() !== folder.name) {
       folder.name = newName.trim();
       try {
         await this.storage.saveFolder(folder);
         this.refreshLibrary();
       } catch (e) {
-        alert(this.T.errorRenaming || "Failed to rename");
+        alert(this.translations.errorRenaming);
       }
     }
   }
 
-  async promptMoveExam(examId) {
-    // Simple prompt for now, or use a custom modal?
-    // Let's use a quick prompt with numbers? No, that's bad UX.
-    // Let's use a custom lightweight overlay.
-
+  async promptMoveExam(examId: string): Promise<void> {
     const folders = [
-      { id: "uncategorized", name: this.T.uncategorized || "Uncategorized" },
+      { id: "uncategorized", name: this.translations.uncategorized },
       ...this.folders,
     ];
 
-    let msg = (this.T.move || "Move to folder") + ":\n";
+    let msg = `${this.translations.moveToFolder}:\n`;
     folders.forEach((f, i) => (msg += `${i + 1}. ${f.name}\n`));
 
     const input = prompt(msg);
     if (input) {
-      const idx = parseInt(input) - 1;
+      const idx = parseInt(input, 10) - 1;
       if (idx >= 0 && idx < folders.length) {
         const folderId = folders[idx].id;
         try {
@@ -1290,7 +1259,7 @@ REQUISITOS IMPORTANTES:
     }
   }
 
-  async exportLibrary() {
+  async exportLibrary(): Promise<void> {
     try {
       const data = await this.storage.exportData();
       const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -1303,38 +1272,35 @@ REQUISITOS IMPORTANTES:
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert(this.T.exportFailed || "Export failed");
+      alert(this.translations.exportFailed);
     }
   }
 
-  async handleBackupImport(event) {
-    const file = event.target.files[0];
+  async handleBackupImport(event: Event & { target: HTMLInputElement }): Promise<void> {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const data = JSON.parse(e.target.result);
-        if (!data.exams && !data.version)
+        const data = JSON.parse(e.target?.result as string) as ExportData;
+        if (!data.exams && !data.version) {
           throw new Error("Invalid backup format");
+        }
         await this.storage.importData(data);
         alert("Import successful!");
         this.refreshLibrary();
       } catch (e) {
-        alert((this.T.importFailed || "Import failed") + ": " + e.message);
+        alert(`${this.translations.importFailed}: ${(e as Error).message}`);
       }
     };
     reader.readAsText(file);
   }
 
-  async clearAllData() {
-    if (
-      !confirm(
-        this.T.confirmClearData ||
-          "This will delete ALL exams, folders and progress. This cannot be undone. Are you sure?",
-      )
-    )
+  async clearAllData(): Promise<void> {
+    if (!confirm(this.translations.confirmClearData)) {
       return;
+    }
 
     try {
       await this.storage.clearAll();
@@ -1342,18 +1308,17 @@ REQUISITOS IMPORTANTES:
       this.folders = [];
       this.refreshLibrary();
     } catch (e) {
-      alert("Failed to clear data: " + e.message);
+      alert("Failed to clear data: " + (e as Error).message);
     }
   }
 
-  async downloadTemplate() {
+  async downloadTemplate(): Promise<void> {
     try {
       const response = await fetch("practice/examples/example_exam.json");
       if (!response.ok) throw new Error("Failed to load template");
 
-      const json = await response.json();
+      const json = (await response.json()) as Record<string, unknown>;
 
-      // Create a clean template with instructions
       const template = {
         _comment:
           "This is an example exam for Ginaxams. You can use this as a template to create your own exams.",
@@ -1373,71 +1338,72 @@ REQUISITOS IMPORTANTES:
       URL.revokeObjectURL(url);
     } catch (e) {
       console.error("Failed to download template:", e);
-      alert(this.T.errorLoadingExample || "Failed to download template");
+      alert(this.translations.errorLoadingExample);
     }
   }
 
-  // --- Drag and Drop ---
+  // ============================================================================
+  // Drag and Drop
+  // ============================================================================
 
-  handleDragStart(event, examId) {
-    event.dataTransfer.setData("text/plain", examId);
-    event.dataTransfer.effectAllowed = "move";
+  handleDragStart(event: DragEvent, examId: string): void {
+    if (event.dataTransfer) {
+      event.dataTransfer.setData("text/plain", examId);
+      event.dataTransfer.effectAllowed = "move";
+    }
     document.body.classList.add("dragging");
   }
 
-  handleDragEnd(event) {
+  handleDragEnd(_event: DragEvent): void {
     document.body.classList.remove("dragging");
-    // Remove all drop-target classes
     document.querySelectorAll(".category-section").forEach((el) => {
       el.classList.remove("drop-target");
     });
   }
 
-  handleDragOver(event, folderId) {
+  handleDragOver(event: DragEvent, folderId: string): void {
     event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    const section = document.getElementById(`cat-${folderId}`);
-    if (section) {
-      section.classList.add("drop-target");
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "move";
     }
+    const section = document.getElementById(`cat-${folderId}`);
+    section?.classList.add("drop-target");
   }
 
-  handleDragLeave(event, folderId) {
+  handleDragLeave(_event: DragEvent, folderId: string): void {
     const section = document.getElementById(`cat-${folderId}`);
-    if (section) {
-      section.classList.remove("drop-target");
-    }
+    section?.classList.remove("drop-target");
   }
 
-  async handleDrop(event, targetFolderId) {
+  async handleDrop(event: DragEvent, targetFolderId: string): Promise<void> {
     event.preventDefault();
     document.body.classList.remove("dragging");
 
-    const examId = event.dataTransfer.getData("text/plain");
+    const examId = event.dataTransfer?.getData("text/plain");
     if (!examId) return;
 
     const exam = await this.storage.getExam(examId);
     if (!exam || exam.folderId === targetFolderId) {
-      // Same folder or exam not found, just clean up
       document.querySelectorAll(".category-section").forEach((el) => {
         el.classList.remove("drop-target");
       });
       return;
     }
 
-    // Move exam to new folder
     exam.folderId = targetFolderId;
     try {
       await this.storage.saveExam(exam);
       this.refreshLibrary();
     } catch (e) {
-      alert(this.T.errorMovingExam || "Failed to move exam");
+      alert(this.translations.errorMovingExam);
     }
   }
 
-  // --- Progress ---
+  // ============================================================================
+  // Progress
+  // ============================================================================
 
-  async saveProgress(examId, questionNum, wasCorrect) {
+  async saveProgress(examId: string, questionNum: number, wasCorrect: boolean): Promise<void> {
     try {
       let p = await this.storage.getProgress(examId);
       if (!p) {
@@ -1449,6 +1415,8 @@ REQUISITOS IMPORTANTES:
           lastPractice: null,
           maxCorrect: 0,
           attempts: 0,
+          lastScore: null,
+          bestScore: null,
         };
       }
 
@@ -1470,35 +1438,34 @@ REQUISITOS IMPORTANTES:
     }
   }
 
-  async incrementAttempt(examId) {
+  async incrementAttempt(examId: string): Promise<void> {
     try {
-      let p = await this.storage.getProgress(examId);
+      const p = await this.storage.getProgress(examId);
       if (!p) {
-        p = {
+        // Create new progress with initial attempt
+        const newProgress: ExamProgress = {
           examId,
           questions: {},
           correct: 0,
           total: 0,
           lastPractice: null,
           maxCorrect: 0,
-          attempts: 0,
+          attempts: 1,
           lastScore: null,
           bestScore: null,
         };
+        await this.storage.saveProgress(newProgress);
+        return;
       }
-      // Ensure all fields exist to prevent data loss
-      if (p.attempts === undefined) p.attempts = 0;
-      if (p.lastScore === undefined) p.lastScore = null;
-      if (p.bestScore === undefined) p.bestScore = null;
 
-      p.attempts = p.attempts + 1;
+      p.attempts = (p.attempts ?? 0) + 1;
       await this.storage.saveProgress(p);
     } catch (e) {
       console.warn("Increment attempt failed", e);
     }
   }
 
-  async saveScore(examId, score) {
+  async saveScore(examId: string, score: number): Promise<{ lastScore: number | null; bestScore: number | null }> {
     try {
       let p = await this.storage.getProgress(examId);
       if (!p) {
@@ -1515,15 +1482,8 @@ REQUISITOS IMPORTANTES:
         };
       }
 
-      // Ensure all fields exist to prevent data loss
-      if (p.attempts === undefined) p.attempts = 0;
-      if (p.lastScore === undefined) p.lastScore = null;
-      if (p.bestScore === undefined) p.bestScore = null;
-
-      // Update last score
       p.lastScore = score;
 
-      // Update best score if applicable
       if (p.bestScore === null || score > p.bestScore) {
         p.bestScore = score;
       }
@@ -1537,52 +1497,61 @@ REQUISITOS IMPORTANTES:
     }
   }
 
-  async getQuestionResult(examId, questionNum) {
+  getQuestionResult(_examId: string, _questionNum: number): boolean | null {
+    // This is a synchronous wrapper - actual implementation would need async
+    // For now, return null to maintain compatibility
     return null;
   }
 
-  // --- Navigation ---
+  // ============================================================================
+  // Navigation
+  // ============================================================================
 
-  hideAllScreens() {
-    document
-      .querySelectorAll('[id$="Screen"]')
-      .forEach((el) => el.classList.add("hidden"));
+  private hideAllScreens(): void {
+    document.querySelectorAll('[id$="Screen"]').forEach((el) => {
+      el.classList.add("hidden");
+    });
   }
 
-  showFileScreen() {
+  showFileScreen(): void {
     this.hideAllScreens();
-    document.getElementById("fileScreen").classList.remove("hidden");
-    document.getElementById("examTitle").textContent = ""; // Clear specific title
+    const fileScreen = document.getElementById("fileScreen");
+    if (fileScreen) {
+      fileScreen.classList.remove("hidden");
+    }
+    const examTitle = document.getElementById("examTitle");
+    if (examTitle) {
+      examTitle.textContent = "";
+    }
     this.refreshLibrary();
   }
 
-  showModeScreen() {
+  showModeScreen(): void {
     this.hideAllScreens();
-    document.getElementById("modeScreen").classList.remove("hidden");
-    // ... (existing update logic) ...
-    if (this.practiceManager.examData) {
-      document.getElementById("examTitle").textContent =
-        this.practiceManager.examData.title;
+    const modeScreen = document.getElementById("modeScreen");
+    if (modeScreen) {
+      modeScreen.classList.remove("hidden");
+    }
 
-      // Async stats update
-      this.storage
-        .getProgress(this.practiceManager.examData.exam_id)
-        .then((p) => {
-          const el = document.getElementById("examStats");
-          if (!el) return;
-          const total = this.practiceManager.examData.total_questions || 0;
-          if (p) {
-            const pct = total > 0 ? Math.round((100 * p.correct) / total) : 0;
-            el.textContent = `${total} ${this.T.questions} | ${this.T.bestScore}: ${p.correct}/${total} (${pct}%)`;
-          } else {
-            el.textContent = `${total} ${this.T.questions}`;
-          }
-        });
+    const examData = this.practiceManager.getExamData();
+    if (examData) {
+      const examTitle = document.getElementById("examTitle");
+      if (examTitle) {
+        examTitle.textContent = examData.title;
+      }
+
+      this.storage.getProgress(examData.exam_id).then((p) => {
+        const el = document.getElementById("examStats");
+        if (!el) return;
+
+        const total = examData.total_questions ?? 0;
+        if (p) {
+          const pct = calculatePercentage(p.correct, total);
+          el.textContent = `${total} ${this.translations.questions} | ${this.translations.bestScore}: ${p.correct}/${total} (${pct}%)`;
+        } else {
+          el.textContent = `${total} ${this.translations.questions}`;
+        }
+      });
     }
   }
 }
-
-// Init
-window.addEventListener("DOMContentLoaded", () => {
-  window.app = new App();
-});
