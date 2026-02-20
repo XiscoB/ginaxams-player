@@ -6,28 +6,29 @@
  * valid attempt objects.
  */
 
-import type { Attempt, AttemptType, AttemptConfig } from "./types.js";
+import type {
+  Attempt,
+  AttemptType,
+  SimulacroAttempt,
+  ReviewAttempt,
+  FreeAttempt,
+  SimulacroAttemptConfig,
+  ReviewAttemptConfig,
+  FreeAttemptConfig,
+} from "./types.js";
 
 /**
  * Re-export types for consumers
  */
-export type { Attempt, AttemptType, AttemptConfig };
-
-/**
- * Default attempt configuration values
- * These are centralized and user-configurable through settings
- */
-export const DEFAULT_ATTEMPT_CONFIG: Required<
-  Omit<AttemptConfig, "timeLimitMs" | "examWeights">
-> & {
-  timeLimitMs: undefined;
-  examWeights: undefined;
-} = {
-  questionCount: 60,
-  timeLimitMs: undefined,
-  penalty: 0,
-  reward: 1,
-  examWeights: undefined,
+export type {
+  Attempt,
+  AttemptType,
+  SimulacroAttempt,
+  ReviewAttempt,
+  FreeAttempt,
+  SimulacroAttemptConfig,
+  ReviewAttemptConfig,
+  FreeAttemptConfig,
 };
 
 /**
@@ -54,13 +55,45 @@ export function generateAttemptId(): string {
   return `attempt-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
+// ============================================================================
+// createAttempt Function Overloads
+// ============================================================================
+
 /**
- * Create a new attempt with validated defaults
+ * Create a new simulacro attempt.
+ * ALL config fields are required for reproducibility.
+ */
+export function createAttempt(
+  type: "simulacro",
+  sourceExamIds: string[],
+  config: SimulacroAttemptConfig
+): SimulacroAttempt;
+
+/**
+ * Create a new review attempt.
+ */
+export function createAttempt(
+  type: "review",
+  sourceExamIds: string[],
+  config: ReviewAttemptConfig,
+  parentAttemptId?: string
+): ReviewAttempt;
+
+/**
+ * Create a new free attempt.
+ */
+export function createAttempt(
+  type: "free",
+  sourceExamIds: string[]
+): FreeAttempt;
+
+/**
+ * Implementation
  */
 export function createAttempt(
   type: AttemptType,
   sourceExamIds: string[],
-  config: AttemptConfig = {},
+  config?: SimulacroAttemptConfig | ReviewAttemptConfig | FreeAttemptConfig,
   parentAttemptId?: string
 ): Attempt {
   if (!isAttemptType(type)) {
@@ -79,16 +112,47 @@ export function createAttempt(
     throw new Error("parentAttemptId must be a string if provided");
   }
 
+  // Validate simulacro config is complete
+  if (type === "simulacro") {
+    if (!config) {
+      throw new Error("Simulacro attempt requires a complete config");
+    }
+    const simConfig = config as SimulacroAttemptConfig;
+    if (
+      typeof simConfig.questionCount !== "number" ||
+      typeof simConfig.timeLimitMs !== "number" ||
+      typeof simConfig.penalty !== "number" ||
+      typeof simConfig.reward !== "number" ||
+      typeof simConfig.examWeights !== "object" ||
+      simConfig.examWeights === null
+    ) {
+      throw new Error(
+        "Simulacro config must include: questionCount, timeLimitMs, penalty, reward, examWeights"
+      );
+    }
+  }
+
+  // Validate review config
+  if (type === "review") {
+    if (!config) {
+      throw new Error("Review attempt requires a config with questionCount");
+    }
+    const revConfig = config as ReviewAttemptConfig;
+    if (typeof revConfig.questionCount !== "number") {
+      throw new Error("Review config must include questionCount");
+    }
+  }
+
   const now = new Date().toISOString();
 
   return {
     id: generateAttemptId(),
     type,
     createdAt: now,
-    sourceExamIds: [...sourceExamIds], // Copy to avoid external mutation
-    config: { ...config }, // Copy to avoid external mutation
+    sourceExamIds: [...sourceExamIds],
+    config: config ? { ...config } : {},
     parentAttemptId,
-  };
+  } as Attempt;
 }
 
 /**
@@ -138,49 +202,30 @@ export function validateAttempt(attempt: unknown): attempt is Attempt {
     throw new Error("Attempt 'parentAttemptId' must be a string if provided");
   }
 
-  // Validate config fields if present
-  const config = a.config as Record<string, unknown>;
-
-  if (config.questionCount !== undefined) {
-    if (
-      typeof config.questionCount !== "number" ||
-      config.questionCount < 1 ||
-      !Number.isInteger(config.questionCount)
-    ) {
-      throw new Error("config.questionCount must be a positive integer");
+  // Type-specific validation
+  if (a.type === "simulacro") {
+    const config = a.config as Record<string, unknown>;
+    if (typeof config.questionCount !== "number") {
+      throw new Error("Simulacro config.questionCount must be a number");
     }
-  }
-
-  if (config.timeLimitMs !== undefined) {
-    if (
-      typeof config.timeLimitMs !== "number" ||
-      config.timeLimitMs < 0 ||
-      !Number.isInteger(config.timeLimitMs)
-    ) {
-      throw new Error("config.timeLimitMs must be a non-negative integer");
+    if (typeof config.timeLimitMs !== "number") {
+      throw new Error("Simulacro config.timeLimitMs must be a number");
     }
-  }
-
-  if (config.penalty !== undefined) {
-    if (typeof config.penalty !== "number" || config.penalty < 0) {
-      throw new Error("config.penalty must be a non-negative number");
+    if (typeof config.penalty !== "number") {
+      throw new Error("Simulacro config.penalty must be a number");
     }
-  }
-
-  if (config.reward !== undefined) {
-    if (typeof config.reward !== "number" || config.reward < 0) {
-      throw new Error("config.reward must be a non-negative number");
+    if (typeof config.reward !== "number") {
+      throw new Error("Simulacro config.reward must be a number");
     }
-  }
-
-  if (config.examWeights !== undefined) {
     if (typeof config.examWeights !== "object" || config.examWeights === null) {
-      throw new Error("config.examWeights must be an object");
+      throw new Error("Simulacro config.examWeights must be an object");
     }
-    for (const [key, value] of Object.entries(config.examWeights)) {
-      if (typeof value !== "number" || value < 0) {
-        throw new Error(`config.examWeights["${key}"] must be a non-negative number`);
-      }
+  }
+
+  if (a.type === "review") {
+    const config = a.config as Record<string, unknown>;
+    if (typeof config.questionCount !== "number") {
+      throw new Error("Review config.questionCount must be a number");
     }
   }
 

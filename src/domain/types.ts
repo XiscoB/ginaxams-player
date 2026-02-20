@@ -6,28 +6,90 @@
  */
 
 // ============================================================================
-// Attempt Types
+// Attempt Types - Discriminated Union (Strict per Attempt Type)
 // ============================================================================
 
 export type AttemptType = "free" | "simulacro" | "review";
 
 export type AnswerResult = "correct" | "wrong" | "blank";
 
+/**
+ * Simulacro Attempt Config - ALL fields required for reproducibility
+ * No optional fields allowed - must be fully specified at creation
+ */
+export interface SimulacroAttemptConfig {
+  questionCount: number;
+  timeLimitMs: number;
+  penalty: number;
+  reward: number;
+  examWeights: Record<string, number>;
+}
+
+/**
+ * Review Attempt Config - Minimal required fields
+ */
+export interface ReviewAttemptConfig {
+  questionCount: number;
+}
+
+/**
+ * Free Attempt Config - No config needed
+ */
+export interface FreeAttemptConfig {
+  // Empty - free mode has no configuration
+}
+
+/**
+ * Simulacro Attempt - Fully specified configuration
+ */
+export interface SimulacroAttempt {
+  id: string;
+  type: "simulacro";
+  createdAt: string;
+  sourceExamIds: string[];
+  config: SimulacroAttemptConfig;
+  parentAttemptId?: string;
+}
+
+/**
+ * Review Attempt - Review mode with required question count
+ */
+export interface ReviewAttempt {
+  id: string;
+  type: "review";
+  createdAt: string;
+  sourceExamIds: string[];
+  config: ReviewAttemptConfig;
+  parentAttemptId?: string;
+}
+
+/**
+ * Free Attempt - Practice mode with no config
+ */
+export interface FreeAttempt {
+  id: string;
+  type: "free";
+  createdAt: string;
+  sourceExamIds: string[];
+  config: FreeAttemptConfig;
+  parentAttemptId?: string;
+}
+
+/**
+ * Attempt Discriminated Union
+ * Type is determined by the 'type' discriminator field
+ */
+export type Attempt = SimulacroAttempt | ReviewAttempt | FreeAttempt;
+
+/**
+ * @deprecated Use specific attempt type interfaces instead
+ */
 export interface AttemptConfig {
   questionCount?: number;
   timeLimitMs?: number;
   penalty?: number;
   reward?: number;
   examWeights?: Record<string, number>;
-}
-
-export interface Attempt {
-  id: string;
-  type: AttemptType;
-  createdAt: string;
-  sourceExamIds: string[];
-  config: AttemptConfig;
-  parentAttemptId?: string;
 }
 
 // ============================================================================

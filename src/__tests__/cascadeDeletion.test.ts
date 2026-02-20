@@ -57,12 +57,38 @@ function createMockAttempt(
   sourceExamIds: string[],
   parentAttemptId?: string
 ): Attempt {
+  if (type === "simulacro") {
+    return {
+      id,
+      type: "simulacro",
+      createdAt: new Date().toISOString(),
+      sourceExamIds,
+      config: {
+        questionCount: 10,
+        timeLimitMs: 60000,
+        penalty: 0.25,
+        reward: 1,
+        examWeights: Object.fromEntries(sourceExamIds.map((id) => [id, 1])),
+      },
+      parentAttemptId,
+    };
+  }
+  if (type === "review") {
+    return {
+      id,
+      type: "review",
+      createdAt: new Date().toISOString(),
+      sourceExamIds,
+      config: { questionCount: 10 },
+      parentAttemptId,
+    };
+  }
   return {
     id,
-    type,
+    type: "free",
     createdAt: new Date().toISOString(),
     sourceExamIds,
-    config: { questionCount: 10 },
+    config: {},
     parentAttemptId,
   };
 }

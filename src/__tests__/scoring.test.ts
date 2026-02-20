@@ -10,23 +10,26 @@ import {
   normalizeWeights,
   distributeQuestions,
   shuffleArray,
-  createSeededRNG,
 } from "../domain/scoring.js";
+import { createSeededRNG } from "../test-utils/seededRng.js";
 
 describe("calculateScore", () => {
   it("calculates score with default weights", () => {
-    expect(calculateScore(5, 2, 1)).toBe(5);
-    expect(calculateScore(10, 0, 0)).toBe(10);
-    expect(calculateScore(0, 5, 5)).toBe(0);
+    // Using object-based signature: all parameters must be explicit
+    expect(calculateScore({ correct: 5, wrong: 2, blank: 1, reward: 1, penalty: 0 })).toBe(5);
+    expect(calculateScore({ correct: 10, wrong: 0, blank: 0, reward: 1, penalty: 0 })).toBe(10);
+    expect(calculateScore({ correct: 0, wrong: 0, blank: 5, reward: 1, penalty: 0 })).toBe(0);
   });
 
   it("calculates score with custom reward and penalty", () => {
-    expect(calculateScore(5, 2, 1, 2, 0.5)).toBe(9); // 5*2 - 2*0.5 = 10 - 1 = 9
-    expect(calculateScore(3, 1, 0, 3, 1)).toBe(8); // 3*3 - 1*1 = 9 - 1 = 8
+    // 5*2 - 2*0.5 = 10 - 1 = 9
+    expect(calculateScore({ correct: 5, wrong: 2, blank: 1, reward: 2, penalty: 0.5 })).toBe(9);
+    // 3*3 - 1*1 = 9 - 1 = 8
+    expect(calculateScore({ correct: 3, wrong: 1, blank: 0, reward: 3, penalty: 1 })).toBe(8);
   });
 
   it("handles all zeros", () => {
-    expect(calculateScore(0, 0, 0)).toBe(0);
+    expect(calculateScore({ correct: 0, wrong: 0, blank: 0, reward: 1, penalty: 0 })).toBe(0);
   });
 });
 
