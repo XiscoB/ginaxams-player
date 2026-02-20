@@ -1,20 +1,29 @@
 /**
  * Storage Service - IndexedDB wrapper for exam data persistence
- * 
+ *
  * This module provides a clean interface for storing and retrieving
- * exams, folders, and progress data using IndexedDB.
+ * exams, folders, progress, attempts, and question telemetry using IndexedDB.
  */
 
-import type { StoredExam, Folder, ExamProgress, ExportData } from "../domain/types.js";
+import type {
+  StoredExam,
+  Folder,
+  ExamProgress,
+  ExportData,
+  Attempt,
+  QuestionTelemetry,
+} from "../domain/types.js";
 
 const DB_NAME = "ginax_db";
-const DB_VERSION = 2; // Incremented for schema v2.0 - clean break from legacy
+const DB_VERSION = 3; // M2: Incremented for attempts and questionTelemetry stores
 
 // Store names
 const STORES = {
   EXAMS: "exams",
   FOLDERS: "folders",
   PROGRESS: "progress",
+  ATTEMPTS: "attempts",
+  QUESTION_TELEMETRY: "questionTelemetry",
 } as const;
 
 /**
@@ -51,10 +60,9 @@ export class ExamStorage {
         const db = (event.target as IDBOpenDBRequest).result;
         const oldVersion = event.oldVersion;
 
-        // Schema v2.0 - Clean break from legacy
-        // Delete existing stores to ensure clean schema
-        if (oldVersion > 0) {
-          // Delete existing stores for clean upgrade
+        // M2 Migration: Handle schema upgrades
+        if (oldVersion < 2) {
+          // v1 to v2: Clean break - delete and recreate existing stores
           if (db.objectStoreNames.contains(STORES.EXAMS)) {
             db.deleteObjectStore(STORES.EXAMS);
           }
@@ -64,19 +72,52 @@ export class ExamStorage {
           if (db.objectStoreNames.contains(STORES.PROGRESS)) {
             db.deleteObjectStore(STORES.PROGRESS);
           }
+
+          // Create Exams store: keyPath = id
+          const examStore = db.createObjectStore(STORES.EXAMS, {
+            keyPath: "id",
+          });
+          examStore.createIndex("folderId", "folderId", { unique: false });
+          examStore.createIndex("addedAt", "addedAt", { unique: false });
+
+          // Create Folders store: keyPath = id
+          const folderStore = db.createObjectStore(STORES.FOLDERS, {
+            keyPath: "id",
+          });
+          folderStore.createIndex("name", "name", { unique: false });
+
+          // Create Progress store: keyPath = examId
+          db.createObjectStore(STORES.PROGRESS, { keyPath: "examId" });
         }
 
-        // Create Exams store: keyPath = id
-        const examStore = db.createObjectStore(STORES.EXAMS, { keyPath: "id" });
-        examStore.createIndex("folderId", "folderId", { unique: false });
-        examStore.createIndex("addedAt", "addedAt", { unique: false });
+        // M2: v2 to v3 migration - add new stores without deleting existing
+        if (oldVersion < 3) {
+          // Create Attempts store: keyPath = id
+          const attemptsStore = db.createObjectStore(STORES.ATTEMPTS, {
+            keyPath: "id",
+          });
+          attemptsStore.createIndex("type", "type", { unique: false });
+          attemptsStore.createIndex("createdAt", "createdAt", {
+            unique: false,
+          });
 
-        // Create Folders store: keyPath = id
-        const folderStore = db.createObjectStore(STORES.FOLDERS, { keyPath: "id" });
-        folderStore.createIndex("name", "name", { unique: false });
-
-        // Create Progress store: keyPath = examId
-        db.createObjectStore(STORES.PROGRESS, { keyPath: "examId" });
+          // Create QuestionTelemetry store: keyPath = id
+          const telemetryStore = db.createObjectStore(
+            STORES.QUESTION_TELEMETRY,
+            {
+              keyPath: "id",
+            }
+          );
+          // Composite index for examId + questionNumber lookups
+          telemetryStore.createIndex("examId_questionNumber", [
+            "examId",
+            "questionNumber",
+          ]);
+          telemetryStore.createIndex("examId", "examId", { unique: false });
+          telemetryStore.createIndex("lastSeenAt", "lastSeenAt", {
+            unique: false,
+          });
+        }
       };
     });
   }
@@ -164,7 +205,8 @@ export class ExamStorage {
           const store = tx.objectStore(STORES.EXAMS);
           const request = store.get(id);
 
-          request.onsuccess = () => resolve(request.result as StoredExam | undefined);
+          request.onsuccess = () =>
+            resolve(request.result as StoredExam | undefined);
           request.onerror = () => reject(request.error);
         })
         .catch(reject);
@@ -172,18 +214,50 @@ export class ExamStorage {
   }
 
   /**
-   * Delete an exam and its associated progress
+   * Delete an exam and its associated progress, telemetry, and attempts
+   * M2: Cascade deletion for telemetry and attempts
    */
   async deleteExam(id: string): Promise<void> {
     await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.EXAMS, STORES.PROGRESS], "readwrite")
+      this.transaction(
+        [
+          STORES.EXAMS,
+          STORES.PROGRESS,
+          STORES.QUESTION_TELEMETRY,
+          STORES.ATTEMPTS,
+        ],
+        "readwrite"
+      )
         .then((tx) => {
           // Delete exam
           tx.objectStore(STORES.EXAMS).delete(id);
           // Delete associated progress
           tx.objectStore(STORES.PROGRESS).delete(id);
+
+          // M2: Delete telemetry for this exam
+          const telemetryStore = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const telemetryIndex = telemetryStore.index("examId");
+          const telemetryRequest = telemetryIndex.getAllKeys(id);
+          telemetryRequest.onsuccess = () => {
+            const keys = telemetryRequest.result as string[];
+            for (const key of keys) {
+              telemetryStore.delete(key);
+            }
+          };
+
+          // M2: Delete attempts that reference this exam
+          const attemptsStore = tx.objectStore(STORES.ATTEMPTS);
+          const allAttemptsRequest = attemptsStore.getAll();
+          allAttemptsRequest.onsuccess = () => {
+            const attempts = allAttemptsRequest.result as Attempt[];
+            for (const attempt of attempts) {
+              if (attempt.sourceExamIds.includes(id)) {
+                attemptsStore.delete(attempt.id);
+              }
+            }
+          };
 
           tx.oncomplete = () => resolve();
           tx.onerror = (e) => {
@@ -275,7 +349,7 @@ export class ExamStorage {
   }
 
   // ============================================================================
-  // Progress Operations
+  // Progress Operations (Legacy - kept for compatibility)
   // ============================================================================
 
   /**
@@ -307,7 +381,303 @@ export class ExamStorage {
         .then((tx) => {
           const request = tx.objectStore(STORES.PROGRESS).get(examId);
 
-          request.onsuccess = () => resolve(request.result as ExamProgress | undefined);
+          request.onsuccess = () =>
+            resolve(request.result as ExamProgress | undefined);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  // ============================================================================
+  // Attempt Operations (M2)
+  // ============================================================================
+
+  /**
+   * Save an attempt
+   */
+  async saveAttempt(attempt: Attempt): Promise<string> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.ATTEMPTS], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.ATTEMPTS);
+          const request = store.put(attempt);
+
+          request.onsuccess = () => resolve(attempt.id);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Get an attempt by ID
+   */
+  async getAttempt(id: string): Promise<Attempt | undefined> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.ATTEMPTS], "readonly")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.ATTEMPTS);
+          const request = store.get(id);
+
+          request.onsuccess = () =>
+            resolve(request.result as Attempt | undefined);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Get all attempts
+   */
+  async getAllAttempts(): Promise<Attempt[]> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.ATTEMPTS], "readonly")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.ATTEMPTS);
+          const request = store.getAll();
+
+          request.onsuccess = () => resolve(request.result as Attempt[]);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Get attempts by type
+   */
+  async getAttemptsByType(type: Attempt["type"]): Promise<Attempt[]> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.ATTEMPTS], "readonly")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.ATTEMPTS);
+          const index = store.index("type");
+          const request = index.getAll(type);
+
+          request.onsuccess = () => resolve(request.result as Attempt[]);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Delete an attempt
+   */
+  async deleteAttempt(id: string): Promise<void> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.ATTEMPTS], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.ATTEMPTS);
+          const request = store.delete(id);
+
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Delete attempts that reference a specific exam (cascade helper)
+   */
+  async deleteAttemptsForExam(examId: string): Promise<void> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.ATTEMPTS], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.ATTEMPTS);
+          const request = store.getAll();
+
+          request.onsuccess = () => {
+            const attempts = request.result as Attempt[];
+            for (const attempt of attempts) {
+              if (attempt.sourceExamIds.includes(examId)) {
+                store.delete(attempt.id);
+              }
+            }
+          };
+
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => {
+            const target = e.target as IDBTransaction;
+            reject(target.error);
+          };
+        })
+        .catch(reject);
+    });
+  }
+
+  // ============================================================================
+  // Question Telemetry Operations (M2)
+  // ============================================================================
+
+  /**
+   * Save or update question telemetry
+   */
+  async saveQuestionTelemetry(telemetry: QuestionTelemetry): Promise<void> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const request = store.put(telemetry);
+
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Get telemetry for a specific question
+   */
+  async getQuestionTelemetry(
+    examId: string,
+    questionNumber: number
+  ): Promise<QuestionTelemetry | undefined> {
+    await this.ready();
+
+    const id = `${examId}::${questionNumber}`;
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.QUESTION_TELEMETRY], "readonly")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const request = store.get(id);
+
+          request.onsuccess = () =>
+            resolve(request.result as QuestionTelemetry | undefined);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Get all telemetry for an exam
+   */
+  async getTelemetryByExam(examId: string): Promise<QuestionTelemetry[]> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.QUESTION_TELEMETRY], "readonly")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const index = store.index("examId");
+          const request = index.getAll(examId);
+
+          request.onsuccess = () =>
+            resolve(request.result as QuestionTelemetry[]);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Get all question telemetry
+   */
+  async getAllQuestionTelemetry(): Promise<QuestionTelemetry[]> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.QUESTION_TELEMETRY], "readonly")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const request = store.getAll();
+
+          request.onsuccess = () =>
+            resolve(request.result as QuestionTelemetry[]);
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Delete telemetry for a specific question
+   */
+  async deleteQuestionTelemetry(
+    examId: string,
+    questionNumber: number
+  ): Promise<void> {
+    await this.ready();
+
+    const id = `${examId}::${questionNumber}`;
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const request = store.delete(id);
+
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Delete all telemetry for an exam
+   */
+  async deleteTelemetryForExam(examId: string): Promise<void> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const index = store.index("examId");
+          const request = index.getAllKeys(examId);
+
+          request.onsuccess = () => {
+            const keys = request.result as string[];
+            for (const key of keys) {
+              store.delete(key);
+            }
+          };
+
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => {
+            const target = e.target as IDBTransaction;
+            reject(target.error);
+          };
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Clear all question telemetry (global reset)
+   * M2: Global reset clears ONLY telemetry, not exams or attempts
+   */
+  async clearAllQuestionTelemetry(): Promise<void> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+          const request = store.clear();
+
+          request.onsuccess = () => resolve();
           request.onerror = () => reject(request.error);
         })
         .catch(reject);
@@ -322,7 +692,7 @@ export class ExamStorage {
    * Export all data
    */
   async exportData(): Promise<ExportData> {
-    const [exams, folders, progress] = await Promise.all([
+    const [exams, folders, progress, attempts, telemetry] = await Promise.all([
       this.getExams(),
       this.getFolders(),
       new Promise<ExamProgress[]>((resolve, reject) => {
@@ -334,14 +704,18 @@ export class ExamStorage {
           })
           .catch(reject);
       }),
+      this.getAllAttempts(),
+      this.getAllQuestionTelemetry(),
     ]);
 
     return {
-      version: 1,
+      version: 2, // M2: Updated export version
       exportedAt: new Date().toISOString(),
       exams,
       folders,
       progress,
+      attempts,
+      telemetry,
     };
   }
 
@@ -356,7 +730,16 @@ export class ExamStorage {
     await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.EXAMS, STORES.FOLDERS, STORES.PROGRESS], "readwrite")
+      this.transaction(
+        [
+          STORES.EXAMS,
+          STORES.FOLDERS,
+          STORES.PROGRESS,
+          STORES.ATTEMPTS,
+          STORES.QUESTION_TELEMETRY,
+        ],
+        "readwrite"
+      )
         .then((tx) => {
           // Merge data, overwriting if ID exists
           data.exams.forEach((item) => {
@@ -372,6 +755,20 @@ export class ExamStorage {
           if (data.progress) {
             data.progress.forEach((item) => {
               tx.objectStore(STORES.PROGRESS).put(item);
+            });
+          }
+
+          // M2: Import attempts if present
+          if (data.attempts) {
+            data.attempts.forEach((item) => {
+              tx.objectStore(STORES.ATTEMPTS).put(item);
+            });
+          }
+
+          // M2: Import telemetry if present
+          if (data.telemetry) {
+            data.telemetry.forEach((item) => {
+              tx.objectStore(STORES.QUESTION_TELEMETRY).put(item);
             });
           }
 
@@ -392,11 +789,22 @@ export class ExamStorage {
     await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.EXAMS, STORES.FOLDERS, STORES.PROGRESS], "readwrite")
+      this.transaction(
+        [
+          STORES.EXAMS,
+          STORES.FOLDERS,
+          STORES.PROGRESS,
+          STORES.ATTEMPTS,
+          STORES.QUESTION_TELEMETRY,
+        ],
+        "readwrite"
+      )
         .then((tx) => {
           tx.objectStore(STORES.EXAMS).clear();
           tx.objectStore(STORES.FOLDERS).clear();
           tx.objectStore(STORES.PROGRESS).clear();
+          tx.objectStore(STORES.ATTEMPTS).clear();
+          tx.objectStore(STORES.QUESTION_TELEMETRY).clear();
 
           tx.oncomplete = () => resolve();
           tx.onerror = (e) => {

@@ -127,6 +127,7 @@ export function createEmptyTelemetry(
   questionNumber: number
 ): QuestionTelemetry {
   return {
+    id: `${examId}::${questionNumber}`,
     examId,
     questionNumber,
     timesCorrect: 0,
@@ -135,7 +136,7 @@ export function createEmptyTelemetry(
     consecutiveCorrect: 0,
     avgResponseTimeMs: 0,
     totalSeen: 0,
-    lastSeenAt: null,
+    lastSeenAt: "",
   };
 }
 

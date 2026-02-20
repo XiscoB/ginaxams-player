@@ -14,7 +14,7 @@ export type AttemptType = "free" | "simulacro" | "review";
 export type AnswerResult = "correct" | "wrong" | "blank";
 
 export interface AttemptConfig {
-  questionCount: number;
+  questionCount?: number;
   timeLimitMs?: number;
   penalty?: number;
   reward?: number;
@@ -119,6 +119,8 @@ export interface ExportData {
   exams: StoredExam[];
   folders: Folder[];
   progress: ExamProgress[];
+  attempts?: Attempt[];
+  telemetry?: QuestionTelemetry[];
 }
 
 // ============================================================================
@@ -304,6 +306,7 @@ export interface Translations {
 // ============================================================================
 
 export interface QuestionTelemetry {
+  id: string;
   examId: string;
   questionNumber: number;
   timesCorrect: number;
@@ -312,5 +315,5 @@ export interface QuestionTelemetry {
   consecutiveCorrect: number;
   avgResponseTimeMs: number;
   totalSeen: number;
-  lastSeenAt: string | null;
+  lastSeenAt: string;
 }
