@@ -7,6 +7,8 @@
 
 import { describe, it, expect } from "vitest";
 import type { QuestionTelemetry } from "../domain/types.js";
+import type { WeaknessWeights } from "../domain/weakness.js";
+import { DEFAULTS } from "../domain/defaults.js";
 import {
   updateTelemetry,
   resetTelemetryForExam,
@@ -18,8 +20,15 @@ import {
   sortByLastSeen,
   selectQuestionsForReview,
   mergeTelemetryUpdates,
-  DEFAULT_WEIGHTS,
 } from "../domain/telemetryEngine.js";
+
+// Test weights - explicit configuration injection
+const TEST_WEIGHTS: WeaknessWeights = {
+  wrongWeight: DEFAULTS.wrongWeight,
+  blankWeight: DEFAULTS.blankWeight,
+  recoveryWeight: DEFAULTS.recoveryWeight,
+  weakTimeThresholdMs: DEFAULTS.weakTimeThresholdMs,
+};
 
 
 // Test fixtures
@@ -489,7 +498,7 @@ describe("getTelemetryByExam", () => {
 describe("calculateWeakness", () => {
   it("returns 0 for never seen question", () => {
     const telemetry = createTestTelemetry();
-    expect(calculateWeakness(telemetry)).toBe(0);
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBe(0);
   });
 
   it("calculates weakness with only wrong answers", () => {
@@ -499,7 +508,7 @@ describe("calculateWeakness", () => {
     });
 
     // 3 * 2 (wrongWeight) = 6
-    expect(calculateWeakness(telemetry)).toBe(6);
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBe(6);
   });
 
   it("calculates weakness with only blank answers", () => {
@@ -509,7 +518,7 @@ describe("calculateWeakness", () => {
     });
 
     // 5 * 1.2 (blankWeight) = 6
-    expect(calculateWeakness(telemetry)).toBeCloseTo(6, 1);
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBeCloseTo(6, 1);
   });
 
   it("calculates weakness with mixed mistakes", () => {
@@ -520,7 +529,7 @@ describe("calculateWeakness", () => {
     });
 
     // (2 * 2) + (3 * 1.2) = 4 + 3.6 = 7.6
-    expect(calculateWeakness(telemetry)).toBeCloseTo(7.6, 1);
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBeCloseTo(7.6, 1);
   });
 
   it("applies recovery from consecutive correct answers", () => {
@@ -531,7 +540,7 @@ describe("calculateWeakness", () => {
     });
 
     // (3 * 2) - (2 * 1) = 6 - 2 = 4
-    expect(calculateWeakness(telemetry)).toBe(4);
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBe(4);
   });
 
   it("clamps weakness to non-negative", () => {
@@ -542,33 +551,35 @@ describe("calculateWeakness", () => {
     });
 
     // (1 * 2) - (5 * 1) = 2 - 5 = -3, clamped to 0
-    expect(calculateWeakness(telemetry)).toBe(0);
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBe(0);
   });
 
-  it("applies time penalty for slow responses", () => {
+  it("applies time penalty for slow responses (M4 formula)", () => {
     const telemetry = createTestTelemetry({
       timesWrong: 1,
       avgResponseTimeMs: 30000, // Double the threshold
       totalSeen: 1,
     });
 
+    // M4 Formula:
     // Base: 1 * 2 = 2
-    // Time penalty: min((30000-15000)/15000, 1.0) * 0.5 = 0.5
-    // Total: 2 + 0.5 = 2.5
-    expect(calculateWeakness(telemetry)).toBeCloseTo(2.5, 1);
+    // Time penalty: (30000-15000)/15000 = 1.0 (no capping in M4)
+    // Total: 2 + 1.0 = 3.0
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBeCloseTo(3.0, 1);
   });
 
-  it("caps time penalty at 1.0 ratio", () => {
+  it("applies proportional time penalty without capping (M4 formula)", () => {
     const telemetry = createTestTelemetry({
       timesWrong: 1,
       avgResponseTimeMs: 100000, // Way over threshold
       totalSeen: 1,
     });
 
+    // M4 Formula (no capping):
     // Base: 1 * 2 = 2
-    // Time penalty: min((100000-15000)/15000, 1.0) * 0.5 = 0.5
-    // Total: 2 + 0.5 = 2.5
-    expect(calculateWeakness(telemetry)).toBeCloseTo(2.5, 1);
+    // Time penalty: (100000-15000)/15000 = 85000/15000 = 5.666...
+    // Total: 2 + 5.666... = 7.666...
+    expect(calculateWeakness(telemetry, TEST_WEIGHTS)).toBeCloseTo(7.666, 2);
   });
 
   it("uses custom weights when provided", () => {
@@ -578,11 +589,15 @@ describe("calculateWeakness", () => {
       totalSeen: 4,
     });
 
-    // With custom weights: wrong=3, blank=2
+    // With custom weights: wrong=3, blank=2, recovery=1, threshold=15000
     // (2 * 3) + (2 * 2) = 6 + 4 = 10
-    expect(
-      calculateWeakness(telemetry, { wrongWeight: 3, blankWeight: 2 })
-    ).toBeCloseTo(10, 0);
+    const customWeights: WeaknessWeights = {
+      wrongWeight: 3,
+      blankWeight: 2,
+      recoveryWeight: 1,
+      weakTimeThresholdMs: 15000,
+    };
+    expect(calculateWeakness(telemetry, customWeights)).toBeCloseTo(10, 0);
   });
 });
 
@@ -593,15 +608,15 @@ describe("compareByWeakness", () => {
 
     // For descending sort: compareByWeakness(a, b) should return negative if a should come after b
     // weak (10) should come BEFORE strong (0), so compareByWeakness(weak, strong) should be negative
-    expect(compareByWeakness(weak, strong)).toBeLessThan(0);
-    expect(compareByWeakness(strong, weak)).toBeGreaterThan(0);
+    expect(compareByWeakness(weak, strong, TEST_WEIGHTS)).toBeLessThan(0);
+    expect(compareByWeakness(strong, weak, TEST_WEIGHTS)).toBeGreaterThan(0);
   });
 
   it("returns 0 for equal weakness", () => {
     const a = createTestTelemetry({ timesWrong: 2, totalSeen: 2 });
     const b = createTestTelemetry({ timesWrong: 2, totalSeen: 2 });
 
-    expect(compareByWeakness(a, b)).toBe(0);
+    expect(compareByWeakness(a, b, TEST_WEIGHTS)).toBe(0);
   });
 });
 
@@ -645,7 +660,7 @@ describe("sortByWeakness", () => {
       createTestTelemetry({ questionNumber: 3, timesWrong: 2, totalSeen: 5 }), // Medium weakness (4)
     ];
 
-    const sorted = sortByWeakness(telemetry);
+    const sorted = sortByWeakness(telemetry, TEST_WEIGHTS);
 
     expect(sorted[0].questionNumber).toBe(2); // Highest weakness
     expect(sorted[1].questionNumber).toBe(3); // Medium weakness
@@ -658,7 +673,7 @@ describe("sortByWeakness", () => {
       createTestTelemetry({ questionNumber: 2, timesWrong: 5, totalSeen: 5 }),
     ];
 
-    const sorted = sortByWeakness(telemetry);
+    const sorted = sortByWeakness(telemetry, TEST_WEIGHTS);
 
     expect(telemetry[0].questionNumber).toBe(1); // Original unchanged
     expect(sorted[0].questionNumber).toBe(2); // Sorted has highest weakness first
@@ -691,7 +706,7 @@ describe("selectQuestionsForReview", () => {
       createTestTelemetry({ questionNumber: 5, timesCorrect: 5, totalSeen: 5 }), // weakness: 0
     ];
 
-    const selected = selectQuestionsForReview(telemetry, 3);
+    const selected = selectQuestionsForReview(telemetry, 3, TEST_WEIGHTS);
 
     expect(selected).toHaveLength(3);
     expect(selected[0].questionNumber).toBe(1); // Most weak
@@ -721,7 +736,7 @@ describe("selectQuestionsForReview", () => {
       }), // weakness: 0 (most recently seen)
     ];
 
-    const selected = selectQuestionsForReview(telemetry, 3);
+    const selected = selectQuestionsForReview(telemetry, 3, TEST_WEIGHTS);
 
     expect(selected).toHaveLength(3);
     expect(selected[0].questionNumber).toBe(1); // Weak first
@@ -735,31 +750,31 @@ describe("selectQuestionsForReview", () => {
       createTestTelemetry({ questionNumber: 2 }),
     ];
 
-    const selected = selectQuestionsForReview(telemetry, 10);
+    const selected = selectQuestionsForReview(telemetry, 10, TEST_WEIGHTS);
 
     expect(selected).toHaveLength(2);
   });
 
   it("returns empty array for empty input", () => {
-    const selected = selectQuestionsForReview([], 10);
+    const selected = selectQuestionsForReview([], 10, TEST_WEIGHTS);
     expect(selected).toHaveLength(0);
   });
 
   it("throws on invalid count", () => {
-    expect(() => selectQuestionsForReview([], 0)).toThrow(
+    expect(() => selectQuestionsForReview([], 0, TEST_WEIGHTS)).toThrow(
       "count must be a positive integer"
     );
-    expect(() => selectQuestionsForReview([], -1)).toThrow(
+    expect(() => selectQuestionsForReview([], -1, TEST_WEIGHTS)).toThrow(
       "count must be a positive integer"
     );
   });
 
-  it("uses default count of 60", () => {
+  it("selects specified count with explicit weights", () => {
     const telemetry = Array.from({ length: 100 }, (_, i) =>
       createTestTelemetry({ questionNumber: i + 1, timesWrong: 1, totalSeen: 1 })
     );
 
-    const selected = selectQuestionsForReview(telemetry);
+    const selected = selectQuestionsForReview(telemetry, 60, TEST_WEIGHTS);
 
     expect(selected).toHaveLength(60);
   });
@@ -825,11 +840,11 @@ describe("mergeTelemetryUpdates", () => {
   });
 });
 
-describe("DEFAULT_WEIGHTS", () => {
+describe("TEST_WEIGHTS", () => {
   it("has expected default values", () => {
-    expect(DEFAULT_WEIGHTS.wrongWeight).toBe(2);
-    expect(DEFAULT_WEIGHTS.blankWeight).toBe(1.2);
-    expect(DEFAULT_WEIGHTS.recoveryWeight).toBe(1);
-    expect(DEFAULT_WEIGHTS.weakTimeThresholdMs).toBe(15000);
+    expect(TEST_WEIGHTS.wrongWeight).toBe(2);
+    expect(TEST_WEIGHTS.blankWeight).toBe(1.2);
+    expect(TEST_WEIGHTS.recoveryWeight).toBe(1);
+    expect(TEST_WEIGHTS.weakTimeThresholdMs).toBe(15000);
   });
 });

@@ -26,10 +26,16 @@ export interface SimulacroAttemptConfig {
 }
 
 /**
- * Review Attempt Config - Minimal required fields
+ * Review Attempt Config - Required fields for adaptive review
  */
 export interface ReviewAttemptConfig {
   questionCount: number;
+  weights: {
+    wrongWeight: number;
+    blankWeight: number;
+    recoveryWeight: number;
+    weakTimeThresholdMs: number;
+  };
 }
 
 /**

@@ -135,11 +135,23 @@ export function createAttempt(
   // Validate review config
   if (type === "review") {
     if (!config) {
-      throw new Error("Review attempt requires a config with questionCount");
+      throw new Error("Review attempt requires a config with questionCount and weights");
     }
     const revConfig = config as ReviewAttemptConfig;
     if (typeof revConfig.questionCount !== "number") {
       throw new Error("Review config must include questionCount");
+    }
+    if (
+      typeof revConfig.weights !== "object" ||
+      revConfig.weights === null ||
+      typeof revConfig.weights.wrongWeight !== "number" ||
+      typeof revConfig.weights.blankWeight !== "number" ||
+      typeof revConfig.weights.recoveryWeight !== "number" ||
+      typeof revConfig.weights.weakTimeThresholdMs !== "number"
+    ) {
+      throw new Error(
+        "Review config must include weights with wrongWeight, blankWeight, recoveryWeight, and weakTimeThresholdMs"
+      );
     }
   }
 
@@ -226,6 +238,22 @@ export function validateAttempt(attempt: unknown): attempt is Attempt {
     const config = a.config as Record<string, unknown>;
     if (typeof config.questionCount !== "number") {
       throw new Error("Review config.questionCount must be a number");
+    }
+    if (typeof config.weights !== "object" || config.weights === null) {
+      throw new Error("Review config.weights must be an object");
+    }
+    const weights = config.weights as Record<string, unknown>;
+    if (typeof weights.wrongWeight !== "number") {
+      throw new Error("Review config.weights.wrongWeight must be a number");
+    }
+    if (typeof weights.blankWeight !== "number") {
+      throw new Error("Review config.weights.blankWeight must be a number");
+    }
+    if (typeof weights.recoveryWeight !== "number") {
+      throw new Error("Review config.weights.recoveryWeight must be a number");
+    }
+    if (typeof weights.weakTimeThresholdMs !== "number") {
+      throw new Error("Review config.weights.weakTimeThresholdMs must be a number");
     }
   }
 

@@ -12,10 +12,19 @@
  * - Consecutive correct answers reduce weakness
  * - Historical mistake counts are never deleted
  * - Weakness score is derived at runtime (not stored)
+ *
+ * CRITICAL ARCHITECTURAL RULE:
+ * - NO imports from defaults.ts or any external configuration
+ * - All configuration is INJECTED via function arguments
+ * - Domain layer is pure and dependency-free
  */
 
 import type { AttemptType, QuestionTelemetry } from "./types.js";
 import { createInitialTelemetry, calculateRollingAverage } from "./telemetry.js";
+import { computeWeakScore, type WeaknessWeights } from "./weakness.js";
+
+// Re-export WeaknessWeights for backward compatibility
+export type { WeaknessWeights };
 
 /**
  * Input for telemetry update operation
@@ -29,22 +38,6 @@ export interface TelemetryUpdateInput {
   responseTimeMs: number;
   now: string;
 }
-
-/**
- * Default weights for weakness calculation
- * These are centralized and user-configurable
- */
-export const DEFAULT_WEIGHTS: {
-  wrongWeight: number;
-  blankWeight: number;
-  recoveryWeight: number;
-  weakTimeThresholdMs: number;
-} = {
-  wrongWeight: 2,
-  blankWeight: 1.2,
-  recoveryWeight: 1,
-  weakTimeThresholdMs: 15000,
-};
 
 /**
  * Update telemetry based on an answer result
@@ -191,64 +184,42 @@ export function getTelemetryByExam(
 }
 
 /**
- * Calculate weakness score for a question
- * This is a DERIVED value - never stored, computed at runtime
+ * Calculate weakness score for a question.
+ * Delegates to the M4-compliant computeWeakScore from ./weakness.js
  *
- * Formula:
+ * M4 Formula:
  *   weakness = (timesWrong * wrongWeight)
  *            + (timesBlank * blankWeight)
  *            + timePenalty
  *            - (consecutiveCorrect * recoveryWeight)
+ *   where timePenalty = (avgResponseTimeMs - weakTimeThresholdMs) / weakTimeThresholdMs
+ *                     if avgResponseTimeMs > weakTimeThresholdMs, else 0
  *   Clamp to >= 0
  *
  * @param telemetry - Question telemetry
- * @param weights - Optional custom weights
+ * @param weights - Complete weights configuration (all fields required)
  * @returns Weakness score (higher = more weak)
  */
 export function calculateWeakness(
   telemetry: QuestionTelemetry,
-  weights: Partial<typeof DEFAULT_WEIGHTS> = {}
+  weights: WeaknessWeights
 ): number {
-  const {
-    wrongWeight = DEFAULT_WEIGHTS.wrongWeight,
-    blankWeight = DEFAULT_WEIGHTS.blankWeight,
-    recoveryWeight = DEFAULT_WEIGHTS.recoveryWeight,
-    weakTimeThresholdMs = DEFAULT_WEIGHTS.weakTimeThresholdMs,
-  } = weights;
-
-  // Base weakness from mistakes
-  const wrongContribution = telemetry.timesWrong * wrongWeight;
-  const blankContribution = telemetry.timesBlank * blankWeight;
-
-  // Time penalty: slower responses indicate uncertainty
-  // If avgResponseTimeMs > threshold, add penalty proportional to excess
-  let timePenalty = 0;
-  if (telemetry.avgResponseTimeMs > weakTimeThresholdMs) {
-    // Normalize: excess time as a fraction of threshold
-    const excessRatio =
-      (telemetry.avgResponseTimeMs - weakTimeThresholdMs) / weakTimeThresholdMs;
-    // Cap at 1.0 (100% excess), scale to be comparable to mistake weights
-    timePenalty = Math.min(excessRatio, 1.0) * 0.5;
-  }
-
-  // Recovery from consecutive correct answers
-  const recovery = telemetry.consecutiveCorrect * recoveryWeight;
-
-  // Calculate final weakness
-  let weakness = wrongContribution + blankContribution + timePenalty - recovery;
-
-  // Clamp to non-negative
-  return Math.max(0, weakness);
+  return computeWeakScore(telemetry, weights);
 }
 
 /**
  * Compare two telemetry entries by weakness (descending)
  * Used for sorting questions by weakness
+ *
+ * @param a - First telemetry entry
+ * @param b - Second telemetry entry
+ * @param weights - Weights configuration for weakness calculation
+ * @returns Comparison result (negative if a < b, positive if a > b)
  */
 export function compareByWeakness(
   a: QuestionTelemetry,
   b: QuestionTelemetry,
-  weights?: Partial<typeof DEFAULT_WEIGHTS>
+  weights: WeaknessWeights
 ): number {
   const weaknessA = calculateWeakness(a, weights);
   const weaknessB = calculateWeakness(b, weights);
@@ -258,6 +229,10 @@ export function compareByWeakness(
 /**
  * Compare two telemetry entries by lastSeenAt (ascending)
  * Used for finding least recently seen questions
+ *
+ * @param a - First telemetry entry
+ * @param b - Second telemetry entry
+ * @returns Comparison result (negative if a comes first)
  */
 export function compareByLastSeen(
   a: QuestionTelemetry,
@@ -281,18 +256,27 @@ export function compareByLastSeen(
 
 /**
  * Sort telemetry by weakness (descending) for review mode
+ *
+ * @param telemetry - Array of telemetry entries
+ * @param weights - Weights configuration for weakness calculation
+ * @returns New sorted array
  */
 export function sortByWeakness(
   telemetry: QuestionTelemetry[],
-  weights?: Partial<typeof DEFAULT_WEIGHTS>
+  weights: WeaknessWeights
 ): QuestionTelemetry[] {
   return [...telemetry].sort((a, b) => compareByWeakness(a, b, weights));
 }
 
 /**
  * Sort telemetry by lastSeenAt (ascending) for finding stale questions
+ *
+ * @param telemetry - Array of telemetry entries
+ * @returns New sorted array
  */
-export function sortByLastSeen(telemetry: QuestionTelemetry[]): QuestionTelemetry[] {
+export function sortByLastSeen(
+  telemetry: QuestionTelemetry[]
+): QuestionTelemetry[] {
   return [...telemetry].sort(compareByLastSeen);
 }
 
@@ -301,14 +285,14 @@ export function sortByLastSeen(telemetry: QuestionTelemetry[]): QuestionTelemetr
  * If insufficient weak questions, fills with least recently seen
  *
  * @param telemetry - All available telemetry
- * @param count - Number of questions to select (default: 60)
- * @param weights - Optional custom weights
+ * @param count - Number of questions to select
+ * @param weights - Complete weights configuration for weakness calculation
  * @returns Selected telemetry entries
  */
 export function selectQuestionsForReview(
   telemetry: QuestionTelemetry[],
-  count: number = 60,
-  weights?: Partial<typeof DEFAULT_WEIGHTS>
+  count: number,
+  weights: WeaknessWeights
 ): QuestionTelemetry[] {
   if (count < 1) {
     throw new Error("count must be a positive integer");

@@ -79,7 +79,15 @@ function createMockAttempt(
       type: "review",
       createdAt: new Date().toISOString(),
       sourceExamIds,
-      config: { questionCount: 10 },
+      config: {
+        questionCount: 10,
+        weights: {
+          wrongWeight: 2,
+          blankWeight: 1.2,
+          recoveryWeight: 1,
+          weakTimeThresholdMs: 15000,
+        },
+      },
       parentAttemptId,
     };
   }
