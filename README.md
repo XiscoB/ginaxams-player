@@ -1,58 +1,122 @@
-# ginaxams-player
+# GinaXams Player
 
-ginaxams-player is a browser-first exam practice platform focused on fast import, structured practice, and measurable progress.
+GinaXams Player is a fully local, adaptive exam training engine built for structured preparation of official exams.
 
-It is a static single-page application (no backend, no build step) designed to run locally or on GitHub Pages.
+It runs entirely in the browser, requires no backend, and stores all data locally using IndexedDB.
 
-## Why this project matters
+---
 
-- **Product mindset**: Designed for real user flow (import → organize → practice → review → improve)
-- **Frontend engineering**: Vanilla JavaScript SPA with modular architecture and responsive UI
-- **Data handling**: Local-first persistence with IndexedDB and backup/restore workflows
-- **Internationalization**: Built-in bilingual interface (English / Spanish)
+## Vision
 
-## Core capabilities
+This project evolved from a simple JSON exam player into a deterministic, telemetry-driven training engine.
 
-- Import exam files in JSON format via click or drag & drop
-- Organize content into folders
-- Practice with optional question/answer shuffling
-- Get instant feedback and final score summaries
-- Review all questions or only failed ones
-- Track last/best score and number of attempts
-- Export and restore complete local library
+The goal is not just to practice questions —  
+but to simulate real exam conditions and force targeted improvement through adaptive review.
 
-## Tech stack
+---
 
-- HTML5 + CSS3
-- Vanilla JavaScript (ES6+)
-- IndexedDB for local persistence
-- Static hosting compatible (GitHub Pages)
+## Core Characteristics
 
-## Run locally
+- Fully client-side (no backend)
+- Static-host deployable (GitHub Pages compatible)
+- Local-first persistence (IndexedDB)
+- Privacy-respecting (no data leaves the browser)
+- Deterministic and testable domain logic
+- Strict TypeScript architecture
 
-1. Clone this repository
-2. Open `index.html` in your browser
+---
 
-No installation or build step required.
+## v1.1 Capabilities
 
-## Deploy to GitHub Pages
+### 1. Golden Data Schema (v2.0)
 
-1. Push repository to GitHub
-2. Go to **Settings → Pages**
-3. Select source: branch root (`/`)
-4. Save and open the generated URL
+All exams must follow a strict schema with:
 
-## Exam JSON format (minimum)
+- Categorization
+- Legal article references
+- Literal legal citations
+- Pedagogical failure explanations
+
+No legacy formats supported.
+
+---
+
+### 2. Three Execution Modes
+
+#### Free Mode
+
+Learning mode with instant feedback.
+Does not update telemetry.
+
+#### Simulacro Mode
+
+Realistic exam simulation.
+
+- Weighted multi-exam selection
+- Random sampling without repetition
+- Configurable:
+  - Question count
+  - Time limit
+  - Penalty
+  - Reward
+- Auto-submit on timeout
+- Generates telemetry
+
+#### Review Mode (Adaptive Engine)
+
+Uses telemetry to generate a weakness-ranked question set.
+
+- Default 60 questions (configurable)
+- Weakness-based prioritization
+- Feeds on itself
+- Persistent Attempt records
+
+---
+
+### 3. Telemetry Engine
+
+Tracked per question:
+
+- timesCorrect
+- timesWrong
+- timesBlank
+- consecutiveCorrect
+- avgResponseTimeMs
+- totalSeen
+- lastSeenAt
+
+Weakness is derived, not stored.
+
+Telemetry can be:
+
+- Reset per exam
+- Reset globally
+
+Deleting an exam deletes its telemetry and related attempts.
+
+---
+
+## Golden Data JSON Format (v2.0)
+
+### Required Structure
 
 ```json
 {
-  "exam_id": "sample-exam",
-  "title": "Sample Exam",
+  "schema_version": "2.0",
+  "exam_id": "unique-id",
+  "title": "Exam Title",
+  "categorias": ["Constitucion", "TREBEP"],
   "total_questions": 2,
   "questions": [
     {
       "number": 1,
       "text": "Question text",
+      "categoria": ["Constitucion"],
+      "articulo_referencia": "Art. 103 CE",
+      "feedback": {
+        "cita_literal": "Literal text from the BOE...",
+        "explicacion_fallo": "Explanation of why the wrong answer is incorrect..."
+      },
       "answers": [
         { "letter": "A", "text": "Option A", "isCorrect": false },
         { "letter": "B", "text": "Option B", "isCorrect": true }
@@ -61,25 +125,3 @@ No installation or build step required.
   ]
 }
 ```
-
-## Project structure
-
-```
-ginaxams-player/
-├── index.html
-├── src/js/
-│   ├── app.js
-│   ├── db.js
-│   └── practice.js
-├── practice/
-│   ├── examples/
-│   │   └── example_exam.json
-│   └── lang/
-│       ├── en.js
-└──     └── es.js
-
-```
-
-## License
-
-MIT
