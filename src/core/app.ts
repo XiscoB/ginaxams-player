@@ -14,21 +14,17 @@ import type {
   Exam,
   Question,
   Folder,
-  ExamProgress,
-  ExportData,
   Translations,
   Attempt,
   FreeAttempt,
   SimulacroAttempt,
   ReviewAttempt,
-  AttemptSessionState,
   QuestionTelemetry,
 } from "../domain/types.js";
 import { storage } from "../storage/db.js";
 import { validateExam } from "../domain/validation.js";
 import { PracticeManager } from "../modes/practice.js";
 import { getTranslations, detectBrowserLanguage, type LanguageCode } from "../i18n/index.js";
-import { calculatePercentage } from "../domain/scoring.js";
 import { AttemptRunner } from "../domain/attemptRunner.js";
 import { shuffleArray } from "../domain/scoring.js";
 import { selectReviewQuestions } from "../domain/reviewSelection.js";
@@ -64,21 +60,12 @@ export class App {
   private exams: StoredExam[] = [];
   private folders: Folder[] = [];
   private translations: Translations = getTranslations("en");
-  private currentLang: LanguageCode = "en";
-  private templateJSON: Record<string, unknown> | null = null;
 
   // View State Machine
-  private currentView: View = "library";
   private pendingAttempt: PendingAttempt | null = null;
 
   // Attempt Execution State
   private currentRunner: AttemptRunner | null = null;
-  private currentAttempt: Attempt | null = null;
-
-  // UI State
-  private currentOnboardingStep = 1;
-  private totalOnboardingSteps = 5;
-  private pendingExternalLink: string | null = null;
 
   constructor() {
     // Initialize PracticeManager as dumb renderer
@@ -126,7 +113,6 @@ export class App {
   // ============================================================================
 
   private setView(view: View): void {
-    this.currentView = view;
     this.hideAllScreens();
 
     switch (view) {
@@ -338,7 +324,6 @@ export class App {
 
     // Create Attempt entity
     const attempt = this.createAttempt(mode, examId, questions.length);
-    this.currentAttempt = attempt;
 
     // Persist Attempt BEFORE runner instantiation
     try {
@@ -350,7 +335,7 @@ export class App {
     }
 
     // Create telemetry lookup function
-    const getTelemetry = (qExamId: string, questionNumber: number): QuestionTelemetry | undefined => {
+    const getTelemetry = (_qExamId: string, _questionNumber: number): QuestionTelemetry | undefined => {
       // Synchronous lookup - storage will be queried during submitAnswer
       return undefined;
     };
@@ -544,7 +529,6 @@ export class App {
     const onboarding = document.getElementById("onboardingOverlay");
     if (onboarding) {
       onboarding.classList.remove("hidden");
-      this.currentOnboardingStep = 1;
       this.updateOnboardingStep();
     }
   }
@@ -558,7 +542,6 @@ export class App {
   // ============================================================================
 
   private setLanguage(lang: LanguageCode): void {
-    this.currentLang = lang;
     this.translations = getTranslations(lang);
     localStorage.setItem("ginaxams_lang", lang);
     this.updatePageText();
@@ -755,17 +738,20 @@ export class App {
       const data = JSON.parse(text);
 
       // Validate exam format
-      const validation = validateExam(data);
-      if (!validation.valid) {
-        alert(`${this.translations.invalidExamFormat}: ${validation.errors?.join(", ")}`);
+      let validatedExam: Exam;
+      try {
+        validatedExam = validateExam(data);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown validation error";
+        alert(`${this.translations.invalidExamFormat}: ${message}`);
         return;
       }
 
       // Save exam
       const storedExam: StoredExam = {
-        id: data.exam_id || crypto.randomUUID(),
-        title: data.title || "Untitled Exam",
-        data: data as Exam,
+        id: validatedExam.exam_id || crypto.randomUUID(),
+        title: validatedExam.title || "Untitled Exam",
+        data: validatedExam,
         addedAt: new Date().toISOString(),
         folderId: "uncategorized",
       };
@@ -972,71 +958,9 @@ export class App {
   }
 
   // ============================================================================
-  // Legacy Progress Methods (Preserved for UI stats during migration)
+  // Legacy Progress Methods (REMOVED in Phase 7)
+  // All stats now derived from Attempt data via attemptSelectors
   // ============================================================================
-
-  async saveProgress(examId: string, questionNum: number, wasCorrect: boolean): Promise<void> {
-    // Legacy method - progress writes disabled in Phase 1
-    // Kept for potential future reference
-  }
-
-  async incrementAttempt(examId: string): Promise<void> {
-    try {
-      const p = await this.storage.getProgress(examId);
-      if (!p) {
-        const newProgress: ExamProgress = {
-          examId,
-          questions: {},
-          correct: 0,
-          total: 0,
-          lastPractice: null,
-          maxCorrect: 0,
-          attempts: 1,
-          lastScore: null,
-          bestScore: null,
-        };
-        await this.storage.saveProgress(newProgress);
-        return;
-      }
-
-      p.attempts = (p.attempts ?? 0) + 1;
-      await this.storage.saveProgress(p);
-    } catch (e) {
-      console.warn("Increment attempt failed", e);
-    }
-  }
-
-  async saveScore(examId: string, score: number): Promise<{ lastScore: number | null; bestScore: number | null }> {
-    try {
-      let p = await this.storage.getProgress(examId);
-      if (!p) {
-        p = {
-          examId,
-          questions: {},
-          correct: 0,
-          total: 0,
-          lastPractice: null,
-          maxCorrect: 0,
-          attempts: 0,
-          lastScore: null,
-          bestScore: null,
-        };
-      }
-
-      p.lastScore = score;
-
-      if (p.bestScore === null || score > p.bestScore) {
-        p.bestScore = score;
-      }
-
-      await this.storage.saveProgress(p);
-
-      return { lastScore: p.lastScore, bestScore: p.bestScore };
-    } catch (e) {
-      console.warn("Save score failed", e);
-      return { lastScore: score, bestScore: score };
-    }
-  }
 
   getQuestionResult(_examId: string, _questionNum: number): boolean | null {
     // Legacy compatibility - returns null
@@ -1051,7 +975,7 @@ export class App {
     try {
       const response = await fetch("./template.json");
       if (response.ok) {
-        this.templateJSON = await response.json();
+        await response.json();
       }
     } catch (e) {
       console.log("No template.json found");

@@ -92,7 +92,7 @@ export class PracticeManager {
     }
 
     // Render answers
-    this.renderAnswers(question.answers, answer, hasAnswered, T);
+    this.renderAnswers(question.answers, answer, hasAnswered);
 
     // Update navigation buttons
     this.updateNavigation(state, hasAnswered, T);
@@ -128,7 +128,7 @@ export class PracticeManager {
     }
 
     // Render review summary
-    this.renderReviewSummary(state, T);
+    this.renderReviewSummary(state);
   }
 
   /**
@@ -137,8 +137,7 @@ export class PracticeManager {
   private renderAnswers(
     answers: { letter: string; text: string; isCorrect: boolean }[],
     answer: { selectedIndex: number | null; isCorrect: boolean } | undefined,
-    hasAnswered: boolean,
-    T: Translations
+    hasAnswered: boolean
   ): void {
     const container = document.getElementById("answersContainer");
     if (!container) return;
@@ -286,7 +285,7 @@ export class PracticeManager {
   /**
    * Render review summary for results screen
    */
-  private renderReviewSummary(state: AttemptSessionState, T: Translations): void {
+  private renderReviewSummary(state: AttemptSessionState): void {
     const summary = document.getElementById("reviewSummary");
     if (!summary) return;
 

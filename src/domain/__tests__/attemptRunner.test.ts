@@ -5,9 +5,9 @@
  * Verifies deterministic behavior of the attempt execution engine.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { AttemptRunner } from "../attemptRunner.js";
-import type { Attempt, Question, FreeAttempt, SimulacroAttempt, ReviewAttempt, QuestionTelemetry } from "../types.js";
+import type { Question, FreeAttempt, SimulacroAttempt, ReviewAttempt, QuestionTelemetry } from "../types.js";
 
 // ============================================================================
 // Test Fixtures

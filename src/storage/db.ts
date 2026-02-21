@@ -2,26 +2,24 @@
  * Storage Service - IndexedDB wrapper for exam data persistence
  *
  * This module provides a clean interface for storing and retrieving
- * exams, folders, progress, attempts, and question telemetry using IndexedDB.
+ * exams, folders, attempts, and question telemetry using IndexedDB.
  */
 
 import type {
   StoredExam,
   Folder,
-  ExamProgress,
   ExportData,
   Attempt,
   QuestionTelemetry,
 } from "../domain/types.js";
 
 const DB_NAME = "ginax_db";
-const DB_VERSION = 3; // M2: Incremented for attempts and questionTelemetry stores
+const DB_VERSION = 4; // Phase 7: Removed legacy progress store
 
 // Store names
 const STORES = {
   EXAMS: "exams",
   FOLDERS: "folders",
-  PROGRESS: "progress",
   ATTEMPTS: "attempts",
   QUESTION_TELEMETRY: "questionTelemetry",
 } as const;
@@ -60,63 +58,64 @@ export class ExamStorage {
         const db = (event.target as IDBOpenDBRequest).result;
         const oldVersion = event.oldVersion;
 
-        // M2 Migration: Handle schema upgrades
-        if (oldVersion < 2) {
-          // v1 to v2: Clean break - delete and recreate existing stores
-          if (db.objectStoreNames.contains(STORES.EXAMS)) {
-            db.deleteObjectStore(STORES.EXAMS);
+        // Phase 7: v3 to v4 migration - remove legacy progress store
+        if (oldVersion < 4) {
+          // Delete legacy progress store if it exists
+          if (db.objectStoreNames.contains("progress")) {
+            db.deleteObjectStore("progress");
           }
-          if (db.objectStoreNames.contains(STORES.FOLDERS)) {
-            db.deleteObjectStore(STORES.FOLDERS);
-          }
-          if (db.objectStoreNames.contains(STORES.PROGRESS)) {
-            db.deleteObjectStore(STORES.PROGRESS);
-          }
-
-          // Create Exams store: keyPath = id
-          const examStore = db.createObjectStore(STORES.EXAMS, {
-            keyPath: "id",
-          });
-          examStore.createIndex("folderId", "folderId", { unique: false });
-          examStore.createIndex("addedAt", "addedAt", { unique: false });
-
-          // Create Folders store: keyPath = id
-          const folderStore = db.createObjectStore(STORES.FOLDERS, {
-            keyPath: "id",
-          });
-          folderStore.createIndex("name", "name", { unique: false });
-
-          // Create Progress store: keyPath = examId
-          db.createObjectStore(STORES.PROGRESS, { keyPath: "examId" });
         }
 
-        // M2: v2 to v3 migration - add new stores without deleting existing
-        if (oldVersion < 3) {
+        // v1/v2 to v4 migration: create core stores
+        if (oldVersion < 2) {
+          // Create Exams store: keyPath = id
+          if (!db.objectStoreNames.contains(STORES.EXAMS)) {
+            const examStore = db.createObjectStore(STORES.EXAMS, {
+              keyPath: "id",
+            });
+            examStore.createIndex("folderId", "folderId", { unique: false });
+            examStore.createIndex("addedAt", "addedAt", { unique: false });
+          }
+
+          // Create Folders store: keyPath = id
+          if (!db.objectStoreNames.contains(STORES.FOLDERS)) {
+            const folderStore = db.createObjectStore(STORES.FOLDERS, {
+              keyPath: "id",
+            });
+            folderStore.createIndex("name", "name", { unique: false });
+          }
+        }
+
+        // v2/v3 to v4 migration: create Attempts and Telemetry stores
+        if (oldVersion < 4) {
           // Create Attempts store: keyPath = id
-          const attemptsStore = db.createObjectStore(STORES.ATTEMPTS, {
-            keyPath: "id",
-          });
-          attemptsStore.createIndex("type", "type", { unique: false });
-          attemptsStore.createIndex("createdAt", "createdAt", {
-            unique: false,
-          });
+          if (!db.objectStoreNames.contains(STORES.ATTEMPTS)) {
+            const attemptsStore = db.createObjectStore(STORES.ATTEMPTS, {
+              keyPath: "id",
+            });
+            attemptsStore.createIndex("type", "type", { unique: false });
+            attemptsStore.createIndex("createdAt", "createdAt", {
+              unique: false,
+            });
+          }
 
           // Create QuestionTelemetry store: keyPath = id
-          const telemetryStore = db.createObjectStore(
-            STORES.QUESTION_TELEMETRY,
-            {
-              keyPath: "id",
-            }
-          );
-          // Composite index for examId + questionNumber lookups
-          telemetryStore.createIndex("examId_questionNumber", [
-            "examId",
-            "questionNumber",
-          ]);
-          telemetryStore.createIndex("examId", "examId", { unique: false });
-          telemetryStore.createIndex("lastSeenAt", "lastSeenAt", {
-            unique: false,
-          });
+          if (!db.objectStoreNames.contains(STORES.QUESTION_TELEMETRY)) {
+            const telemetryStore = db.createObjectStore(
+              STORES.QUESTION_TELEMETRY,
+              {
+                keyPath: "id",
+              }
+            );
+            telemetryStore.createIndex("examId_questionNumber", [
+              "examId",
+              "questionNumber",
+            ]);
+            telemetryStore.createIndex("examId", "examId", { unique: false });
+            telemetryStore.createIndex("lastSeenAt", "lastSeenAt", {
+              unique: false,
+            });
+          }
         }
       };
     });
@@ -214,8 +213,8 @@ export class ExamStorage {
   }
 
   /**
-   * Delete an exam and its associated progress, telemetry, and attempts
-   * M2: Cascade deletion for telemetry and attempts
+   * Delete an exam and its associated telemetry and attempts
+   * Phase 7: Cascade deletion for telemetry and attempts (progress removed)
    */
   async deleteExam(id: string): Promise<void> {
     await this.ready();
@@ -224,7 +223,6 @@ export class ExamStorage {
       this.transaction(
         [
           STORES.EXAMS,
-          STORES.PROGRESS,
           STORES.QUESTION_TELEMETRY,
           STORES.ATTEMPTS,
         ],
@@ -233,10 +231,8 @@ export class ExamStorage {
         .then((tx) => {
           // Delete exam
           tx.objectStore(STORES.EXAMS).delete(id);
-          // Delete associated progress
-          tx.objectStore(STORES.PROGRESS).delete(id);
 
-          // M2: Delete telemetry for this exam
+          // Delete telemetry for this exam
           const telemetryStore = tx.objectStore(STORES.QUESTION_TELEMETRY);
           const telemetryIndex = telemetryStore.index("examId");
           const telemetryRequest = telemetryIndex.getAllKeys(id);
@@ -349,48 +345,7 @@ export class ExamStorage {
   }
 
   // ============================================================================
-  // Progress Operations (Legacy - kept for compatibility)
-  // ============================================================================
-
-  /**
-   * Save progress for an exam
-   */
-  async saveProgress(progress: ExamProgress): Promise<void> {
-    await this.ready();
-
-    return new Promise((resolve, reject) => {
-      this.transaction([STORES.PROGRESS], "readwrite")
-        .then((tx) => {
-          const request = tx.objectStore(STORES.PROGRESS).put(progress);
-
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
-    });
-  }
-
-  /**
-   * Get progress for a specific exam
-   */
-  async getProgress(examId: string): Promise<ExamProgress | undefined> {
-    await this.ready();
-
-    return new Promise((resolve, reject) => {
-      this.transaction([STORES.PROGRESS], "readonly")
-        .then((tx) => {
-          const request = tx.objectStore(STORES.PROGRESS).get(examId);
-
-          request.onsuccess = () =>
-            resolve(request.result as ExamProgress | undefined);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
-    });
-  }
-
-  // ============================================================================
-  // Attempt Operations (M2)
+  // Attempt Operations
   // ============================================================================
 
   /**
@@ -692,28 +647,18 @@ export class ExamStorage {
    * Export all data
    */
   async exportData(): Promise<ExportData> {
-    const [exams, folders, progress, attempts, telemetry] = await Promise.all([
+    const [exams, folders, attempts, telemetry] = await Promise.all([
       this.getExams(),
       this.getFolders(),
-      new Promise<ExamProgress[]>((resolve, reject) => {
-        this.transaction([STORES.PROGRESS], "readonly")
-          .then((tx) => {
-            const request = tx.objectStore(STORES.PROGRESS).getAll();
-            request.onsuccess = () => resolve(request.result as ExamProgress[]);
-            request.onerror = () => reject(request.error);
-          })
-          .catch(reject);
-      }),
       this.getAllAttempts(),
       this.getAllQuestionTelemetry(),
     ]);
 
     return {
-      version: 2, // M2: Updated export version
+      version: 3, // Phase 7: Removed legacy progress store
       exportedAt: new Date().toISOString(),
       exams,
       folders,
-      progress,
       attempts,
       telemetry,
     };
@@ -734,7 +679,6 @@ export class ExamStorage {
         [
           STORES.EXAMS,
           STORES.FOLDERS,
-          STORES.PROGRESS,
           STORES.ATTEMPTS,
           STORES.QUESTION_TELEMETRY,
         ],
@@ -752,20 +696,14 @@ export class ExamStorage {
             });
           }
 
-          if (data.progress) {
-            data.progress.forEach((item) => {
-              tx.objectStore(STORES.PROGRESS).put(item);
-            });
-          }
-
-          // M2: Import attempts if present
+          // Import attempts if present
           if (data.attempts) {
             data.attempts.forEach((item) => {
               tx.objectStore(STORES.ATTEMPTS).put(item);
             });
           }
 
-          // M2: Import telemetry if present
+          // Import telemetry if present
           if (data.telemetry) {
             data.telemetry.forEach((item) => {
               tx.objectStore(STORES.QUESTION_TELEMETRY).put(item);
@@ -793,7 +731,6 @@ export class ExamStorage {
         [
           STORES.EXAMS,
           STORES.FOLDERS,
-          STORES.PROGRESS,
           STORES.ATTEMPTS,
           STORES.QUESTION_TELEMETRY,
         ],
@@ -802,7 +739,6 @@ export class ExamStorage {
         .then((tx) => {
           tx.objectStore(STORES.EXAMS).clear();
           tx.objectStore(STORES.FOLDERS).clear();
-          tx.objectStore(STORES.PROGRESS).clear();
           tx.objectStore(STORES.ATTEMPTS).clear();
           tx.objectStore(STORES.QUESTION_TELEMETRY).clear();
 

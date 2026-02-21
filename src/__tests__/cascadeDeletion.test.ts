@@ -132,7 +132,6 @@ class MockExamStorage {
       stores: new Map([
         ["exams", { data: new Map(), indexes: new Map() }],
         ["folders", { data: new Map(), indexes: new Map() }],
-        ["progress", { data: new Map(), indexes: new Map() }],
         ["attempts", { data: new Map(), indexes: new Map() }],
         ["questionTelemetry", { data: new Map(), indexes: new Map() }],
       ]),
@@ -166,15 +165,11 @@ class MockExamStorage {
   // Cascade deletion implementation (mirrors real storage)
   async deleteExam(id: string): Promise<void> {
     const examStore = this.getStore("exams");
-    const progressStore = this.getStore("progress");
     const telemetryStore = this.getStore("questionTelemetry");
     const attemptsStore = this.getStore("attempts");
 
     // Delete exam
     examStore.data.delete(id);
-
-    // Delete associated progress
-    progressStore.data.delete(id);
 
     // Delete telemetry for this exam
     const telemetryToDelete: string[] = [];

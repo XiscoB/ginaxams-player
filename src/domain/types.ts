@@ -55,6 +55,7 @@ export interface SimulacroAttempt {
   sourceExamIds: string[];
   config: SimulacroAttemptConfig;
   parentAttemptId?: string;
+  result?: AttemptResult;
 }
 
 /**
@@ -67,6 +68,7 @@ export interface ReviewAttempt {
   sourceExamIds: string[];
   config: ReviewAttemptConfig;
   parentAttemptId?: string;
+  result?: AttemptResult;
 }
 
 /**
@@ -79,6 +81,7 @@ export interface FreeAttempt {
   sourceExamIds: string[];
   config: FreeAttemptConfig;
   parentAttemptId?: string;
+  result?: AttemptResult;
 }
 
 /**
@@ -164,29 +167,11 @@ export interface Folder {
   order: number;
 }
 
-export interface QuestionProgress {
-  wasCorrect: boolean;
-  lastAttempt: string;
-}
-
-export interface ExamProgress {
-  examId: string;
-  questions: Record<number, QuestionProgress>;
-  correct: number;
-  total: number;
-  lastPractice: string | null;
-  maxCorrect: number;
-  attempts: number;
-  lastScore: number | null;
-  bestScore: number | null;
-}
-
 export interface ExportData {
   version: number;
   exportedAt: string;
   exams: StoredExam[];
   folders: Folder[];
-  progress: ExamProgress[];
   attempts?: Attempt[];
   telemetry?: QuestionTelemetry[];
 }
