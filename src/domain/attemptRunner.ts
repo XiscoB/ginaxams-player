@@ -95,15 +95,71 @@ export class AttemptRunner {
    * Sets the start timestamp and returns initial state.
    * Must be called before submitAnswer.
    *
+   * For simulacro mode, initializes remainingTimeMs from config.timeLimitMs.
+   *
    * @returns Initial session state
    */
   start(): AttemptSessionState {
+    // Only simulacro gets remainingTimeMs
+    const remainingTimeMs = this.attempt.type === "simulacro" 
+      ? this.config.timeLimitMs 
+      : undefined;
+
     this.state = {
       ...this.state,
       startedAt: Date.now(),
-      remainingTimeMs: this.config.timeLimitMs,
+      remainingTimeMs,
     };
     this.answerStartTime = this.state.startedAt;
+    return this.getState();
+  }
+
+  /**
+   * Advance timer by deltaMs (deterministic time progression).
+   *
+   * Only active for simulacro mode. For other modes, returns state unchanged.
+   * When remainingTimeMs reaches 0, automatically calls finish().
+   *
+   * Deterministic: same sequence of tick() calls produces same results.
+   * No Date.now() used. No internal scheduling.
+   *
+   * @param deltaMs - Time to advance in milliseconds (must be >= 0)
+   * @returns Updated session state
+   */
+  tick(deltaMs: number): AttemptSessionState {
+    // Only simulacro has timer
+    if (this.attempt.type !== "simulacro") {
+      return this.getState();
+    }
+
+    // Already finished - no further ticking
+    if (this.state.isFinished) {
+      return this.getState();
+    }
+
+    // Validate deltaMs
+    if (deltaMs < 0) {
+      throw new Error("tick() deltaMs must be non-negative");
+    }
+
+    // No time limit configured - nothing to tick
+    if (this.state.remainingTimeMs === undefined) {
+      return this.getState();
+    }
+
+    // Decrement remaining time (deterministic)
+    const newRemaining = Math.max(0, this.state.remainingTimeMs - deltaMs);
+
+    this.state = {
+      ...this.state,
+      remainingTimeMs: newRemaining,
+    };
+
+    // Auto-finish if time expired
+    if (newRemaining === 0) {
+      return this.finish();
+    }
+
     return this.getState();
   }
 

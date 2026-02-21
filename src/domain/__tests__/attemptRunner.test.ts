@@ -621,4 +621,218 @@ describe("AttemptRunner", () => {
       expect(updates[0].next.lastSeenAt <= after).toBe(true);
     });
   });
+
+  describe("Timer (Simulacro Only)", () => {
+    it("should initialize remainingTimeMs for simulacro", () => {
+      const attempt = createSimulacroAttempt("timer-init");
+      const questions = createMockQuestions(10);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 600000 });
+
+      const state = runner.start();
+
+      expect(state.remainingTimeMs).toBe(600000);
+    });
+
+    it("should not initialize remainingTimeMs for free mode", () => {
+      const attempt = createFreeAttempt("timer-free");
+      const questions = createMockQuestions(10);
+      const runner = new AttemptRunner(attempt, questions);
+
+      const state = runner.start();
+
+      expect(state.remainingTimeMs).toBeUndefined();
+    });
+
+    it("should not initialize remainingTimeMs for review mode", () => {
+      const attempt = createReviewAttempt("timer-review");
+      const questions = createMockQuestions(10);
+      const runner = new AttemptRunner(attempt, questions);
+
+      const state = runner.start();
+
+      expect(state.remainingTimeMs).toBeUndefined();
+    });
+
+    it("should decrease remainingTimeMs deterministically", () => {
+      const attempt = createSimulacroAttempt("timer-tick");
+      const questions = createMockQuestions(10);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 600000 });
+
+      runner.start();
+      const state1 = runner.tick(5000);
+      expect(state1.remainingTimeMs).toBe(595000);
+
+      const state2 = runner.tick(10000);
+      expect(state2.remainingTimeMs).toBe(585000);
+    });
+
+    it("should clamp remainingTimeMs at zero", () => {
+      const attempt = createSimulacroAttempt("timer-clamp");
+      const questions = createMockQuestions(10);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 10000 });
+
+      runner.start();
+      const state = runner.tick(15000); // Tick more than remaining
+
+      expect(state.remainingTimeMs).toBe(0);
+    });
+
+    it("should auto-finish when time reaches zero", () => {
+      const attempt = createSimulacroAttempt("timer-finish");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 10000 });
+
+      runner.start();
+      const state = runner.tick(10000);
+
+      expect(state.isFinished).toBe(true);
+      expect(state.result).toBeDefined();
+      expect(state.result?.correct).toBe(0);
+      expect(state.result?.blank).toBe(5); // All unanswered = blank
+    });
+
+    it("should not accept answers after timer expiry", () => {
+      const attempt = createSimulacroAttempt("timer-lock");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 10000 });
+
+      runner.start();
+      runner.tick(10000); // Time expires, auto-finishes
+
+      expect(() => runner.submitAnswer(2)).toThrow("already finished");
+    });
+
+    it("should not allow next() after timer expiry", () => {
+      const attempt = createSimulacroAttempt("timer-next-lock");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 10000 });
+
+      runner.start();
+      runner.tick(10000); // Time expires
+
+      const state = runner.next();
+      expect(state.isFinished).toBe(true);
+      expect(state.currentIndex).toBe(0); // No change
+    });
+
+    it("should accumulate multiple tick() calls", () => {
+      const attempt = createSimulacroAttempt("timer-accum");
+      const questions = createMockQuestions(10);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 60000 });
+
+      runner.start();
+      runner.tick(10000);
+      runner.tick(20000);
+      runner.tick(5000);
+      const state = runner.getState();
+
+      expect(state.remainingTimeMs).toBe(25000); // 60000 - 35000
+    });
+
+    it("should be deterministic: tick(5000)+tick(5000) equals tick(10000)", () => {
+      const attempt1 = createSimulacroAttempt("timer-det1");
+      const attempt2 = createSimulacroAttempt("timer-det2");
+      const questions = createMockQuestions(5);
+
+      // Runner 1: Two 5-second ticks
+      const runner1 = new AttemptRunner(attempt1, questions, { timeLimitMs: 60000 });
+      runner1.start();
+      runner1.tick(5000);
+      runner1.tick(5000);
+      const state1 = runner1.getState();
+
+      // Runner 2: One 10-second tick
+      const runner2 = new AttemptRunner(attempt2, questions, { timeLimitMs: 60000 });
+      runner2.start();
+      runner2.tick(10000);
+      const state2 = runner2.getState();
+
+      expect(state1.remainingTimeMs).toBe(state2.remainingTimeMs);
+      expect(state1.remainingTimeMs).toBe(50000); // 60000 - 10000
+    });
+
+    it("should ignore tick() for free attempts", () => {
+      const attempt = createFreeAttempt("timer-free-ignore");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions);
+
+      runner.start();
+      const state = runner.tick(5000);
+
+      expect(state.remainingTimeMs).toBeUndefined();
+      expect(state.isFinished).toBe(false);
+    });
+
+    it("should ignore tick() for review attempts", () => {
+      const attempt = createReviewAttempt("timer-review-ignore");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions);
+
+      runner.start();
+      const state = runner.tick(5000);
+
+      expect(state.remainingTimeMs).toBeUndefined();
+      expect(state.isFinished).toBe(false);
+    });
+
+    it("should throw on negative deltaMs", () => {
+      const attempt = createSimulacroAttempt("timer-negative");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 60000 });
+
+      runner.start();
+      expect(() => runner.tick(-1000)).toThrow("deltaMs must be non-negative");
+    });
+
+    it("should not tick further after already finished", () => {
+      const attempt = createSimulacroAttempt("timer-no-double-finish");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 10000 });
+
+      runner.start();
+      const state1 = runner.tick(10000); // Expires and finishes
+      expect(state1.isFinished).toBe(true);
+
+      const state2 = runner.tick(5000); // Try to tick again
+      expect(state2.isFinished).toBe(true);
+      expect(state2.remainingTimeMs).toBe(0);
+    });
+
+    it("should generate telemetry updates on auto-finish", () => {
+      const attempt = createSimulacroAttempt("timer-telemetry");
+      const questions = createMockQuestions(3);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 5000 });
+
+      runner.start();
+      // Answer one question before timeout
+      runner.submitAnswer(2);
+      runner.next();
+
+      // Let timer expire
+      runner.tick(5000);
+
+      const updates = runner.getPendingTelemetryUpdates();
+      expect(updates.length).toBeGreaterThan(0);
+      expect(updates[0].next.totalSeen).toBe(1);
+    });
+
+    it("should finish with correct scoring after partial answers", () => {
+      const attempt = createSimulacroAttempt("timer-partial");
+      const questions = createMockQuestions(5);
+      const runner = new AttemptRunner(attempt, questions, { timeLimitMs: 10000 });
+
+      runner.start();
+      runner.submitAnswer(2); // Correct (Q1)
+      runner.next();
+      runner.submitAnswer(0); // Wrong (Q2)
+
+      // Time expires
+      const state = runner.tick(10000);
+
+      expect(state.isFinished).toBe(true);
+      expect(state.result?.correct).toBe(1);
+      expect(state.result?.wrong).toBe(1);
+      expect(state.result?.blank).toBe(3); // Q3, Q4, Q5 unanswered
+    });
+  });
 });
