@@ -195,10 +195,8 @@ export class PracticeManager {
     const q = this.currentQuestions[this.currentIndex];
     const isCorrect = q.answers[answerIndex]?.isCorrect ?? false;
 
-    // Save progress
-    if (this.examData) {
-      this.config.saveProgress(this.examData.exam_id, q.number, isCorrect);
-    }
+    // Progress persistence disabled (Phase 1: Execution Isolation)
+    // Legacy progress writes removed; telemetry will be wired in Phase 2
 
     if (isCorrect) {
       this.renderQuestion(); // Show feedback

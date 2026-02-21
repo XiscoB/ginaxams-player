@@ -370,6 +370,72 @@ export interface Translations {
 }
 
 // ============================================================================
+// Attempt Runner Types
+// ============================================================================
+
+/**
+ * Result of answering a single question in an attempt session
+ */
+export interface SessionAnswerResult {
+  selectedIndex: number | null;
+  isCorrect: boolean;
+}
+
+/**
+ * Final result of a completed attempt
+ */
+export interface AttemptResult {
+  correct: number;
+  wrong: number;
+  blank: number;
+  score: number;
+  percentage: number;
+}
+
+/**
+ * State snapshot for an active or completed attempt session
+ */
+export interface AttemptSessionState {
+  attemptId: string;
+  attemptType: "free" | "simulacro" | "review";
+
+  questions: Question[];
+  currentIndex: number;
+
+  answers: Record<number, SessionAnswerResult>;
+
+  startedAt: number;
+  remainingTimeMs?: number;
+
+  isFinished: boolean;
+  result?: AttemptResult;
+}
+
+// ============================================================================
+// Telemetry Update Types
+// ============================================================================
+
+/**
+ * Represents a deterministic telemetry state transition
+ * Produced by AttemptRunner, consumed by orchestration layer
+ */
+export interface TelemetryUpdate {
+  examId: string;
+  questionNumber: number;
+  previous: QuestionTelemetry | undefined;
+  next: QuestionTelemetry;
+}
+
+/**
+ * Function type for looking up existing telemetry
+ * Injected into AttemptRunner for pure telemetry computation
+ */
+export type TelemetryLookup = (
+  examId: string,
+  questionNumber: number
+) => QuestionTelemetry | undefined;
+
+// ============================================================================
 // Telemetry Types (for future use - scaffolding only)
 // ============================================================================
 
