@@ -33,6 +33,7 @@ import { AttemptRunner } from "../domain/attemptRunner.js";
 import { shuffleArray } from "../domain/scoring.js";
 import { selectReviewQuestions } from "../domain/reviewSelection.js";
 import { DEFAULTS } from "../domain/defaults.js";
+import { getAttemptStatsForExam } from "../domain/attemptSelectors.js";
 
 /**
  * View state for UI routing
@@ -271,15 +272,8 @@ export class App {
     // Render results via PracticeManager
     this.practiceManager.renderResults(state);
 
-    // Update legacy progress (preserved for UI stats during migration)
-    if (this.currentAttempt) {
-      const examId = this.currentAttempt.sourceExamIds[0];
-      const percentage = state.result.percentage;
-
-      // Fire-and-forget legacy progress updates
-      this.saveScore(examId, percentage).catch(console.warn);
-      this.incrementAttempt(examId).catch(console.warn);
-    }
+    // Note: Legacy progress updates removed - stats now derived from Attempt data
+    // Phase 6.5: Attempts are the single source of truth
   }
 
   // ============================================================================
@@ -585,13 +579,13 @@ export class App {
     try {
       this.exams = await this.storage.getExams();
       this.folders = await this.storage.getFolders();
-      this.renderLibrary();
+      await this.renderLibrary();
     } catch (e) {
       console.error("Failed to refresh library:", e);
     }
   }
 
-  private renderLibrary(): void {
+  private async renderLibrary(): Promise<void> {
     const listEl = document.getElementById("examList");
     if (!listEl) return;
 
@@ -619,8 +613,15 @@ export class App {
       return;
     }
 
-    // Load progress data for display
-    const progressMap: Record<string, ExamProgress | undefined> = {};
+    // Load attempts and derive stats for display (Phase 6.5: Attempt-based stats)
+    const allAttempts = await this.storage.getAllAttempts();
+    const attemptStatsMap = new Map();
+    for (const exam of this.exams) {
+      const stats = getAttemptStatsForExam(allAttempts, exam.id);
+      if (stats) {
+        attemptStatsMap.set(exam.id, stats);
+      }
+    }
 
     // Render folders and exams
     let html = "";
@@ -634,7 +635,7 @@ export class App {
         folderName = this.translations.uncategorized;
       }
 
-      html += this.renderFolderSection(folderId, folderName, exams, progressMap);
+      html += this.renderFolderSection(folderId, folderName, exams, attemptStatsMap);
     }
 
     listEl.innerHTML = html;
@@ -644,16 +645,16 @@ export class App {
     folderId: string,
     folderName: string,
     exams: StoredExam[],
-    progressMap: Record<string, ExamProgress | undefined>
+    attemptStatsMap: Map<string, { attemptCount: number; lastScore?: number; bestScore?: number }>
   ): string {
     const T = this.translations;
     const icon = folderId === "uncategorized" ? "📂" : "📁";
     const isUncat = folderId === "uncategorized";
 
     const renderExam = (exam: StoredExam): string => {
-      const progress = progressMap[exam.id];
-      const attempts = progress?.attempts ?? 0;
-      const bestScore = progress?.bestScore ?? 0;
+      const stats = attemptStatsMap.get(exam.id);
+      const attempts = stats?.attemptCount ?? 0;
+      const bestScore = stats?.bestScore ?? 0;
 
       let statsHtml = "";
       if (attempts > 0) {
