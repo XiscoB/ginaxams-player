@@ -31,6 +31,8 @@ import { getTranslations, detectBrowserLanguage, type LanguageCode } from "../i1
 import { calculatePercentage } from "../domain/scoring.js";
 import { AttemptRunner } from "../domain/attemptRunner.js";
 import { shuffleArray } from "../domain/scoring.js";
+import { selectReviewQuestions } from "../domain/reviewSelection.js";
+import { DEFAULTS } from "../domain/defaults.js";
 
 /**
  * View state for UI routing
@@ -314,10 +316,29 @@ export class App {
     const { examId, examData } = this.pendingAttempt;
 
     // Prepare question set based on mode
-    let questions: Question[] = [...examData.questions];
+    let questions: Question[];
 
-    // Apply shuffling for free/simulacro modes
-    if (mode === "free" || mode === "simulacro") {
+    if (mode === "review") {
+      // Load telemetry for adaptive review selection
+      const telemetry = await this.storage.getTelemetryByExam(examId);
+      
+      // Generate review question set deterministically
+      const reviewItems = selectReviewQuestions(
+        examData.questions,
+        telemetry,
+        DEFAULTS.reviewQuestionCount,
+        {
+          wrongWeight: DEFAULTS.wrongWeight,
+          blankWeight: DEFAULTS.blankWeight,
+          recoveryWeight: DEFAULTS.recoveryWeight,
+          weakTimeThresholdMs: DEFAULTS.weakTimeThresholdMs,
+        }
+      );
+      
+      questions = reviewItems.map(item => item.question);
+    } else {
+      // Free and Simulacro: use all questions with shuffling
+      questions = [...examData.questions];
       questions = shuffleArray(questions);
     }
 
@@ -325,7 +346,7 @@ export class App {
     const attempt = this.createAttempt(mode, examId, questions.length);
     this.currentAttempt = attempt;
 
-    // Persist Attempt
+    // Persist Attempt BEFORE runner instantiation
     try {
       await this.storage.saveAttempt(attempt);
     } catch (e) {
@@ -337,7 +358,6 @@ export class App {
     // Create telemetry lookup function
     const getTelemetry = (qExamId: string, questionNumber: number): QuestionTelemetry | undefined => {
       // Synchronous lookup - storage will be queried during submitAnswer
-      // This is a placeholder - actual lookup happens async in persistTelemetryUpdates
       return undefined;
     };
 
@@ -345,7 +365,7 @@ export class App {
     const runnerConfig: { questionCount?: number; timeLimitMs?: number; getTelemetry?: (examId: string, qNum: number) => QuestionTelemetry | undefined } = {};
 
     if (mode === "simulacro") {
-      runnerConfig.questionCount = 60; // Default, can be made configurable
+      runnerConfig.questionCount = DEFAULTS.reviewQuestionCount;
       runnerConfig.timeLimitMs = 600000; // 10 minutes
     }
     runnerConfig.getTelemetry = getTelemetry;
