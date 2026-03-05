@@ -2797,13 +2797,16 @@
         border-radius: var(--radius-lg);
         padding: var(--space-lg);
         backdrop-filter: blur(20px);
-        transition: border-color var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-normal);
+        transition:
+          border-color var(--transition-normal),
+          box-shadow var(--transition-normal),
+          transform var(--transition-normal);
         position: relative;
         overflow: hidden;
       }
 
       .mode-card::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
@@ -2824,9 +2827,15 @@
         opacity: 1;
       }
 
-      .mode-card--free::before { background: var(--accent-primary); }
-      .mode-card--simulacro::before { background: var(--color-warning); }
-      .mode-card--review::before { background: var(--color-success); }
+      .mode-card--free::before {
+        background: var(--accent-primary);
+      }
+      .mode-card--simulacro::before {
+        background: var(--color-warning);
+      }
+      .mode-card--review::before {
+        background: var(--color-success);
+      }
 
       .mode-card__header {
         display: flex;
@@ -2901,7 +2910,8 @@
         background: rgba(255, 255, 255, 0.06);
       }
 
-      .btn:disabled, .btn.disabled {
+      .btn:disabled,
+      .btn.disabled {
         opacity: 0.4;
         cursor: not-allowed;
         pointer-events: none;
@@ -2968,7 +2978,8 @@
         box-shadow: none;
       }
 
-      .mode-btn:disabled, .mode-btn.disabled {
+      .mode-btn:disabled,
+      .mode-btn.disabled {
         opacity: 0.4;
         cursor: not-allowed;
         pointer-events: none;
@@ -3162,9 +3173,15 @@
         margin-bottom: var(--space-xs);
       }
 
-      .results-stat--correct .results-stat__value { color: var(--color-success); }
-      .results-stat--wrong .results-stat__value { color: var(--color-error); }
-      .results-stat--blank .results-stat__value { color: var(--color-neutral); }
+      .results-stat--correct .results-stat__value {
+        color: var(--color-success);
+      }
+      .results-stat--wrong .results-stat__value {
+        color: var(--color-error);
+      }
+      .results-stat--blank .results-stat__value {
+        color: var(--color-neutral);
+      }
 
       .results-stat__label {
         font-size: 0.75em;
@@ -3608,7 +3625,12 @@
             <div class="ai-destinations-grid">
               <button
                 class="ai-destination-btn"
-                onclick="window.app.openExternalLink('https://chat.openai.com', 'ChatGPT')"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://chat.openai.com',
+                    'ChatGPT',
+                  )
+                "
               >
                 <span class="ai-destination-icon">🗨️</span>
                 <span>ChatGPT</span>
@@ -3616,7 +3638,9 @@
               </button>
               <button
                 class="ai-destination-btn"
-                onclick="window.app.openExternalLink('https://claude.ai', 'Claude')"
+                onclick="
+                  window.app.openExternalLink('https://claude.ai', 'Claude')
+                "
               >
                 <span class="ai-destination-icon">🎭</span>
                 <span>Claude</span>
@@ -3624,7 +3648,12 @@
               </button>
               <button
                 class="ai-destination-btn"
-                onclick="window.app.openExternalLink('https://notebooklm.google.com', 'NotebookLM')"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://notebooklm.google.com',
+                    'NotebookLM',
+                  )
+                "
               >
                 <span class="ai-destination-icon">📖</span>
                 <span>NotebookLM</span>
@@ -3632,7 +3661,12 @@
               </button>
               <button
                 class="ai-destination-btn kimi"
-                onclick="window.app.openExternalLink('https://kimi.moonshot.cn', 'Kimi')"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://kimi.moonshot.cn',
+                    'Kimi',
+                  )
+                "
               >
                 <span class="ai-destination-icon">✨</span>
                 <span>Kimi</span>
@@ -3647,7 +3681,13 @@
               💡 <strong>Tip:</strong> This prompt was generated with
               <a
                 href="#"
-                onclick="window.app.openExternalLink('https://kimi.moonshot.cn', 'Kimi'); return false;"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://kimi.moonshot.cn',
+                    'Kimi',
+                  );
+                  return false;
+                "
                 >Kimi AI</a
               >
               in mind - give it a try for even better results!
@@ -3745,7 +3785,10 @@
               <div class="choice-options">
                 <button
                   class="choice-option easy"
-                  onclick="window.app.showAIPromptGenerator(); window.app.closeChoiceModal();"
+                  onclick="
+                    window.app.showAIPromptGenerator();
+                    window.app.closeChoiceModal();
+                  "
                 >
                   <span class="choice-option-icon">🤖</span>
                   <div class="choice-option-content">
@@ -3759,7 +3802,10 @@
                 </button>
                 <button
                   class="choice-option advanced"
-                  onclick="window.app.showTemplateModal(); window.app.closeChoiceModal();"
+                  onclick="
+                    window.app.showTemplateModal();
+                    window.app.closeChoiceModal();
+                  "
                 >
                   <span class="choice-option-icon">💻</span>
                   <div class="choice-option-content">
@@ -3823,14 +3869,20 @@
             <div id="helpMenuPopup" class="help-menu-popup hidden">
               <button
                 class="help-menu-item"
-                onclick="window.app.showOnboarding(); window.app.toggleHelpMenu();"
+                onclick="
+                  window.app.showOnboarding();
+                  window.app.toggleHelpMenu();
+                "
               >
                 <span>📖</span>
                 <span id="txtShowOnboarding">Show Tutorial</span>
               </button>
               <button
                 class="help-menu-item"
-                onclick="window.app.showChoiceModal(); window.app.toggleHelpMenu();"
+                onclick="
+                  window.app.showChoiceModal();
+                  window.app.toggleHelpMenu();
+                "
               >
                 <span>📋</span>
                 <span id="txtExamFormat">Exam Format</span>
@@ -3898,7 +3950,18 @@
         <div class="mode-select">
           <button
             class="mode-btn active"
-            onclick="window.app.practiceManager.startPractice(window.app.practiceManager.getExamData(), {shuffleQuestions: document.getElementById('shuffleQuestions').checked, shuffleAnswers: document.getElementById('shuffleAnswers').checked, showFeedback: document.getElementById('showFeedback').checked})"
+            onclick="
+              window.app.practiceManager.startPractice(
+                window.app.practiceManager.getExamData(),
+                {
+                  shuffleQuestions:
+                    document.getElementById('shuffleQuestions').checked,
+                  shuffleAnswers:
+                    document.getElementById('shuffleAnswers').checked,
+                  showFeedback: document.getElementById('showFeedback').checked,
+                },
+              )
+            "
           >
             <span id="btnPracticeMode">Start Practice</span>
           </button>
@@ -3947,7 +4010,10 @@
           <div id="feedbackSection" class="hidden"></div>
 
           <!-- Wrong Answer Feedback (Tarjeta Roja) - Shown only in free mode when answer is wrong -->
-          <div id="wrongAnswerFeedback" class="wrong-answer-feedback hidden"></div>
+          <div
+            id="wrongAnswerFeedback"
+            class="wrong-answer-feedback hidden"
+          ></div>
         </div>
 
         <div class="nav-buttons">
@@ -3962,7 +4028,10 @@
 
       <!-- SCREEN 4: RESULTS -->
       <div id="resultsScreen" class="hidden">
-        <h2 style="text-align: center; margin-bottom: var(--space-lg)" id="txtResults">
+        <h2
+          style="text-align: center; margin-bottom: var(--space-lg)"
+          id="txtResults"
+        >
           🏆 Results
         </h2>
 
@@ -3997,7 +4066,9 @@
           <!-- Score & Percentage Row -->
           <div class="results-score-row">
             <span class="results-score-row__label">Score</span>
-            <span class="results-score-row__value" id="resultScoreValue">0</span>
+            <span class="results-score-row__value" id="resultScoreValue"
+              >0</span
+            >
           </div>
         </div>
 
@@ -4006,7 +4077,9 @@
           <div class="results-section__title">Statistics</div>
           <div class="results-time-row">
             <span class="results-time-row__label">Total Questions</span>
-            <span class="results-time-row__value" id="resultTotalQuestions">0</span>
+            <span class="results-time-row__value" id="resultTotalQuestions"
+              >0</span
+            >
           </div>
           <div class="results-time-row">
             <span class="results-time-row__label">Time Spent</span>
@@ -4038,7 +4111,9 @@
 
         <!-- Review Summary Grid -->
         <div class="results-section" style="margin-top: var(--space-md)">
-          <div class="results-section__title" id="txtReviewSummaryTitle">Review Summary</div>
+          <div class="results-section__title" id="txtReviewSummaryTitle">
+            Review Summary
+          </div>
           <div id="reviewSummary" class="review-summary"></div>
         </div>
 

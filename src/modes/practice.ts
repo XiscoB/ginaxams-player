@@ -274,7 +274,9 @@ export class PracticeManager {
     feedbackSection.classList.remove("hidden");
 
     const isCorrect = state.feedback.isCorrect;
-    const panelClass = isCorrect ? "feedback-panel--correct" : "feedback-panel--wrong";
+    const panelClass = isCorrect
+      ? "feedback-panel--correct"
+      : "feedback-panel--wrong";
     const headerIcon = isCorrect ? "✓" : "✗";
 
     let headerText: string;
