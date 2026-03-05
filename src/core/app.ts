@@ -298,7 +298,9 @@ export class App {
     // Show/hide timer area based on mode
     const timerArea = document.getElementById("simulacroTimerArea");
     if (timerArea) {
-      const isSimulacro = this.currentAttemptView?.mode === "simulacro" && this.currentAttemptView?.timer;
+      const isSimulacro =
+        this.currentAttemptView?.mode === "simulacro" &&
+        this.currentAttemptView?.timer;
       if (isSimulacro) {
         timerArea.classList.remove("hidden");
         timerArea.style.display = "flex";
@@ -400,11 +402,11 @@ export class App {
         lastScoreEl.textContent =
           exam.stats.lastScore !== undefined
             ? `${exam.stats.lastScore}%`
-            : (T.notAttempted || "-");
+            : T.notAttempted || "-";
         bestScoreEl.textContent =
           exam.stats.bestScore !== undefined
             ? `${exam.stats.bestScore}%`
-            : (T.notAttempted || "-");
+            : T.notAttempted || "-";
         return;
       }
     }
@@ -425,7 +427,8 @@ export class App {
     // Update review screen translation labels
     const T = this.translations;
     const txtBackReview = document.getElementById("txtBackReview");
-    if (txtBackReview) txtBackReview.textContent = T.reviewBack || T.back || "Back";
+    if (txtBackReview)
+      txtBackReview.textContent = T.reviewBack || T.back || "Back";
     const txtReviewPrev = document.getElementById("txtReviewPrevious");
     if (txtReviewPrev) txtReviewPrev.textContent = T.reviewPrev || "← Prev";
     const txtReviewNext = document.getElementById("txtReviewNext");
@@ -594,7 +597,9 @@ export class App {
       // Read simulacro timer config from UI
       let timeLimitMs = 3600000; // default 60 minutes
       if (mode === "simulacro") {
-        const timerSelect = document.getElementById("simulacroTimerSelect") as HTMLSelectElement | null;
+        const timerSelect = document.getElementById(
+          "simulacroTimerSelect",
+        ) as HTMLSelectElement | null;
         if (timerSelect) {
           timeLimitMs = parseInt(timerSelect.value, 10);
         }
@@ -693,8 +698,8 @@ export class App {
     }
     if (timerToggle) {
       timerToggle.textContent = this.timerVisible
-        ? (T.hideTimer || "Hide Timer")
-        : (T.showTimer || "Show Timer");
+        ? T.hideTimer || "Hide Timer"
+        : T.showTimer || "Show Timer";
     }
   }
 
