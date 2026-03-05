@@ -70,25 +70,12 @@ export function calculatePercentage(correct: number, total: number): number {
  * @param percentage - Score percentage (0-100)
  * @returns "good" | "medium" | "bad" based on thresholds
  */
-export function getScoreCategory(percentage: number): "good" | "medium" | "bad" {
+export function getScoreCategory(
+  percentage: number,
+): "good" | "medium" | "bad" {
   if (percentage >= 70) return "good";
   if (percentage >= 50) return "medium";
   return "bad";
-}
-
-/**
- * Get the color associated with a score category.
- *
- * @param category - The score category
- * @returns CSS color value
- */
-export function getScoreColor(category: "good" | "medium" | "bad"): string {
-  const colors = {
-    good: "var(--accent-secondary)", // #00ff88
-    medium: "#ffd700",
-    bad: "#ff6b6b",
-  };
-  return colors[category];
 }
 
 // ============================================================================
@@ -106,7 +93,7 @@ export function getScoreColor(category: "good" | "medium" | "bad"): string {
  */
 export function normalizeWeights(
   examIds: string[],
-  weights?: Record<string, number>
+  weights?: Record<string, number>,
 ): Record<string, number> {
   const normalized: Record<string, number> = {};
 
@@ -165,7 +152,7 @@ export function normalizeWeights(
 export function distributeQuestions(
   totalQuestions: number,
   examIds: string[],
-  weights?: Record<string, number>
+  weights?: Record<string, number>,
 ): Record<string, number> {
   if (totalQuestions <= 0 || examIds.length === 0) {
     return {};
@@ -176,7 +163,8 @@ export function distributeQuestions(
 
   // Calculate initial distribution
   let assigned = 0;
-  const allocations: { id: string; allocation: number; fraction: number }[] = [];
+  const allocations: { id: string; allocation: number; fraction: number }[] =
+    [];
 
   examIds.forEach((id) => {
     const exact = totalQuestions * normalized[id];
@@ -221,7 +209,7 @@ export function distributeQuestions(
  */
 export function shuffleArray<T>(
   array: readonly T[],
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): T[] {
   const result = [...array];
   for (let i = result.length - 1; i > 0; i--) {
@@ -230,5 +218,3 @@ export function shuffleArray<T>(
   }
   return result;
 }
-
-
