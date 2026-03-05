@@ -1,14 +1,18 @@
 /**
  * PracticeManager - Dumb UI Renderer
  *
- * This module is now a pure UI renderer for attempt execution.
- * All execution logic has been moved to AttemptRunner in app.ts.
+ * This module is a pure UI renderer for attempt execution.
+ * It receives pre-computed view state from the application layer
+ * and renders it to the DOM.
  *
  * Responsibilities:
- * - Render AttemptSessionState to the DOM
+ * - Render AttemptViewState to the DOM
+ * - Render AttemptResultViewState to the results screen
  * - Emit user interaction callbacks
  *
  * Forbidden:
+ * - No domain imports
+ * - No storage imports
  * - No persistence logic
  * - No scoring calculation
  * - No attempt state management
@@ -16,7 +20,21 @@
  * - No question shuffling
  */
 
-import type { AttemptSessionState, Translations } from "../domain/types.js";
+import type {
+  AttemptViewState,
+  AttemptResultViewState,
+  AnswerViewWithResult,
+} from "../application/viewState.js";
+import type { Translations } from "../i18n/index.js";
+
+/**
+ * Type guard: checks whether the answers include result information.
+ */
+function isAnsweredView(
+  answers: AttemptViewState["answers"],
+): answers is AnswerViewWithResult[] {
+  return answers.length > 0 && "isCorrect" in answers[0];
+}
 
 export interface PracticeManagerConfig {
   onAnswer: (answerIndex: number) => void;
@@ -40,42 +58,23 @@ export class PracticeManager {
    * Bind DOM events for navigation
    */
   private bindEvents(): void {
-    // Navigation buttons
-    document.getElementById("prevBtn")?.addEventListener("click", () => {
-      // Previous is now handled internally by tracking currentIndex
-      // For now, we only support forward navigation via the runner
-      // This can be extended if needed
-    });
-
     document.getElementById("nextBtn")?.addEventListener("click", () => {
       this.config.onNext();
     });
 
-    // Results screen buttons
     document.getElementById("btnTryAgain")?.addEventListener("click", () => {
       this.config.onFinish();
-    });
-
-    document.getElementById("txtResultsMenu")?.parentElement?.addEventListener("click", () => {
-      // Navigate back to library - handled by app.ts
     });
   }
 
   /**
-   * Render the current attempt state
+   * Render the current attempt view state.
    *
    * This is the primary entry point for UI updates.
-   * All state comes from AttemptSessionState.
+   * All data comes pre-computed from the application layer.
    */
-  render(state: AttemptSessionState): void {
+  render(state: AttemptViewState): void {
     const T = this.config.getTranslations();
-
-    // Get current question
-    const question = state.questions[state.currentIndex];
-    if (!question) return;
-
-    const answer = state.answers[question.number];
-    const hasAnswered = answer !== undefined;
 
     // Update progress indicators
     this.updateProgressBar(state);
@@ -83,81 +82,90 @@ export class PracticeManager {
     // Render question
     const questionText = document.getElementById("questionText");
     if (questionText) {
-      questionText.textContent = question.text;
+      questionText.textContent = state.questionText;
     }
 
     const questionNumber = document.getElementById("questionNumber");
     if (questionNumber) {
-      questionNumber.textContent = `${T.question || "Question"} ${state.currentIndex + 1}/${state.questions.length}`;
+      questionNumber.textContent = `${T.question || "Question"} ${state.progress.current}/${state.progress.total}`;
     }
 
     // Render answers
-    this.renderAnswers(question.answers, answer, hasAnswered);
+    this.renderAnswers(state);
 
     // Update navigation buttons
-    this.updateNavigation(state, hasAnswered, T);
+    this.updateNavigation(state, T);
 
-    // Show/hide feedback based on answer
-    this.updateFeedback(answer, question, T);
+    // Show/hide feedback
+    this.updateFeedback(state, T);
   }
 
   /**
-   * Render the results screen
+   * Render the results screen from a completed attempt result.
    */
-  renderResults(state: AttemptSessionState): void {
-    if (!state.isFinished || !state.result) return;
-
+  renderResults(result: AttemptResultViewState): void {
     const T = this.config.getTranslations();
-    const result = state.result;
+    const {
+      result: score,
+      scoreCategory,
+      totalQuestions,
+      timeSpentMs,
+    } = result;
 
     // Update score circle
     const scoreCircle = document.getElementById("scoreCircle");
     const scoreEl = document.getElementById("finalScore");
     if (scoreEl) {
-      scoreEl.textContent = `${result.percentage}%`;
+      scoreEl.textContent = `${score.percentage}%`;
     }
 
     if (scoreCircle) {
-      scoreCircle.className = `score-circle ${result.percentage >= 70 ? "good" : result.percentage >= 50 ? "medium" : "bad"}`;
-      scoreCircle.style.setProperty("--score-percent", `${result.percentage}%`);
+      scoreCircle.className = `score-circle ${scoreCategory}`;
+      scoreCircle.style.setProperty("--score-percent", `${score.percentage}%`);
     }
 
     const scoreDetails = document.getElementById("scoreDetails");
     if (scoreDetails) {
-      scoreDetails.textContent = `${result.correct} ${T.correctOutOf || "correct out of"} ${result.correct + result.wrong + result.blank}`;
+      scoreDetails.textContent = `${score.correct} ${T.correctOutOf || "correct out of"} ${totalQuestions}`;
     }
 
-    // Render review summary
-    this.renderReviewSummary(state);
+    // Update time spent display
+    const timeDisplay = document.getElementById("timeSpent");
+    if (timeDisplay) {
+      const totalSeconds = Math.floor(timeSpentMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
+
+    // Render per-question review summary
+    this.renderReviewSummary(result);
   }
 
   /**
-   * Render answer options
+   * Render answer options from the view state.
    */
-  private renderAnswers(
-    answers: { letter: string; text: string; isCorrect: boolean }[],
-    answer: { selectedIndex: number | null; isCorrect: boolean } | undefined,
-    hasAnswered: boolean
-  ): void {
+  private renderAnswers(state: AttemptViewState): void {
     const container = document.getElementById("answersContainer");
     if (!container) return;
 
     container.innerHTML = "";
 
-    answers.forEach((ans, index) => {
+    const answered = isAnsweredView(state.answers);
+
+    state.answers.forEach((ans) => {
       const div = document.createElement("div");
       div.className = "answer-option";
 
-      const isSelected = answer?.selectedIndex === index;
-      const showCorrect = hasAnswered && ans.isCorrect;
-      const showWrong = isSelected && !answer?.isCorrect;
-
-      if (showCorrect) {
-        div.classList.add("correct");
-      } else if (showWrong) {
-        div.classList.add("wrong");
-      } else if (isSelected) {
-        div.classList.add("selected");
+      if (answered) {
+        const resultAns = ans as AnswerViewWithResult;
+        if (resultAns.isCorrect) {
+          div.classList.add("correct");
+        } else if (resultAns.isSelected && !resultAns.isCorrect) {
+          div.classList.add("wrong");
+        } else if (resultAns.isSelected) {
+          div.classList.add("selected");
+        }
       }
 
       div.innerHTML = `
@@ -165,10 +173,10 @@ export class PracticeManager {
         <span class="answer-text">${ans.text}</span>
       `;
 
-      // Only allow clicking if not answered yet
-      if (!hasAnswered) {
+      // Only allow clicking if not yet answered
+      if (!state.isAnswered) {
         div.addEventListener("click", () => {
-          this.config.onAnswer(index);
+          this.config.onAnswer(ans.index);
         });
       }
 
@@ -177,14 +185,13 @@ export class PracticeManager {
   }
 
   /**
-   * Update progress bar
+   * Update progress bar from view state.
    */
-  private updateProgressBar(state: AttemptSessionState): void {
+  private updateProgressBar(state: AttemptViewState): void {
     const progressBar = document.getElementById("progressBar");
     const progressText = document.getElementById("progressText");
 
-    const total = state.questions.length;
-    const answered = Object.keys(state.answers).length;
+    const { total, answered } = state.progress;
     const percentage = total > 0 ? (answered / total) * 100 : 0;
 
     if (progressBar) {
@@ -197,41 +204,35 @@ export class PracticeManager {
   }
 
   /**
-   * Update navigation buttons
+   * Update navigation buttons from view state.
    */
-  private updateNavigation(
-    state: AttemptSessionState,
-    hasAnswered: boolean,
-    T: Translations
-  ): void {
-    const prevBtn = document.getElementById("prevBtn") as HTMLButtonElement | null;
-    const nextBtn = document.getElementById("nextBtn") as HTMLButtonElement | null;
-    const finishBtn = document.getElementById("finishBtn") as HTMLButtonElement | null;
-
-    const isLastQuestion = state.currentIndex >= state.questions.length - 1;
-    const allAnswered = Object.keys(state.answers).length >= state.questions.length;
+  private updateNavigation(state: AttemptViewState, T: Translations): void {
+    const prevBtn = document.getElementById(
+      "prevBtn",
+    ) as HTMLButtonElement | null;
+    const nextBtn = document.getElementById(
+      "nextBtn",
+    ) as HTMLButtonElement | null;
+    const finishBtn = document.getElementById(
+      "finishBtn",
+    ) as HTMLButtonElement | null;
 
     if (prevBtn) {
-      prevBtn.disabled = state.currentIndex === 0;
-      prevBtn.classList.toggle("disabled", state.currentIndex === 0);
+      prevBtn.disabled = !state.canGoPrevious;
+      prevBtn.classList.toggle("disabled", !state.canGoPrevious);
     }
 
     if (nextBtn) {
-      // Show "Next" if answered and not last, hide otherwise
-      const showNext = hasAnswered && !isLastQuestion;
-      nextBtn.style.display = showNext ? "block" : "none";
-      if (showNext) {
+      nextBtn.style.display = state.canGoNext ? "block" : "none";
+      if (state.canGoNext) {
         nextBtn.textContent = T.next || "Next";
       }
     }
 
     if (finishBtn) {
-      // Show "Finish" on last question or when all answered
-      const showFinish = (isLastQuestion && hasAnswered) || allAnswered;
-      finishBtn.style.display = showFinish ? "block" : "none";
+      finishBtn.style.display = state.canFinish ? "block" : "none";
       finishBtn.textContent = T.finish || "Finish";
 
-      // Bind finish handler
       finishBtn.onclick = () => {
         this.config.onFinish();
       };
@@ -239,17 +240,13 @@ export class PracticeManager {
   }
 
   /**
-   * Update feedback display
+   * Update feedback display from view state.
    */
-  private updateFeedback(
-    answer: { selectedIndex: number | null; isCorrect: boolean } | undefined,
-    question: { articulo_referencia: string; feedback: { cita_literal: string; explicacion_fallo: string } },
-    T: Translations
-  ): void {
+  private updateFeedback(state: AttemptViewState, T: Translations): void {
     const feedbackSection = document.getElementById("feedbackSection");
     if (!feedbackSection) return;
 
-    if (!answer) {
+    if (!state.feedback) {
       feedbackSection.classList.add("hidden");
       return;
     }
@@ -257,50 +254,55 @@ export class PracticeManager {
     feedbackSection.classList.remove("hidden");
 
     const feedbackTitle = document.getElementById("feedbackTitle");
-    const feedbackClass = answer.isCorrect ? "correct" : "wrong";
+    const feedbackClass = state.feedback.isCorrect ? "correct" : "wrong";
 
     if (feedbackTitle) {
-      feedbackTitle.textContent = answer.isCorrect
-        ? T.correctAnswer || "Correct!"
-        : T.wrongAnswer || "Incorrect";
+      if (state.feedback.isCorrect) {
+        feedbackTitle.textContent = T.correctAnswer || "Correct!";
+      } else {
+        const selected = state.feedback.selectedAnswer ?? "—";
+        const correct = state.feedback.correctAnswer;
+        feedbackTitle.textContent = `${T.wrongAnswer || "Incorrect"} (${selected} → ${correct})`;
+      }
       feedbackTitle.className = feedbackClass;
     }
 
     const referenceArticle = document.getElementById("referenceArticle");
     if (referenceArticle) {
-      referenceArticle.textContent = `${T.referenceArticle || "Reference"}: ${question.articulo_referencia}`;
+      referenceArticle.textContent = `${T.referenceArticle || "Reference"}: ${state.feedback.referenceArticle}`;
     }
 
     const literalCitation = document.getElementById("literalCitation");
     if (literalCitation) {
-      literalCitation.textContent = question.feedback.cita_literal;
+      literalCitation.textContent = state.feedback.literalCitation;
     }
 
     const explanation = document.getElementById("explanation");
     if (explanation) {
-      explanation.textContent = question.feedback.explicacion_fallo;
+      explanation.textContent = state.feedback.explanation;
     }
   }
 
   /**
-   * Render review summary for results screen
+   * Render per-question review summary for the results screen.
    */
-  private renderReviewSummary(state: AttemptSessionState): void {
+  private renderReviewSummary(result: AttemptResultViewState): void {
     const summary = document.getElementById("reviewSummary");
     if (!summary) return;
 
     summary.innerHTML = "";
 
-    state.questions.forEach((q) => {
-      const answer = state.answers[q.number];
+    result.questionSummary.forEach((q) => {
       const div = document.createElement("div");
       div.className = "review-item";
-      div.textContent = String(q.number);
+      div.textContent = String(q.questionNumber);
 
-      if (answer) {
-        div.classList.add(answer.isCorrect ? "correct" : "incorrect");
-      } else {
+      if (q.isBlank) {
         div.classList.add("unanswered");
+      } else if (q.isCorrect) {
+        div.classList.add("correct");
+      } else {
+        div.classList.add("incorrect");
       }
 
       summary.appendChild(div);

@@ -1,73 +1,88 @@
 /**
  * Main Application Logic
  *
- * The App class coordinates all functionality:
- * - Exam library management
+ * The App class coordinates all UI functionality:
+ * - Exam library management (via ExamLibraryController)
+ * - Attempt execution (via AttemptController)
  * - File import/export
  * - Language switching
  * - UI navigation
- * - Attempt execution orchestration
+ *
+ * All business operations go through the application layer controllers.
+ * The App class never imports from domain/ or storage/ directly.
  */
 
 import type {
-  StoredExam,
-  Exam,
-  Question,
-  Folder,
-  Translations,
-  Attempt,
-  FreeAttempt,
-  SimulacroAttempt,
-  ReviewAttempt,
-  QuestionTelemetry,
-} from "../domain/types.js";
-import { storage } from "../storage/db.js";
-import { validateExam } from "../domain/validation.js";
+  AttemptViewState,
+  AttemptResultViewState,
+  ExamCardView,
+  LibraryViewState,
+} from "../application/viewState.js";
+import { AttemptController } from "../application/attemptController.js";
+import { ExamLibraryController } from "../application/examLibraryController.js";
 import { PracticeManager } from "../modes/practice.js";
-import { getTranslations, detectBrowserLanguage, type LanguageCode } from "../i18n/index.js";
-import { AttemptRunner } from "../domain/attemptRunner.js";
-import { shuffleArray } from "../domain/scoring.js";
-import { selectReviewQuestions } from "../domain/reviewSelection.js";
-import { DEFAULTS } from "../domain/defaults.js";
-import { getAttemptStatsForExam } from "../domain/attemptSelectors.js";
+import {
+  getTranslations,
+  detectBrowserLanguage,
+  type LanguageCode,
+  type Translations,
+} from "../i18n/index.js";
 
 /**
  * View state for UI routing
  */
 type View =
-  | "library"      // Exam library/folders
+  | "library" // Exam library/folders
   | "attemptConfig" // Mode selection (Free/Simulacro/Review)
   | "attemptExecution" // Active attempt
-  | "results";     // Attempt results
+  | "results"; // Attempt results
 
 /**
- * Pending attempt configuration
+ * Pending attempt configuration (UI-only state)
  */
 interface PendingAttempt {
   examId: string;
-  examData: Exam;
+  examTitle: string;
+}
+
+/**
+ * Application dependencies injected from main.ts
+ */
+export interface AppDeps {
+  attemptController: AttemptController;
+  libraryController: ExamLibraryController;
+  onStorageReady: () => Promise<void>;
 }
 
 /**
  * Main Application Class
+ *
+ * Coordinates UI navigation and dispatches all business operations
+ * through application layer controllers.
  */
 export class App {
   // Core components
   practiceManager: PracticeManager;
-  private storage = storage;
+  private attemptController: AttemptController;
+  private libraryController: ExamLibraryController;
+  private onStorageReady: () => Promise<void>;
 
   // State
-  private exams: StoredExam[] = [];
-  private folders: Folder[] = [];
+  private libraryState: LibraryViewState | null = null;
   private translations: Translations = getTranslations("en");
 
   // View State Machine
   private pendingAttempt: PendingAttempt | null = null;
 
-  // Attempt Execution State
-  private currentRunner: AttemptRunner | null = null;
+  // Cached view states for the current attempt
+  private currentAttemptView: AttemptViewState | null = null;
+  private currentResultView: AttemptResultViewState | null = null;
 
-  constructor() {
+  constructor(deps: AppDeps) {
+    this.attemptController = deps.attemptController;
+    this.libraryController = deps.libraryController;
+    this.onStorageReady = deps.onStorageReady;
+
     // Initialize PracticeManager as dumb renderer
     this.practiceManager = new PracticeManager({
       onAnswer: (answerIndex: number) => this.handleAnswer(answerIndex),
@@ -85,10 +100,12 @@ export class App {
 
   private async init(): Promise<void> {
     try {
-      await this.storage.ready();
+      await this.onStorageReady();
 
       // Load Language Preference
-      const savedLang = localStorage.getItem("ginaxams_lang") as LanguageCode | null;
+      const savedLang = localStorage.getItem(
+        "ginaxams_lang",
+      ) as LanguageCode | null;
       const detectedLang = detectBrowserLanguage();
       this.setLanguage(savedLang || detectedLang);
 
@@ -170,7 +187,7 @@ export class App {
     // Update exam title
     const examTitle = document.getElementById("examTitle");
     if (examTitle && this.pendingAttempt) {
-      examTitle.textContent = this.pendingAttempt.examData.title;
+      examTitle.textContent = this.pendingAttempt.examTitle;
     }
   }
 
@@ -231,22 +248,15 @@ export class App {
       practiceScreen.classList.remove("hidden");
     }
 
-    // Initial render if we have a runner
-    if (this.currentRunner) {
-      const state = this.currentRunner.getState();
-      this.practiceManager.render(state);
+    // Initial render if we have a cached view state
+    if (this.currentAttemptView) {
+      this.practiceManager.render(this.currentAttemptView);
     }
   }
 
   private showResultsScreen(): void {
-    if (!this.currentRunner) {
+    if (!this.currentResultView) {
       this.setView("library");
-      return;
-    }
-
-    const state = this.currentRunner.getState();
-    if (!state.isFinished || !state.result) {
-      this.setView("attemptExecution");
       return;
     }
 
@@ -256,10 +266,7 @@ export class App {
     }
 
     // Render results via PracticeManager
-    this.practiceManager.renderResults(state);
-
-    // Note: Legacy progress updates removed - stats now derived from Attempt data
-    // Phase 6.5: Attempts are the single source of truth
+    this.practiceManager.renderResults(this.currentResultView);
   }
 
   // ============================================================================
@@ -270,7 +277,9 @@ export class App {
    * User clicked on an exam - show mode selection
    */
   selectExam(examId: string): void {
-    const exam = this.exams.find((e) => e.id === examId);
+    if (!this.libraryState) return;
+
+    const exam = this.libraryState.exams.find((e) => e.id === examId);
     if (!exam) {
       alert(this.translations.examNotFound);
       return;
@@ -278,7 +287,7 @@ export class App {
 
     this.pendingAttempt = {
       examId,
-      examData: exam.data,
+      examTitle: exam.title,
     };
 
     this.setView("attemptConfig");
@@ -287,129 +296,36 @@ export class App {
   /**
    * Start a new attempt with the selected mode
    */
-  private async startAttempt(mode: "free" | "simulacro" | "review"): Promise<void> {
+  private async startAttempt(
+    mode: "free" | "simulacro" | "review",
+  ): Promise<void> {
     if (!this.pendingAttempt) {
       this.setView("library");
       return;
     }
 
-    const { examId, examData } = this.pendingAttempt;
+    const { examId } = this.pendingAttempt;
 
-    // Prepare question set based on mode
-    let questions: Question[];
-
-    if (mode === "review") {
-      // Load telemetry for adaptive review selection
-      const telemetry = await this.storage.getTelemetryByExam(examId);
-      
-      // Generate review question set deterministically
-      const reviewItems = selectReviewQuestions(
-        examData.questions,
-        telemetry,
-        DEFAULTS.reviewQuestionCount,
-        {
-          wrongWeight: DEFAULTS.wrongWeight,
-          blankWeight: DEFAULTS.blankWeight,
-          recoveryWeight: DEFAULTS.recoveryWeight,
-          weakTimeThresholdMs: DEFAULTS.weakTimeThresholdMs,
-        }
-      );
-      
-      questions = reviewItems.map(item => item.question);
-    } else {
-      // Free and Simulacro: use all questions with shuffling
-      questions = [...examData.questions];
-      questions = shuffleArray(questions);
-    }
-
-    // Create Attempt entity
-    const attempt = this.createAttempt(mode, examId, questions.length);
-
-    // Persist Attempt BEFORE runner instantiation
     try {
-      await this.storage.saveAttempt(attempt);
+      const viewState = await this.attemptController.startAttempt({
+        mode,
+        examIds: [examId],
+        config:
+          mode === "simulacro"
+            ? {
+                questionCount: 60,
+                timeLimitMs: 600000,
+                penalty: 0,
+                reward: 1,
+              }
+            : undefined,
+      });
+
+      this.currentAttemptView = viewState;
+      this.setView("attemptExecution");
     } catch (e) {
-      console.error("Failed to save attempt:", e);
+      console.error("Failed to start attempt:", e);
       alert("Failed to start attempt. Please try again.");
-      return;
-    }
-
-    // Create telemetry lookup function
-    const getTelemetry = (_qExamId: string, _questionNumber: number): QuestionTelemetry | undefined => {
-      // Synchronous lookup - storage will be queried during submitAnswer
-      return undefined;
-    };
-
-    // Instantiate AttemptRunner
-    const runnerConfig: { questionCount?: number; timeLimitMs?: number; getTelemetry?: (examId: string, qNum: number) => QuestionTelemetry | undefined } = {};
-
-    if (mode === "simulacro") {
-      runnerConfig.questionCount = DEFAULTS.reviewQuestionCount;
-      runnerConfig.timeLimitMs = 600000; // 10 minutes
-    }
-    runnerConfig.getTelemetry = getTelemetry;
-
-    this.currentRunner = new AttemptRunner(attempt, questions, runnerConfig);
-
-    // Start the attempt
-    this.currentRunner.start();
-
-    // Transition to execution view
-    this.setView("attemptExecution");
-  }
-
-  /**
-   * Create Attempt entity based on mode
-   */
-  private createAttempt(
-    mode: "free" | "simulacro" | "review",
-    examId: string,
-    questionCount: number
-  ): Attempt {
-    const now = new Date().toISOString();
-    const id = crypto.randomUUID();
-
-    switch (mode) {
-      case "free":
-        return {
-          id,
-          type: "free",
-          createdAt: now,
-          sourceExamIds: [examId],
-          config: {},
-        } as FreeAttempt;
-
-      case "simulacro":
-        return {
-          id,
-          type: "simulacro",
-          createdAt: now,
-          sourceExamIds: [examId],
-          config: {
-            questionCount: Math.min(60, questionCount),
-            timeLimitMs: 600000,
-            penalty: 0,
-            reward: 1,
-            examWeights: { [examId]: 1 },
-          },
-        } as SimulacroAttempt;
-
-      case "review":
-        return {
-          id,
-          type: "review",
-          createdAt: now,
-          sourceExamIds: [examId],
-          config: {
-            questionCount: Math.min(60, questionCount),
-            weights: {
-              wrongWeight: 2,
-              blankWeight: 1.2,
-              recoveryWeight: 1,
-              weakTimeThresholdMs: 15000,
-            },
-          },
-        } as ReviewAttempt;
     }
   }
 
@@ -421,22 +337,19 @@ export class App {
    * Handle answer selection from UI
    */
   private async handleAnswer(answerIndex: number): Promise<void> {
-    if (!this.currentRunner) return;
+    if (!this.attemptController.hasActiveSession()) return;
 
-    // Submit answer to runner
-    this.currentRunner.submitAnswer(answerIndex);
-
-    // Persist telemetry updates (SINGLE WRITE PATH)
-    await this.persistTelemetryUpdates();
+    // Submit answer via controller
+    this.currentAttemptView = this.attemptController.submitAnswer(answerIndex);
 
     // Re-render
-    const state = this.currentRunner.getState();
-    this.practiceManager.render(state);
+    this.practiceManager.render(this.currentAttemptView);
 
     // Auto-advance on correct answer
-    const currentQ = state.questions[state.currentIndex];
-    const answer = state.answers[currentQ.number];
-    if (answer?.isCorrect) {
+    if (
+      this.currentAttemptView.isAnswered &&
+      this.currentAttemptView.feedback?.isCorrect
+    ) {
       setTimeout(() => {
         this.handleNext();
       }, 500);
@@ -447,52 +360,24 @@ export class App {
    * Handle next button from UI
    */
   private async handleNext(): Promise<void> {
-    if (!this.currentRunner) return;
+    if (!this.attemptController.hasActiveSession()) return;
 
-    this.currentRunner.next();
-
-    const state = this.currentRunner.getState();
-
-    // Check if we've reached the end
-    if (state.currentIndex >= state.questions.length - 1 &&
-        Object.keys(state.answers).length >= state.questions.length) {
-      // All questions answered, show finish option or auto-finish
-      this.practiceManager.render(state);
-    } else {
-      this.practiceManager.render(state);
-    }
+    this.currentAttemptView = this.attemptController.nextQuestion();
+    this.practiceManager.render(this.currentAttemptView);
   }
 
   /**
    * Handle finish from UI
    */
   private async handleFinish(): Promise<void> {
-    if (!this.currentRunner) return;
+    if (!this.attemptController.hasActiveSession()) return;
 
-    // Final telemetry persistence
-    await this.persistTelemetryUpdates();
-
-    // Finish the attempt
-    this.currentRunner.finish();
-
-    // Transition to results
-    this.setView("results");
-  }
-
-  /**
-   * Persist telemetry updates - SINGLE WRITE PATH
-   */
-  private async persistTelemetryUpdates(): Promise<void> {
-    if (!this.currentRunner) return;
-
-    const updates = this.currentRunner.consumeTelemetryUpdates();
-
-    for (const update of updates) {
-      try {
-        await this.storage.saveQuestionTelemetry(update.next);
-      } catch (e) {
-        console.warn("Failed to save telemetry:", e);
-      }
+    try {
+      this.currentResultView = await this.attemptController.finalizeAttempt();
+      this.currentAttemptView = null;
+      this.setView("results");
+    } catch (e) {
+      console.error("Failed to finalize attempt:", e);
     }
   }
 
@@ -560,8 +445,7 @@ export class App {
 
   private async refreshLibrary(): Promise<void> {
     try {
-      this.exams = await this.storage.getExams();
-      this.folders = await this.storage.getFolders();
+      this.libraryState = await this.libraryController.getLibraryViewState();
       await this.renderLibrary();
     } catch (e) {
       console.error("Failed to refresh library:", e);
@@ -570,13 +454,15 @@ export class App {
 
   private async renderLibrary(): Promise<void> {
     const listEl = document.getElementById("examList");
-    if (!listEl) return;
+    if (!listEl || !this.libraryState) return;
+
+    const { exams, folders } = this.libraryState;
 
     // Group exams by folder
-    const map: Record<string, typeof this.exams> = {};
+    const map: Record<string, ExamCardView[]> = {};
     let hasAnyExams = false;
 
-    this.exams.forEach((exam) => {
+    exams.forEach((exam) => {
       const fid = exam.folderId || "uncategorized";
       if (!map[fid]) map[fid] = [];
       map[fid].push(exam);
@@ -584,7 +470,7 @@ export class App {
     });
 
     // If truly empty, show empty state
-    if (!hasAnyExams && this.folders.length === 0) {
+    if (!hasAnyExams && folders.length === 0) {
       const T = this.translations;
       listEl.innerHTML = `
         <div class="no-exams">
@@ -596,29 +482,23 @@ export class App {
       return;
     }
 
-    // Load attempts and derive stats for display (Phase 6.5: Attempt-based stats)
-    const allAttempts = await this.storage.getAllAttempts();
-    const attemptStatsMap = new Map();
-    for (const exam of this.exams) {
-      const stats = getAttemptStatsForExam(allAttempts, exam.id);
-      if (stats) {
-        attemptStatsMap.set(exam.id, stats);
-      }
-    }
-
     // Render folders and exams
     let html = "";
-    for (const [folderId, exams] of Object.entries(map)) {
-      if (folderId === "uncategorized" && exams.length === 0 && this.folders.length > 0) {
+    for (const [folderId, folderExams] of Object.entries(map)) {
+      if (
+        folderId === "uncategorized" &&
+        folderExams.length === 0 &&
+        folders.length > 0
+      ) {
         continue;
       }
 
-      let folderName = this.folders.find((f) => f.id === folderId)?.name || folderId;
+      let folderName = folders.find((f) => f.id === folderId)?.name || folderId;
       if (folderId === "uncategorized") {
         folderName = this.translations.uncategorized;
       }
 
-      html += this.renderFolderSection(folderId, folderName, exams, attemptStatsMap);
+      html += this.renderFolderSection(folderId, folderName, folderExams);
     }
 
     listEl.innerHTML = html;
@@ -627,17 +507,15 @@ export class App {
   private renderFolderSection(
     folderId: string,
     folderName: string,
-    exams: StoredExam[],
-    attemptStatsMap: Map<string, { attemptCount: number; lastScore?: number; bestScore?: number }>
+    exams: ExamCardView[],
   ): string {
     const T = this.translations;
     const icon = folderId === "uncategorized" ? "📂" : "📁";
     const isUncat = folderId === "uncategorized";
 
-    const renderExam = (exam: StoredExam): string => {
-      const stats = attemptStatsMap.get(exam.id);
-      const attempts = stats?.attemptCount ?? 0;
-      const bestScore = stats?.bestScore ?? 0;
+    const renderExam = (exam: ExamCardView): string => {
+      const attempts = exam.stats?.attemptCount ?? 0;
+      const bestScore = exam.stats?.bestScore ?? 0;
 
       let statsHtml = "";
       if (attempts > 0) {
@@ -648,7 +526,7 @@ export class App {
           </div>
         `;
       } else {
-        statsHtml = `<span class="exam-item-meta">${exam.data.total_questions ?? "?"} ${T.questions}</span>`;
+        statsHtml = `<span class="exam-item-meta">${exam.questionCount ?? "?"} ${T.questions}</span>`;
       }
 
       return `
@@ -674,13 +552,14 @@ export class App {
             <span class="category-name">${folderName}</span>
             <span class="category-count">${exams.length}</span>
           </div>
-          ${!isUncat
-        ? `
+          ${
+            !isUncat
+              ? `
               <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameFolder('${folderId}')" title="${T.rename}">✏️</button>
               <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteFolder('${folderId}')" title="${T.delete}">🗑️</button>
             `
-        : ""
-      }
+              : ""
+          }
         </div>
         <div class="category-exams">
           ${exams.map((e) => renderExam(e)).join("")}
@@ -695,7 +574,9 @@ export class App {
 
   private bindEvents(): void {
     // File import
-    const fileInput = document.getElementById("fileInput") as HTMLInputElement | null;
+    const fileInput = document.getElementById(
+      "fileInput",
+    ) as HTMLInputElement | null;
     fileInput?.addEventListener("change", (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files && files.length > 0) {
@@ -722,7 +603,9 @@ export class App {
     });
 
     // Language selector
-    const langSelect = document.getElementById("languageSelect") as HTMLSelectElement | null;
+    const langSelect = document.getElementById(
+      "languageSelect",
+    ) as HTMLSelectElement | null;
     langSelect?.addEventListener("change", (e) => {
       this.setLanguage((e.target as HTMLSelectElement).value as LanguageCode);
     });
@@ -737,39 +620,29 @@ export class App {
       const text = await file.text();
       const data = JSON.parse(text);
 
-      // Validate exam format
-      let validatedExam: Exam;
-      try {
-        validatedExam = validateExam(data);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown validation error";
-        alert(`${this.translations.invalidExamFormat}: ${message}`);
-        return;
-      }
-
-      // Save exam
-      const storedExam: StoredExam = {
-        id: validatedExam.exam_id || crypto.randomUUID(),
-        title: validatedExam.title || "Untitled Exam",
-        data: validatedExam,
-        addedAt: new Date().toISOString(),
-        folderId: "uncategorized",
-      };
-
-      await this.storage.saveExam(storedExam);
+      // Import through the library controller (validates + persists)
+      const examId = await this.libraryController.importExam(data);
       await this.refreshLibrary();
 
-      alert(`${this.translations.importSuccessful || "Import successful"}: ${storedExam.title}`);
+      // Find the imported exam title from refreshed library state
+      const imported = this.libraryState?.exams.find((e) => e.id === examId);
+      const title = imported?.title ?? "Exam";
+      alert(
+        `${this.translations.importSuccessful || "Import successful"}: ${title}`,
+      );
     } catch (e) {
       console.error("Import failed:", e);
-      alert(this.translations.importFailed);
+      const message = e instanceof Error ? e.message : "Unknown error";
+      alert(`${this.translations.importFailed}: ${message}`);
     }
   }
 
   async exportLibrary(): Promise<void> {
     try {
-      const data = await this.storage.exportData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const snapshot = await this.libraryController.createBackup();
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
 
       const a = document.createElement("a");
@@ -793,12 +666,7 @@ export class App {
     if (!name || name.trim().length === 0) return;
 
     try {
-      const folder: Folder = {
-        id: crypto.randomUUID(),
-        name: name.trim(),
-        order: this.folders.length,
-      };
-      await this.storage.saveFolder(folder);
+      await this.libraryController.createFolder(name.trim());
       await this.refreshLibrary();
     } catch (e) {
       alert(this.translations.errorCreatingFolder);
@@ -806,26 +674,31 @@ export class App {
   }
 
   async promptRenameFolder(folderId: string): Promise<void> {
-    const folder = this.folders.find((f) => f.id === folderId);
+    if (!this.libraryState) return;
+    const folder = this.libraryState.folders.find((f) => f.id === folderId);
     if (!folder) return;
 
     const name = prompt(this.translations.newName, folder.name);
     if (!name || name.trim().length === 0) return;
 
-    folder.name = name.trim();
-    await this.storage.saveFolder(folder);
-    await this.refreshLibrary();
+    try {
+      await this.libraryController.renameFolder(folderId, name.trim());
+      await this.refreshLibrary();
+    } catch (e) {
+      alert(this.translations.errorRenaming || "Error renaming folder");
+    }
   }
 
   async deleteFolder(folderId: string): Promise<void> {
     const T = this.translations;
-    const folder = this.folders.find((f) => f.id === folderId);
+    if (!this.libraryState) return;
+    const folder = this.libraryState.folders.find((f) => f.id === folderId);
     if (!folder) return;
 
     if (!confirm(`${T.confirmDeleteFolder} "${folder.name}"?`)) return;
 
     try {
-      await this.storage.deleteFolder(folderId);
+      await this.libraryController.deleteFolder(folderId);
       await this.refreshLibrary();
     } catch (e) {
       alert(T.errorDeletingFolder);
@@ -837,45 +710,58 @@ export class App {
   // ============================================================================
 
   async promptRenameExam(examId: string): Promise<void> {
-    const exam = this.exams.find((e) => e.id === examId);
+    if (!this.libraryState) return;
+    const exam = this.libraryState.exams.find((e) => e.id === examId);
     if (!exam) return;
 
     const name = prompt(this.translations.newName, exam.title);
     if (!name || name.trim().length === 0) return;
 
-    exam.title = name.trim();
-    await this.storage.saveExam(exam);
-    await this.refreshLibrary();
+    try {
+      await this.libraryController.renameExam(examId, name.trim());
+      await this.refreshLibrary();
+    } catch (e) {
+      alert(this.translations.errorRenaming || "Error renaming exam");
+    }
   }
 
   async promptMoveExam(examId: string): Promise<void> {
-    const exam = this.exams.find((e) => e.id === examId);
+    if (!this.libraryState) return;
+    const exam = this.libraryState.exams.find((e) => e.id === examId);
     if (!exam) return;
 
-    const folderNames = this.folders.map((f) => f.name).join("\n");
-    const folderId = prompt(`${this.translations.moveToFolder}:\n${folderNames}`);
+    const folderNames = this.libraryState.folders.map((f) => f.name).join("\n");
+    const folderId = prompt(
+      `${this.translations.moveToFolder}:\n${folderNames}`,
+    );
     if (!folderId) return;
 
-    const targetFolder = this.folders.find((f) => f.name === folderId || f.id === folderId);
+    const targetFolder = this.libraryState.folders.find(
+      (f) => f.name === folderId || f.id === folderId,
+    );
     if (!targetFolder) {
       alert(this.translations.folderNotFound || "Folder not found");
       return;
     }
 
-    exam.folderId = targetFolder.id;
-    await this.storage.saveExam(exam);
-    await this.refreshLibrary();
+    try {
+      await this.libraryController.moveExam(examId, targetFolder.id);
+      await this.refreshLibrary();
+    } catch (e) {
+      alert(this.translations.errorMovingExam || "Error moving exam");
+    }
   }
 
   async deleteExam(examId: string): Promise<void> {
     const T = this.translations;
-    const exam = this.exams.find((e) => e.id === examId);
+    if (!this.libraryState) return;
+    const exam = this.libraryState.exams.find((e) => e.id === examId);
     if (!exam) return;
 
     if (!confirm(`${T.confirmDelete} "${exam.title}"?`)) return;
 
     try {
-      await this.storage.deleteExam(examId);
+      await this.libraryController.deleteExam(examId);
       await this.refreshLibrary();
     } catch (e) {
       alert(T.errorDeletingExam);
@@ -901,13 +787,26 @@ export class App {
           articulo_referencia: "HTML-1.1",
           feedback: {
             cita_literal: "HTML stands for HyperText Markup Language",
-            explicacion_fallo: "HTML is the standard markup language for documents designed to be displayed in a web browser.",
+            explicacion_fallo:
+              "HTML is the standard markup language for documents designed to be displayed in a web browser.",
           },
           answers: [
             { letter: "A", text: "HyperText Markup Language", isCorrect: true },
-            { letter: "B", text: "HighText Machine Language", isCorrect: false },
-            { letter: "C", text: "HyperText Markdown Language", isCorrect: false },
-            { letter: "D", text: "Home Tool Markup Language", isCorrect: false },
+            {
+              letter: "B",
+              text: "HighText Machine Language",
+              isCorrect: false,
+            },
+            {
+              letter: "C",
+              text: "HyperText Markdown Language",
+              isCorrect: false,
+            },
+            {
+              letter: "D",
+              text: "Home Tool Markup Language",
+              isCorrect: false,
+            },
           ],
         },
         {
@@ -917,7 +816,8 @@ export class App {
           articulo_referencia: "CSS-2.1",
           feedback: {
             cita_literal: "The color property sets the color of text",
-            explicacion_fallo: "The color CSS property sets the foreground color value of an element's text content.",
+            explicacion_fallo:
+              "The color CSS property sets the foreground color value of an element's text content.",
           },
           answers: [
             { letter: "A", text: "text-color", isCorrect: false },
@@ -933,7 +833,8 @@ export class App {
           articulo_referencia: "JS-1.1",
           feedback: {
             cita_literal: "<script src='app.js'></script>",
-            explicacion_fallo: "The src attribute specifies the URL of an external script file.",
+            explicacion_fallo:
+              "The src attribute specifies the URL of an external script file.",
           },
           answers: [
             { letter: "A", text: "<script href='app.js'>", isCorrect: false },
@@ -945,16 +846,12 @@ export class App {
       ],
     };
 
-    const storedExam: StoredExam = {
-      id: demoExam.exam_id,
-      title: demoExam.title,
-      data: demoExam,
-      addedAt: new Date().toISOString(),
-      folderId: "uncategorized",
-    };
-
-    await this.storage.saveExam(storedExam);
-    await this.refreshLibrary();
+    try {
+      await this.libraryController.importExam(demoExam);
+      await this.refreshLibrary();
+    } catch (e) {
+      console.error("Failed to import demo data:", e);
+    }
   }
 
   // ============================================================================

@@ -14,7 +14,8 @@ import type {
 } from "../domain/types.js";
 
 const DB_NAME = "ginax_db";
-const DB_VERSION = 4; // Phase 7: Removed legacy progress store
+/** Current IndexedDB schema version */
+export const DB_VERSION = 4; // Phase 7: Removed legacy progress store
 
 // Store names
 const STORES = {
@@ -105,7 +106,7 @@ export class ExamStorage {
               STORES.QUESTION_TELEMETRY,
               {
                 keyPath: "id",
-              }
+              },
             );
             telemetryStore.createIndex("examId_questionNumber", [
               "examId",
@@ -133,7 +134,7 @@ export class ExamStorage {
    */
   private async transaction(
     storeNames: string | string[],
-    mode: IDBTransactionMode
+    mode: IDBTransactionMode,
   ): Promise<IDBTransaction> {
     const db = await this.ready();
     return db.transaction(storeNames, mode);
@@ -221,12 +222,8 @@ export class ExamStorage {
 
     return new Promise((resolve, reject) => {
       this.transaction(
-        [
-          STORES.EXAMS,
-          STORES.QUESTION_TELEMETRY,
-          STORES.ATTEMPTS,
-        ],
-        "readwrite"
+        [STORES.EXAMS, STORES.QUESTION_TELEMETRY, STORES.ATTEMPTS],
+        "readwrite",
       )
         .then((tx) => {
           // Delete exam
@@ -504,7 +501,7 @@ export class ExamStorage {
    */
   async getQuestionTelemetry(
     examId: string,
-    questionNumber: number
+    questionNumber: number,
   ): Promise<QuestionTelemetry | undefined> {
     await this.ready();
 
@@ -570,7 +567,7 @@ export class ExamStorage {
    */
   async deleteQuestionTelemetry(
     examId: string,
-    questionNumber: number
+    questionNumber: number,
   ): Promise<void> {
     await this.ready();
 
@@ -682,7 +679,7 @@ export class ExamStorage {
           STORES.ATTEMPTS,
           STORES.QUESTION_TELEMETRY,
         ],
-        "readwrite"
+        "readwrite",
       )
         .then((tx) => {
           // Merge data, overwriting if ID exists
@@ -734,7 +731,7 @@ export class ExamStorage {
           STORES.ATTEMPTS,
           STORES.QUESTION_TELEMETRY,
         ],
-        "readwrite"
+        "readwrite",
       )
         .then((tx) => {
           tx.objectStore(STORES.EXAMS).clear();

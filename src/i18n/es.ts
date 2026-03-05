@@ -25,6 +25,12 @@ export const LANG_ES = {
   // Modes
   practiceMode: "▶️ Práctica",
   reviewMode: "📖 Repasar Todo",
+  selectMode: "Selecciona Modo de Práctica",
+  freeMode: "Modo Libre",
+  freeModeDesc: "Practica a tu ritmo con el examen completo",
+  simulacroMode: "Simulacro",
+  simulacroModeDesc: "Simulación de examen con tiempo",
+  reviewModeDesc: "Enfócate en las preguntas débiles",
 
   // Stats
   questions: "preguntas",
@@ -100,6 +106,9 @@ export const LANG_ES = {
   errorDeletingFolder: "Error al eliminar carpeta",
   errorDeletingExam: "Error al eliminar examen",
   importFailed: "Error al importar",
+  importSuccessful: "Importación exitosa",
+  folderNotFound: "Carpeta no encontrada",
+  wrongAnswer: "Incorrecto",
   exportFailed: "Error al exportar",
   invalidExamFormat: "Formato de examen inválido",
   errorRenaming: "Error al renombrar",

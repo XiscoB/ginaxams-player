@@ -24,6 +24,12 @@ export const LANG_EN = {
   // Modes
   practiceMode: "▶️ Practice",
   reviewMode: "📖 Review All",
+  selectMode: "Select Practice Mode",
+  freeMode: "Free Mode",
+  freeModeDesc: "Practice at your own pace with full exam",
+  simulacroMode: "Simulacro",
+  simulacroModeDesc: "Timed exam simulation",
+  reviewModeDesc: "Focus on weak questions",
 
   // Stats
   questions: "questions",
@@ -99,6 +105,9 @@ export const LANG_EN = {
   errorDeletingFolder: "Failed to delete folder",
   errorDeletingExam: "Failed to delete exam",
   importFailed: "Import failed",
+  importSuccessful: "Import successful",
+  folderNotFound: "Folder not found",
+  wrongAnswer: "Incorrect",
   exportFailed: "Export failed",
   invalidExamFormat: "Invalid exam format: missing 'questions' array.",
   errorRenaming: "Failed to rename",
@@ -214,6 +223,6 @@ export const LANG_EN = {
   referenceArticle: "Reference",
   literalCitation: "Citation",
   explanation: "Explanation",
-}
+};
 
 export type TranslationKey = keyof typeof LANG_EN;
