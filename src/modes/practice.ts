@@ -55,6 +55,13 @@ export class PracticeManager {
   }
 
   /**
+   * Reset feedback tracking state (call when starting a new attempt).
+   */
+  resetFeedbackState(): void {
+    this.lastRenderedFeedbackKey = null;
+  }
+
+  /**
    * Bind DOM events for navigation
    */
   private bindEvents(): void {
@@ -322,19 +329,38 @@ export class PracticeManager {
   }
 
   /**
+   * Track the last rendered feedback state to prevent flicker on re-renders.
+   * Stores `questionNumber:isCorrect` to detect whether feedback has changed.
+   */
+  private lastRenderedFeedbackKey: string | null = null;
+
+  /**
    * Update feedback display from view state.
    * Uses the feedback-panel component for clear visual separation.
+   * Skips re-render if the feedback hasn't changed (prevents flicker
+   * when timer ticks trigger frequent render cycles).
    */
   private updateFeedback(state: AttemptViewState, T: Translations): void {
     const feedbackSection = document.getElementById("feedbackSection");
     if (!feedbackSection) return;
 
     if (!state.feedback) {
-      feedbackSection.classList.add("hidden");
-      feedbackSection.innerHTML = "";
+      if (this.lastRenderedFeedbackKey !== null) {
+        feedbackSection.classList.add("hidden");
+        feedbackSection.innerHTML = "";
+        this.lastRenderedFeedbackKey = null;
+      }
       return;
     }
 
+    // Build a key to detect whether feedback content changed
+    const feedbackKey = `${state.questionNumber}:${state.feedback.isCorrect}`;
+    if (feedbackKey === this.lastRenderedFeedbackKey) {
+      // Feedback already rendered for this question — skip to avoid flicker
+      return;
+    }
+
+    this.lastRenderedFeedbackKey = feedbackKey;
     feedbackSection.classList.remove("hidden");
 
     const isCorrect = state.feedback.isCorrect;

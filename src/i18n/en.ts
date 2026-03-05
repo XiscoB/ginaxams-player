@@ -237,6 +237,31 @@ export const LANG_EN = {
   modeFree: "Free",
   modeSimulacro: "Simulacro",
   modeReview: "Review",
+
+  // Review Screen Navigation
+  reviewPrev: "← Prev",
+  reviewNext: "Next →",
+  reviewBack: "Back",
+
+  // Mode Card Descriptions
+  modeFreeDescription: "No telemetry tracking",
+  modeSimulacroDescription: "Configurable timer",
+  modeReviewDescription: "Adaptive practice",
+  modeStartButton: "Start",
+
+  // Simulacro Timer Configuration
+  timerConfig: "Timer Duration",
+  timerNoLimit: "No timer",
+  timer30: "30 minutes",
+  timer60: "60 minutes",
+  timer90: "90 minutes",
+  questionCountLabel: "Question Count",
+  penaltyLabel: "Penalty per wrong answer",
+  rewardLabel: "Reward per correct answer",
+
+  // Timer Visibility
+  showTimer: "Show Timer",
+  hideTimer: "Hide Timer",
 };
 
 export type TranslationKey = keyof typeof LANG_EN;

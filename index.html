@@ -3880,7 +3880,7 @@
               <button
                 class="help-menu-item"
                 onclick="
-                  window.app.showChoiceModal();
+                  window.app.showTemplateModal();
                   window.app.toggleHelpMenu();
                 "
               >
@@ -3984,6 +3984,15 @@
           >
             <span id="txtExitReview">Menu</span>
           </button>
+          <div id="simulacroTimerArea" class="hidden" style="display: flex; align-items: center; gap: 8px;">
+            <span id="simulacroTimerDisplay" style="font-family: monospace; font-size: 1.1em; color: var(--accent-primary);"></span>
+            <button
+              id="timerToggleBtn"
+              class="lang-btn"
+              style="font-size: 0.75em; padding: 4px 10px;"
+              onclick="window.app.toggleTimerVisibility()"
+            >Hide Timer</button>
+          </div>
           <div
             id="progressText"
             class="progress-text"
@@ -4160,7 +4169,7 @@
         <div class="nav-buttons-top">
           <button
             class="nav-btn prev"
-            onclick="window.app.practiceManager.showResults()"
+            onclick="window.app.backToResults()"
           >
             <span id="txtBackReview">Back</span>
           </button>
@@ -4207,13 +4216,13 @@
 
         <div class="nav-buttons">
           <button
-            onclick="window.app.practiceManager.prevQuestion()"
+            onclick="window.app.reviewPrevQuestion()"
             class="nav-btn prev"
           >
             <span id="txtReviewPrevious">Prev</span>
           </button>
           <button
-            onclick="window.app.practiceManager.nextQuestion()"
+            onclick="window.app.reviewNextQuestion()"
             class="nav-btn next"
           >
             <span id="txtReviewNext">Next</span>

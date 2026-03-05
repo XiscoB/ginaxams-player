@@ -239,4 +239,29 @@ export const LANG_ES = {
   modeFree: "Libre",
   modeSimulacro: "Simulacro",
   modeReview: "Repaso",
+
+  // Review Screen Navigation
+  reviewPrev: "← Anterior",
+  reviewNext: "Siguiente →",
+  reviewBack: "Volver",
+
+  // Mode Card Descriptions
+  modeFreeDescription: "Sin seguimiento de telemetría",
+  modeSimulacroDescription: "Temporizador configurable",
+  modeReviewDescription: "Práctica adaptativa",
+  modeStartButton: "Iniciar",
+
+  // Simulacro Timer Configuration
+  timerConfig: "Duración del temporizador",
+  timerNoLimit: "Sin temporizador",
+  timer30: "30 minutos",
+  timer60: "60 minutos",
+  timer90: "90 minutos",
+  questionCountLabel: "Número de preguntas",
+  penaltyLabel: "Penalización por respuesta incorrecta",
+  rewardLabel: "Recompensa por respuesta correcta",
+
+  // Timer Visibility
+  showTimer: "Mostrar Temporizador",
+  hideTimer: "Ocultar Temporizador",
 } as const;

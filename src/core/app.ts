@@ -82,6 +82,7 @@ export class App {
   private currentAttemptView: AttemptViewState | null = null;
   private currentResultView: AttemptResultViewState | null = null;
   private simulacroTimerInterval: ReturnType<typeof setInterval> | null = null;
+  private timerVisible = true;
 
   // Onboarding state
   private onboardingStep = 1;
@@ -222,10 +223,10 @@ export class App {
             </div>
             <div class="mode-card__desc">
               <span>${T.freeModeDesc || "Practice at your own pace with full exam"}</span>
-              <span style="color: var(--text-muted); font-size: 0.85em;">No telemetry tracking</span>
+              <span style="color: var(--text-muted); font-size: 0.85em;">${T.modeFreeDescription || "No telemetry tracking"}</span>
             </div>
             <div class="mode-card__actions">
-              <button id="btnFreeMode" class="btn btn--primary">Start</button>
+              <button id="btnFreeMode" class="btn btn--primary">${T.modeStartButton || "Start"}</button>
             </div>
           </div>
           <div class="mode-card mode-card--simulacro">
@@ -235,10 +236,19 @@ export class App {
             </div>
             <div class="mode-card__desc">
               <span>${T.simulacroModeDesc || "Timed exam simulation"}</span>
-              <span style="color: var(--text-muted); font-size: 0.85em;">Configurable timer</span>
+              <span style="color: var(--text-muted); font-size: 0.85em;">${T.modeSimulacroDescription || "Configurable timer"}</span>
+            </div>
+            <div class="mode-card__config" style="margin-top: var(--space-sm);">
+              <label style="display: block; margin-bottom: var(--space-xs); color: var(--text-secondary); font-size: 0.85em;">${T.timerConfig || "Timer Duration"}</label>
+              <select id="simulacroTimerSelect" class="config-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-size: 0.9em; margin-bottom: var(--space-sm);">
+                <option value="0">${T.timerNoLimit || "No timer"}</option>
+                <option value="1800000">${T.timer30 || "30 minutes"}</option>
+                <option value="3600000" selected>${T.timer60 || "60 minutes"}</option>
+                <option value="5400000">${T.timer90 || "90 minutes"}</option>
+              </select>
             </div>
             <div class="mode-card__actions">
-              <button id="btnSimulacroMode" class="btn btn--primary">Start</button>
+              <button id="btnSimulacroMode" class="btn btn--primary">${T.modeStartButton || "Start"}</button>
             </div>
           </div>
           <div class="mode-card mode-card--review">
@@ -248,10 +258,10 @@ export class App {
             </div>
             <div class="mode-card__desc">
               <span>${T.reviewModeDesc || "Focus on weak questions"}</span>
-              <span style="color: var(--text-muted); font-size: 0.85em;">Adaptive practice</span>
+              <span style="color: var(--text-muted); font-size: 0.85em;">${T.modeReviewDescription || "Adaptive practice"}</span>
             </div>
             <div class="mode-card__actions">
-              <button id="btnReviewMode" class="btn btn--primary">Start</button>
+              <button id="btnReviewMode" class="btn btn--primary">${T.modeStartButton || "Start"}</button>
             </div>
           </div>
         </div>
@@ -285,13 +295,48 @@ export class App {
       practiceScreen.classList.remove("hidden");
     }
 
+    // Show/hide timer area based on mode
+    const timerArea = document.getElementById("simulacroTimerArea");
+    if (timerArea) {
+      const isSimulacro = this.currentAttemptView?.mode === "simulacro" && this.currentAttemptView?.timer;
+      if (isSimulacro) {
+        timerArea.classList.remove("hidden");
+        timerArea.style.display = "flex";
+        this.timerVisible = true;
+        this.updateTimerVisibility();
+      } else {
+        timerArea.classList.add("hidden");
+        timerArea.style.display = "none";
+      }
+    }
+
+    // Reset feedback tracking for new attempt
+    this.practiceManager.resetFeedbackState();
+
     // Initial render if we have a cached view state
     if (this.currentAttemptView) {
       this.practiceManager.render(this.currentAttemptView);
+      this.renderSimulacroTimer();
     }
   }
 
-  private showResultsScreen(): void {
+  /**
+   * Render the simulacro timer display.
+   */
+  private renderSimulacroTimer(): void {
+    if (!this.currentAttemptView?.timer) return;
+
+    const timerDisplay = document.getElementById("simulacroTimerDisplay");
+    if (!timerDisplay) return;
+
+    const remainingMs = this.currentAttemptView.timer.remainingMs;
+    const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
+
+  private async showResultsScreen(): Promise<void> {
     if (!this.currentResultView) {
       this.setView("library");
       return;
@@ -304,6 +349,9 @@ export class App {
 
     // Render results via PracticeManager
     this.practiceManager.renderResults(this.currentResultView);
+
+    // Populate last/best score from attempt history
+    await this.populateScoreComparison();
 
     // Bind results action buttons
     const btnTryAgain = document.getElementById("btnTryAgain");
@@ -326,6 +374,45 @@ export class App {
     }
   }
 
+  /**
+   * Populate the Last Score / Best Score comparison on the results screen
+   * from stored attempt data via the library controller.
+   */
+  private async populateScoreComparison(): Promise<void> {
+    const T = this.translations;
+    const lastScoreEl = document.getElementById("lastScoreValue");
+    const bestScoreEl = document.getElementById("bestScoreValue");
+
+    if (!lastScoreEl || !bestScoreEl) return;
+
+    // Refresh library to get updated stats after the attempt was persisted
+    try {
+      await this.refreshLibrary();
+    } catch {
+      // If refresh fails, just show dashes
+    }
+
+    if (this.pendingAttempt && this.libraryState) {
+      const exam = this.libraryState.exams.find(
+        (e) => e.id === this.pendingAttempt!.examId,
+      );
+      if (exam?.stats) {
+        lastScoreEl.textContent =
+          exam.stats.lastScore !== undefined
+            ? `${exam.stats.lastScore}%`
+            : (T.notAttempted || "-");
+        bestScoreEl.textContent =
+          exam.stats.bestScore !== undefined
+            ? `${exam.stats.bestScore}%`
+            : (T.notAttempted || "-");
+        return;
+      }
+    }
+
+    lastScoreEl.textContent = T.notAttempted || "-";
+    bestScoreEl.textContent = T.notAttempted || "-";
+  }
+
   private showReviewScreen(): void {
     if (!this.currentResultView) return;
 
@@ -334,6 +421,15 @@ export class App {
     if (reviewScreen) {
       reviewScreen.classList.remove("hidden");
     }
+
+    // Update review screen translation labels
+    const T = this.translations;
+    const txtBackReview = document.getElementById("txtBackReview");
+    if (txtBackReview) txtBackReview.textContent = T.reviewBack || T.back || "Back";
+    const txtReviewPrev = document.getElementById("txtReviewPrevious");
+    if (txtReviewPrev) txtReviewPrev.textContent = T.reviewPrev || "← Prev";
+    const txtReviewNext = document.getElementById("txtReviewNext");
+    if (txtReviewNext) txtReviewNext.textContent = T.reviewNext || "Next →";
 
     this.renderReviewScreenContent("all");
 
@@ -430,6 +526,33 @@ export class App {
     }
   }
 
+  /**
+   * Navigate back from review screen to results screen.
+   */
+  backToResults(): void {
+    this.setView("results");
+  }
+
+  /**
+   * Navigate to previous question in review screen.
+   */
+  reviewPrevQuestion(): void {
+    if (this.reviewCurrentIndex > 0) {
+      this.reviewCurrentIndex--;
+      this.renderReviewQuestion();
+    }
+  }
+
+  /**
+   * Navigate to next question in review screen.
+   */
+  reviewNextQuestion(): void {
+    if (this.reviewCurrentIndex < this.reviewFilteredQuestions.length - 1) {
+      this.reviewCurrentIndex++;
+      this.renderReviewQuestion();
+    }
+  }
+
   // ============================================================================
   // Attempt Creation & Runner Management
   // ============================================================================
@@ -468,6 +591,15 @@ export class App {
     const { examId } = this.pendingAttempt;
 
     try {
+      // Read simulacro timer config from UI
+      let timeLimitMs = 3600000; // default 60 minutes
+      if (mode === "simulacro") {
+        const timerSelect = document.getElementById("simulacroTimerSelect") as HTMLSelectElement | null;
+        if (timerSelect) {
+          timeLimitMs = parseInt(timerSelect.value, 10);
+        }
+      }
+
       const viewState = await this.attemptController.startAttempt({
         mode,
         examIds: [examId],
@@ -475,7 +607,7 @@ export class App {
           mode === "simulacro"
             ? {
                 questionCount: 60,
-                timeLimitMs: 600000,
+                timeLimitMs,
                 penalty: 0,
                 reward: 1,
               }
@@ -501,6 +633,12 @@ export class App {
 
   private startSimulacroTimer(): void {
     this.stopSimulacroTimer();
+    this.timerVisible = true;
+
+    // If no time limit (timeLimitMs = 0), don't start a timer
+    if (this.currentAttemptView?.timer?.totalMs === 0) {
+      return;
+    }
 
     const TICK_INTERVAL = 1000;
     this.simulacroTimerInterval = setInterval(() => {
@@ -511,6 +649,12 @@ export class App {
 
       this.currentAttemptView = this.attemptController.tick(TICK_INTERVAL);
       this.practiceManager.render(this.currentAttemptView);
+
+      // Update timer display
+      this.renderSimulacroTimer();
+
+      // Update timer display visibility
+      this.updateTimerVisibility();
 
       // Auto-finalize when timer expires
       if (this.currentAttemptView.isFinished) {
@@ -524,6 +668,33 @@ export class App {
     if (this.simulacroTimerInterval !== null) {
       clearInterval(this.simulacroTimerInterval);
       this.simulacroTimerInterval = null;
+    }
+  }
+
+  /**
+   * Toggle timer visibility during simulacro mode.
+   * Timer continues running even when hidden.
+   */
+  toggleTimerVisibility(): void {
+    this.timerVisible = !this.timerVisible;
+    this.updateTimerVisibility();
+  }
+
+  /**
+   * Update the timer display and toggle button based on visibility state.
+   */
+  private updateTimerVisibility(): void {
+    const T = this.translations;
+    const timerDisplay = document.getElementById("simulacroTimerDisplay");
+    const timerToggle = document.getElementById("timerToggleBtn");
+
+    if (timerDisplay) {
+      timerDisplay.style.visibility = this.timerVisible ? "visible" : "hidden";
+    }
+    if (timerToggle) {
+      timerToggle.textContent = this.timerVisible
+        ? (T.hideTimer || "Hide Timer")
+        : (T.showTimer || "Show Timer");
     }
   }
 
@@ -783,10 +954,12 @@ export class App {
     setText("txtBackToLibraryBtn", T.backToLibrary);
 
     // Review screen
-    setText("txtBackReview", T.back);
+    setText("txtBackReview", T.reviewBack || T.back);
     setText("txtFilterAll", T.filterAll);
     setText("txtFilterWrong", T.filterWrong);
     setText("txtCorrectAnswer", T.correctAnswer);
+    setText("txtReviewPrevious", T.reviewPrev);
+    setText("txtReviewNext", T.reviewNext);
 
     // Onboarding
     setText("txtOnboardingSkip", T.onboardingSkip);
