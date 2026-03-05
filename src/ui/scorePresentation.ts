@@ -21,9 +21,9 @@ export type ScoreCategory = "good" | "medium" | "bad";
  */
 export function getScoreColor(category: ScoreCategory): string {
   const colors: Record<ScoreCategory, string> = {
-    good: "var(--accent-secondary)", // #00ff88
-    medium: "#ffd700",
-    bad: "#ff6b6b",
+    good: "var(--color-success)",
+    medium: "var(--color-warning)",
+    bad: "var(--color-error)",
   };
   return colors[category];
 }

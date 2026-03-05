@@ -9,17 +9,63 @@
 
     <style>
       :root {
+        /* Backgrounds */
         --bg-primary: #0f0f1a;
         --bg-secondary: rgba(20, 20, 35, 0.6);
         --bg-card: rgba(30, 30, 50, 0.4);
+
+        /* Accent */
         --accent-primary: #00d4ff;
         --accent-secondary: #00ff88;
         --accent-gradient: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+
+        /* Semantic Colors */
+        --color-success: #00ff88;
+        --color-success-dim: #1a3d2e;
+        --color-success-bg: rgba(0, 255, 136, 0.12);
+        --color-success-border: rgba(0, 255, 136, 0.4);
+        --color-error: #ff4757;
+        --color-error-dim: #3d1a1a;
+        --color-error-bg: rgba(255, 71, 87, 0.12);
+        --color-error-border: rgba(255, 71, 87, 0.4);
+        --color-warning: #ffd700;
+        --color-warning-bg: rgba(255, 215, 0, 0.12);
+        --color-warning-border: rgba(255, 215, 0, 0.4);
+        --color-neutral: #a0a0b0;
+        --color-neutral-bg: rgba(160, 160, 176, 0.08);
+        --color-neutral-border: rgba(160, 160, 176, 0.25);
+
+        /* Text */
         --text-primary: #ffffff;
         --text-secondary: #a0a0b0;
+        --text-muted: #666680;
+
+        /* Borders */
         --border-color: rgba(255, 255, 255, 0.1);
+        --border-hover: rgba(255, 255, 255, 0.2);
+
+        /* Spacing Scale */
+        --space-xs: 4px;
+        --space-sm: 8px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 32px;
+        --space-2xl: 48px;
+
+        /* Radii */
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+
+        /* Shadows */
         --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        --glass: backdrop-filter: blur(20px);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+        --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+
+        /* Transitions */
+        --transition-fast: 0.15s ease;
+        --transition-normal: 0.25s ease;
       }
 
       * {
@@ -2734,6 +2780,581 @@
           font-size: 1.1em;
         }
       }
+
+      /* ================================================================
+         Phase 3: Mode Cards
+         ================================================================ */
+      .mode-cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+        margin-bottom: var(--space-lg);
+      }
+
+      .mode-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        backdrop-filter: blur(20px);
+        transition: border-color var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .mode-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--accent-gradient);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+      }
+
+      .mode-card:hover {
+        border-color: var(--accent-primary);
+        box-shadow: 0 8px 24px rgba(0, 212, 255, 0.12);
+        transform: translateY(-2px);
+      }
+
+      .mode-card:hover::before {
+        opacity: 1;
+      }
+
+      .mode-card--free::before { background: var(--accent-primary); }
+      .mode-card--simulacro::before { background: var(--color-warning); }
+      .mode-card--review::before { background: var(--color-success); }
+
+      .mode-card__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-sm);
+      }
+
+      .mode-card__icon {
+        font-size: 1.6em;
+        line-height: 1;
+      }
+
+      .mode-card__title {
+        font-size: 1.15em;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .mode-card__desc {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        line-height: 1.5;
+        margin-bottom: var(--space-md);
+      }
+
+      .mode-card__desc span {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .mode-card__actions {
+        display: flex;
+        gap: var(--space-sm);
+        justify-content: flex-end;
+      }
+
+      /* ================================================================
+         Phase 3: Unified Button System
+         ================================================================ */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-sm);
+        padding: 10px 20px;
+        font-size: 0.95em;
+        font-weight: 600;
+        font-family: inherit;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        backdrop-filter: blur(10px);
+        line-height: 1.4;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: none;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .btn:disabled, .btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .btn--primary {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--primary:hover:not(:disabled) {
+        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--primary:active:not(:disabled) {
+        box-shadow: 0 2px 8px rgba(0, 212, 255, 0.2);
+        background: var(--accent-gradient);
+      }
+
+      .btn--secondary {
+        background: transparent;
+        border-color: var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      .btn--secondary:hover:not(:disabled) {
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .btn--success {
+        background: var(--color-success);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--success:hover:not(:disabled) {
+        box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+        background: var(--color-success);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--sm {
+        padding: 6px 14px;
+        font-size: 0.85em;
+      }
+
+      .btn--lg {
+        padding: 14px 28px;
+        font-size: 1.05em;
+      }
+
+      /* Ensure existing mode-btn has consistent states */
+      .mode-btn:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      .mode-btn:disabled, .mode-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      /* Ensure nav-btn has consistent disabled state */
+      .nav-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+        filter: grayscale(0.5);
+      }
+
+      .nav-btn:active:not(:disabled) {
+        transform: translateY(0) !important;
+      }
+
+      /* ================================================================
+         Phase 3: Improved Answer Feedback
+         ================================================================ */
+      .answer-option.correct {
+        border-color: var(--color-success-border);
+        background: var(--color-success-bg);
+      }
+
+      .answer-option.correct .answer-letter {
+        background: var(--color-success);
+        color: var(--bg-primary);
+      }
+
+      .answer-option.wrong {
+        border-color: var(--color-error-border);
+        background: var(--color-error-bg);
+      }
+
+      .answer-option.wrong .answer-letter {
+        background: var(--color-error);
+        color: #fff;
+      }
+
+      .answer-option.incorrect {
+        border-color: var(--color-error-border);
+        background: var(--color-error-bg);
+      }
+
+      .answer-option.incorrect .answer-letter {
+        background: var(--color-error);
+        color: #fff;
+      }
+
+      .answer-option.show-correct {
+        border-color: var(--color-success-border);
+        background: var(--color-success-bg);
+      }
+
+      .answer-option.show-correct .answer-letter {
+        background: var(--color-success);
+        color: var(--bg-primary);
+      }
+
+      /* Feedback panel - distinct from answer list */
+      .feedback-panel {
+        margin-top: var(--space-lg);
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      .feedback-panel--correct {
+        border-color: var(--color-success-border);
+      }
+
+      .feedback-panel--wrong {
+        border-color: var(--color-error-border);
+      }
+
+      .feedback-panel__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: var(--space-md);
+        font-weight: 600;
+        font-size: 1.05em;
+      }
+
+      .feedback-panel--correct .feedback-panel__header {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+      }
+
+      .feedback-panel--wrong .feedback-panel__header {
+        background: var(--color-error-bg);
+        color: var(--color-error);
+      }
+
+      .feedback-panel__body {
+        padding: var(--space-md);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+
+      .feedback-panel__field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xs);
+      }
+
+      .feedback-panel__label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .feedback-panel__value {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .feedback-panel__citation {
+        padding: var(--space-sm) var(--space-md);
+        border-left: 3px solid var(--color-warning);
+        background: var(--color-warning-bg);
+        color: var(--text-secondary);
+        font-style: italic;
+        font-size: 0.95em;
+        line-height: 1.6;
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      }
+
+      /* ================================================================
+         Phase 3: Results Screen Layout
+         ================================================================ */
+      .results-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        margin-bottom: var(--space-md);
+        backdrop-filter: blur(20px);
+      }
+
+      .results-section__title {
+        font-size: 0.8em;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        margin-bottom: var(--space-md);
+        font-weight: 600;
+      }
+
+      .results-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-sm);
+      }
+
+      .results-stat {
+        text-align: center;
+        padding: var(--space-md) var(--space-sm);
+        border-radius: var(--radius-md);
+        background: var(--color-neutral-bg);
+        border: 1px solid transparent;
+      }
+
+      .results-stat--correct {
+        background: var(--color-success-bg);
+        border-color: var(--color-success-border);
+      }
+
+      .results-stat--wrong {
+        background: var(--color-error-bg);
+        border-color: var(--color-error-border);
+      }
+
+      .results-stat--blank {
+        background: var(--color-neutral-bg);
+        border-color: var(--color-neutral-border);
+      }
+
+      .results-stat__value {
+        font-size: 1.8em;
+        font-weight: 800;
+        display: block;
+        margin-bottom: var(--space-xs);
+      }
+
+      .results-stat--correct .results-stat__value { color: var(--color-success); }
+      .results-stat--wrong .results-stat__value { color: var(--color-error); }
+      .results-stat--blank .results-stat__value { color: var(--color-neutral); }
+
+      .results-stat__label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+      }
+
+      .results-score-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-md) 0;
+        border-top: 1px solid var(--border-color);
+        margin-top: var(--space-md);
+      }
+
+      .results-score-row__label {
+        font-size: 1em;
+        color: var(--text-secondary);
+      }
+
+      .results-score-row__value {
+        font-size: 1.4em;
+        font-weight: 800;
+      }
+
+      .results-time-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-sm) 0;
+      }
+
+      .results-time-row__label {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+      }
+
+      .results-time-row__value {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .results-actions {
+        display: flex;
+        gap: var(--space-sm);
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: var(--space-md);
+      }
+
+      .results-actions .btn {
+        min-width: 160px;
+      }
+
+      /* Review items with semantic colors */
+      .review-item.correct {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+        border: 1px solid var(--color-success-border);
+      }
+
+      .review-item.incorrect {
+        background: var(--color-error-bg);
+        color: var(--color-error);
+        border: 1px solid var(--color-error-border);
+      }
+
+      .review-item.unanswered {
+        background: var(--color-neutral-bg);
+        color: var(--color-neutral);
+        border: 1px solid var(--color-neutral-border);
+      }
+
+      /* Score circle semantic colors */
+      .score-circle.good {
+        --score-color: var(--color-success);
+      }
+      .score-circle.medium {
+        --score-color: var(--color-warning);
+      }
+      .score-circle.bad {
+        --score-color: var(--color-error);
+      }
+
+      /* Minimap semantic colors */
+      .minimap-item.user-correct {
+        background: var(--color-success);
+        color: var(--bg-primary);
+      }
+
+      .minimap-item.user-incorrect {
+        background: var(--color-error);
+        color: #fff;
+      }
+
+      .minimap-item.was-correct {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+      }
+
+      .minimap-item.was-incorrect {
+        background: var(--color-error-bg);
+        color: var(--color-error);
+      }
+
+      /* ================================================================
+         Phase 3: Spacing Consistency Overrides
+         ================================================================ */
+      .question-card {
+        padding: var(--space-lg);
+        margin-bottom: var(--space-md);
+        border-radius: var(--radius-lg);
+      }
+
+      .answers {
+        gap: var(--space-sm);
+      }
+
+      .nav-buttons {
+        gap: var(--space-md);
+      }
+
+      .nav-buttons-top {
+        gap: var(--space-md);
+        margin-bottom: var(--space-md);
+      }
+
+      .progress-container {
+        margin-bottom: var(--space-sm);
+      }
+
+      .file-input-area {
+        padding: var(--space-xl) var(--space-lg);
+        margin-bottom: var(--space-lg);
+        border-radius: var(--radius-xl);
+      }
+
+      .exam-item {
+        padding: var(--space-md) var(--space-lg);
+        margin-bottom: var(--space-sm);
+        border-radius: var(--radius-lg);
+      }
+
+      .category-exams {
+        padding: var(--space-sm) 0 var(--space-sm) var(--space-lg);
+      }
+
+      .category-header {
+        padding: var(--space-md);
+        border-radius: var(--radius-lg);
+      }
+
+      /* Mode cards responsive */
+      @media (max-width: 600px) {
+        .mode-card {
+          padding: var(--space-md);
+        }
+
+        .mode-card__title {
+          font-size: 1.05em;
+        }
+
+        .mode-card__actions {
+          flex-direction: column;
+        }
+
+        .mode-card__actions .btn {
+          width: 100%;
+        }
+
+        .results-stats-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: var(--space-xs);
+        }
+
+        .results-stat__value {
+          font-size: 1.4em;
+        }
+
+        .results-actions {
+          flex-direction: column;
+        }
+
+        .results-actions .btn {
+          width: 100%;
+          min-width: unset;
+        }
+      }
     </style>
   </head>
   <body>
@@ -3322,6 +3943,9 @@
 
           <div id="answersContainer" class="answers"></div>
 
+          <!-- Feedback Section - rendered dynamically by PracticeManager -->
+          <div id="feedbackSection" class="hidden"></div>
+
           <!-- Wrong Answer Feedback (Tarjeta Roja) - Shown only in free mode when answer is wrong -->
           <div id="wrongAnswerFeedback" class="wrong-answer-feedback hidden"></div>
         </div>
@@ -3338,15 +3962,55 @@
 
       <!-- SCREEN 4: RESULTS -->
       <div id="resultsScreen" class="hidden">
-        <h2 style="text-align: center; margin-bottom: 25px" id="txtResults">
+        <h2 style="text-align: center; margin-bottom: var(--space-lg)" id="txtResults">
           🏆 Results
         </h2>
 
-        <!-- Main Score Circle -->
-        <div class="score-circle-container">
-          <div class="score-circle" id="scoreCircle">
-            <span class="score-percentage" id="finalScore">0%</span>
-            <span class="score-label" id="scoreDetails">0 correct</span>
+        <!-- Score Summary Section -->
+        <div class="results-section">
+          <div class="results-section__title">Score Summary</div>
+
+          <!-- Main Score Circle -->
+          <div class="score-circle-container">
+            <div class="score-circle" id="scoreCircle">
+              <span class="score-percentage" id="finalScore">0%</span>
+              <span class="score-label" id="scoreDetails">0 correct</span>
+            </div>
+          </div>
+
+          <!-- Stats Grid: Correct / Wrong / Blank -->
+          <div id="resultsStatsGrid" class="results-stats-grid">
+            <div class="results-stat results-stat--correct">
+              <span class="results-stat__value" id="resultCorrectCount">0</span>
+              <span class="results-stat__label">Correct</span>
+            </div>
+            <div class="results-stat results-stat--wrong">
+              <span class="results-stat__value" id="resultWrongCount">0</span>
+              <span class="results-stat__label">Wrong</span>
+            </div>
+            <div class="results-stat results-stat--blank">
+              <span class="results-stat__value" id="resultBlankCount">0</span>
+              <span class="results-stat__label">Blank</span>
+            </div>
+          </div>
+
+          <!-- Score & Percentage Row -->
+          <div class="results-score-row">
+            <span class="results-score-row__label">Score</span>
+            <span class="results-score-row__value" id="resultScoreValue">0</span>
+          </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="results-section">
+          <div class="results-section__title">Statistics</div>
+          <div class="results-time-row">
+            <span class="results-time-row__label">Total Questions</span>
+            <span class="results-time-row__value" id="resultTotalQuestions">0</span>
+          </div>
+          <div class="results-time-row">
+            <span class="results-time-row__label">Time Spent</span>
+            <span class="results-time-row__value" id="timeSpent">0:00</span>
           </div>
         </div>
 
@@ -3362,23 +4026,25 @@
           </div>
         </div>
 
-        <div class="mode-select">
-          <button id="btnTryAgain" class="mode-btn">
+        <!-- Actions Section -->
+        <div class="results-actions">
+          <button id="btnTryAgain" class="btn btn--primary btn--lg">
             <span id="lblTryAgain">Try Again</span>
           </button>
-          <button id="btnReviewAnswers" class="mode-btn">
+          <button id="btnReviewAnswers" class="btn btn--secondary btn--lg">
             <span id="lblReviewAnswers">Review Answers</span>
           </button>
         </div>
 
-        <h3 class="review-summary-title" id="txtReviewSummaryTitle">
-          Review Summary
-        </h3>
-        <div id="reviewSummary" class="review-summary"></div>
+        <!-- Review Summary Grid -->
+        <div class="results-section" style="margin-top: var(--space-md)">
+          <div class="results-section__title" id="txtReviewSummaryTitle">Review Summary</div>
+          <div id="reviewSummary" class="review-summary"></div>
+        </div>
 
-        <div style="margin-top: 30px; text-align: center">
+        <div style="margin-top: var(--space-lg); text-align: center">
           <button
-            class="mode-btn"
+            class="btn btn--secondary"
             onclick="window.app.showFileScreen()"
             style="min-width: 200px"
           >

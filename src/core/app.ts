@@ -201,24 +201,48 @@ export class App {
     screen.innerHTML = `
       <div class="container">
         <h2>${T.selectMode || "Select Practice Mode"}</h2>
-        <div class="mode-selection">
-          <button id="btnFreeMode" class="mode-btn mode-free">
-            <span class="mode-icon">📚</span>
-            <span class="mode-name">${T.freeMode || "Free Mode"}</span>
-            <span class="mode-desc">${T.freeModeDesc || "Practice at your own pace with full exam"}</span>
-          </button>
-          <button id="btnSimulacroMode" class="mode-btn mode-simulacro">
-            <span class="mode-icon">⏱️</span>
-            <span class="mode-name">${T.simulacroMode || "Simulacro"}</span>
-            <span class="mode-desc">${T.simulacroModeDesc || "Timed exam simulation"}</span>
-          </button>
-          <button id="btnReviewMode" class="mode-btn mode-review">
-            <span class="mode-icon">🎯</span>
-            <span class="mode-name">${T.reviewMode || "Review Mode"}</span>
-            <span class="mode-desc">${T.reviewModeDesc || "Focus on weak questions"}</span>
-          </button>
+        <div class="mode-cards-container">
+          <div class="mode-card mode-card--free">
+            <div class="mode-card__header">
+              <span class="mode-card__icon">📚</span>
+              <span class="mode-card__title">${T.freeMode || "Free Mode"}</span>
+            </div>
+            <div class="mode-card__desc">
+              <span>${T.freeModeDesc || "Practice at your own pace with full exam"}</span>
+              <span style="color: var(--text-muted); font-size: 0.85em;">No telemetry tracking</span>
+            </div>
+            <div class="mode-card__actions">
+              <button id="btnFreeMode" class="btn btn--primary">Start</button>
+            </div>
+          </div>
+          <div class="mode-card mode-card--simulacro">
+            <div class="mode-card__header">
+              <span class="mode-card__icon">⏱️</span>
+              <span class="mode-card__title">${T.simulacroMode || "Simulacro"}</span>
+            </div>
+            <div class="mode-card__desc">
+              <span>${T.simulacroModeDesc || "Timed exam simulation"}</span>
+              <span style="color: var(--text-muted); font-size: 0.85em;">Configurable timer</span>
+            </div>
+            <div class="mode-card__actions">
+              <button id="btnSimulacroMode" class="btn btn--primary">Start</button>
+            </div>
+          </div>
+          <div class="mode-card mode-card--review">
+            <div class="mode-card__header">
+              <span class="mode-card__icon">🎯</span>
+              <span class="mode-card__title">${T.reviewMode || "Review Mode"}</span>
+            </div>
+            <div class="mode-card__desc">
+              <span>${T.reviewModeDesc || "Focus on weak questions"}</span>
+              <span style="color: var(--text-muted); font-size: 0.85em;">Adaptive practice</span>
+            </div>
+            <div class="mode-card__actions">
+              <button id="btnReviewMode" class="btn btn--primary">Start</button>
+            </div>
+          </div>
         </div>
-        <button id="btnBackToLibrary" class="secondary-btn">${T.back || "Back"}</button>
+        <button id="btnBackToLibrary" class="btn btn--secondary" style="width:100%;">${T.back || "Back"}</button>
       </div>
     `;
 

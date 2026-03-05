@@ -129,6 +129,24 @@ export class PracticeManager {
       scoreDetails.textContent = `${score.correct} ${T.correctOutOf || "correct out of"} ${totalQuestions}`;
     }
 
+    // Update structured stats grid
+    const correctCount = document.getElementById("resultCorrectCount");
+    if (correctCount) correctCount.textContent = String(score.correct);
+
+    const wrongCount = document.getElementById("resultWrongCount");
+    if (wrongCount) wrongCount.textContent = String(score.wrong);
+
+    const blankCount = document.getElementById("resultBlankCount");
+    if (blankCount) blankCount.textContent = String(score.blank);
+
+    // Score value
+    const scoreValue = document.getElementById("resultScoreValue");
+    if (scoreValue) scoreValue.textContent = `${score.percentage}%`;
+
+    // Total questions
+    const totalQEl = document.getElementById("resultTotalQuestions");
+    if (totalQEl) totalQEl.textContent = String(totalQuestions);
+
     // Update time spent display
     const timeDisplay = document.getElementById("timeSpent");
     if (timeDisplay) {
@@ -241,6 +259,7 @@ export class PracticeManager {
 
   /**
    * Update feedback display from view state.
+   * Uses the feedback-panel component for clear visual separation.
    */
   private updateFeedback(state: AttemptViewState, T: Translations): void {
     const feedbackSection = document.getElementById("feedbackSection");
@@ -248,39 +267,47 @@ export class PracticeManager {
 
     if (!state.feedback) {
       feedbackSection.classList.add("hidden");
+      feedbackSection.innerHTML = "";
       return;
     }
 
     feedbackSection.classList.remove("hidden");
 
-    const feedbackTitle = document.getElementById("feedbackTitle");
-    const feedbackClass = state.feedback.isCorrect ? "correct" : "wrong";
+    const isCorrect = state.feedback.isCorrect;
+    const panelClass = isCorrect ? "feedback-panel--correct" : "feedback-panel--wrong";
+    const headerIcon = isCorrect ? "✓" : "✗";
 
-    if (feedbackTitle) {
-      if (state.feedback.isCorrect) {
-        feedbackTitle.textContent = T.correctAnswer || "Correct!";
-      } else {
-        const selected = state.feedback.selectedAnswer ?? "—";
-        const correct = state.feedback.correctAnswer;
-        feedbackTitle.textContent = `${T.wrongAnswer || "Incorrect"} (${selected} → ${correct})`;
-      }
-      feedbackTitle.className = feedbackClass;
+    let headerText: string;
+    if (isCorrect) {
+      headerText = T.correctAnswer || "Correct!";
+    } else {
+      const selected = state.feedback.selectedAnswer ?? "—";
+      const correct = state.feedback.correctAnswer;
+      headerText = `${T.wrongAnswer || "Incorrect"} (${selected} → ${correct})`;
     }
 
-    const referenceArticle = document.getElementById("referenceArticle");
-    if (referenceArticle) {
-      referenceArticle.textContent = `${T.referenceArticle || "Reference"}: ${state.feedback.referenceArticle}`;
-    }
-
-    const literalCitation = document.getElementById("literalCitation");
-    if (literalCitation) {
-      literalCitation.textContent = state.feedback.literalCitation;
-    }
-
-    const explanation = document.getElementById("explanation");
-    if (explanation) {
-      explanation.textContent = state.feedback.explanation;
-    }
+    feedbackSection.innerHTML = `
+      <div class="feedback-panel ${panelClass}">
+        <div class="feedback-panel__header">
+          <span>${headerIcon}</span>
+          <span>${headerText}</span>
+        </div>
+        <div class="feedback-panel__body">
+          <div class="feedback-panel__field">
+            <span class="feedback-panel__label">${T.referenceArticle || "Reference"}</span>
+            <span class="feedback-panel__value">${state.feedback.referenceArticle}</span>
+          </div>
+          <div class="feedback-panel__field">
+            <span class="feedback-panel__label">${T.literalCitation || "Citation"}</span>
+            <blockquote class="feedback-panel__citation">${state.feedback.literalCitation}</blockquote>
+          </div>
+          <div class="feedback-panel__field">
+            <span class="feedback-panel__label">${T.explanation || "Explanation"}</span>
+            <span class="feedback-panel__value">${state.feedback.explanation}</span>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   /**
