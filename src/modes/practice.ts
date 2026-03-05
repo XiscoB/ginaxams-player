@@ -169,7 +169,8 @@ export class PracticeManager {
 
     // Update translated labels on the results screen
     const txtScoreSummary = document.getElementById("txtScoreSummary");
-    if (txtScoreSummary) txtScoreSummary.textContent = T.scoreSummary || "Score Summary";
+    if (txtScoreSummary)
+      txtScoreSummary.textContent = T.scoreSummary || "Score Summary";
 
     const txtCorrectLabel = document.getElementById("txtResultCorrectLabel");
     if (txtCorrectLabel) txtCorrectLabel.textContent = T.correct || "Correct";
@@ -187,7 +188,8 @@ export class PracticeManager {
     if (txtStatistics) txtStatistics.textContent = T.statistics || "Statistics";
 
     const txtTotalQuestions = document.getElementById("txtTotalQuestions");
-    if (txtTotalQuestions) txtTotalQuestions.textContent = T.totalQuestions || "Total Questions";
+    if (txtTotalQuestions)
+      txtTotalQuestions.textContent = T.totalQuestions || "Total Questions";
 
     const txtTimeSpent = document.getElementById("txtTimeSpent");
     if (txtTimeSpent) txtTimeSpent.textContent = T.timeSpent || "Time Spent";
@@ -199,13 +201,18 @@ export class PracticeManager {
     if (lblTryAgain) lblTryAgain.textContent = T.tryAgain || "Try Again";
 
     const lblReviewAnswers = document.getElementById("lblReviewAnswers");
-    if (lblReviewAnswers) lblReviewAnswers.textContent = T.reviewAnswers || "Review Answers";
+    if (lblReviewAnswers)
+      lblReviewAnswers.textContent = T.reviewAnswers || "Review Answers";
 
-    const txtReviewSummaryTitle = document.getElementById("txtReviewSummaryTitle");
-    if (txtReviewSummaryTitle) txtReviewSummaryTitle.textContent = T.reviewSummary || "Review Summary";
+    const txtReviewSummaryTitle = document.getElementById(
+      "txtReviewSummaryTitle",
+    );
+    if (txtReviewSummaryTitle)
+      txtReviewSummaryTitle.textContent = T.reviewSummary || "Review Summary";
 
     const txtBackToLibraryBtn = document.getElementById("txtBackToLibraryBtn");
-    if (txtBackToLibraryBtn) txtBackToLibraryBtn.textContent = T.backToLibrary || "📚 Back to Library";
+    if (txtBackToLibraryBtn)
+      txtBackToLibraryBtn.textContent = T.backToLibrary || "📚 Back to Library";
 
     const txtLastScore = document.getElementById("txtLastScore");
     if (txtLastScore) txtLastScore.textContent = T.lastScore || "Last Score";

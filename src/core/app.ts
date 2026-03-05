@@ -71,7 +71,9 @@ export class App {
   private libraryState: LibraryViewState | null = null;
   private translations: Translations = getTranslations("en");
   private _currentLang: LanguageCode = "en";
-  get currentLang(): LanguageCode { return this._currentLang; }
+  get currentLang(): LanguageCode {
+    return this._currentLang;
+  }
 
   // View State Machine
   private pendingAttempt: PendingAttempt | null = null;
@@ -357,16 +359,19 @@ export class App {
   }
 
   private reviewCurrentIndex = 0;
-  private reviewFilteredQuestions: typeof this.currentResultView extends null ? never : NonNullable<typeof this.currentResultView>["questionSummary"] = [];
+  private reviewFilteredQuestions: typeof this.currentResultView extends null
+    ? never
+    : NonNullable<typeof this.currentResultView>["questionSummary"] = [];
 
   private renderReviewScreenContent(filter: "all" | "wrong"): void {
     if (!this.currentResultView) return;
 
     const T = this.translations;
     const summary = this.currentResultView.questionSummary;
-    const filtered = filter === "all"
-      ? summary
-      : summary.filter((q) => !q.isCorrect && !q.isBlank);
+    const filtered =
+      filter === "all"
+        ? summary
+        : summary.filter((q) => !q.isCorrect && !q.isBlank);
 
     this.reviewFilteredQuestions = filtered;
     this.reviewCurrentIndex = 0;
@@ -375,9 +380,10 @@ export class App {
     if (filtered.length === 0) {
       const questionText = document.getElementById("reviewQuestionText");
       if (questionText) {
-        questionText.textContent = filter === "wrong"
-          ? (T.noWrongAnswers || "No wrong answers to review")
-          : (T.noQuestionsMatch || "No questions match this filter!");
+        questionText.textContent =
+          filter === "wrong"
+            ? T.noWrongAnswers || "No wrong answers to review"
+            : T.noQuestionsMatch || "No questions match this filter!";
       }
     }
   }
@@ -416,7 +422,10 @@ export class App {
 
     const progressBar = document.getElementById("reviewProgressBar");
     if (progressBar) {
-      const pct = filtered.length > 0 ? ((this.reviewCurrentIndex + 1) / filtered.length) * 100 : 0;
+      const pct =
+        filtered.length > 0
+          ? ((this.reviewCurrentIndex + 1) / filtered.length) * 100
+          : 0;
       progressBar.style.width = `${pct}%`;
     }
   }
@@ -638,7 +647,9 @@ export class App {
     });
 
     // Update dot indicators
-    const dots = document.querySelectorAll(".onboarding-steps .onboarding-step");
+    const dots = document.querySelectorAll(
+      ".onboarding-steps .onboarding-step",
+    );
     dots.forEach((dot) => {
       const dotNum = parseInt((dot as HTMLElement).dataset.step || "0", 10);
       dot.classList.toggle("active", dotNum === this.onboardingStep);
@@ -725,7 +736,7 @@ export class App {
       if (el && text !== undefined) el.textContent = text;
     };
 
-    // Helper to safely set innerHTML by element ID  
+    // Helper to safely set innerHTML by element ID
     const setHtml = (id: string, html: string | undefined): void => {
       const el = document.getElementById(id);
       if (el && html !== undefined) el.innerHTML = html;
@@ -840,7 +851,9 @@ export class App {
     setHtml("txtKimiSuggestion", T.kimiSuggestion);
 
     // Set textarea placeholder via data attribute
-    const aiMaterial = document.getElementById("aiMaterial") as HTMLTextAreaElement | null;
+    const aiMaterial = document.getElementById(
+      "aiMaterial",
+    ) as HTMLTextAreaElement | null;
     if (aiMaterial) {
       aiMaterial.placeholder = T.materialPlaceholder || "";
     }
@@ -1405,7 +1418,9 @@ export class App {
   }
 
   toggleMaterialField(): void {
-    const checkbox = document.getElementById("aiMaterialInChat") as HTMLInputElement | null;
+    const checkbox = document.getElementById(
+      "aiMaterialInChat",
+    ) as HTMLInputElement | null;
     const field = document.getElementById("aiMaterialField");
     if (field && checkbox) {
       field.style.display = checkbox.checked ? "none" : "block";
@@ -1414,11 +1429,21 @@ export class App {
 
   generateAIPrompt(): void {
     const T = this.translations;
-    const numQuestions = (document.getElementById("aiNumQuestions") as HTMLInputElement)?.value || "10";
-    const numAnswers = (document.getElementById("aiNumAnswers") as HTMLInputElement)?.value || "4";
-    const difficulty = (document.getElementById("aiDifficulty") as HTMLSelectElement)?.value || "medium";
-    const materialInChat = (document.getElementById("aiMaterialInChat") as HTMLInputElement)?.checked;
-    const material = (document.getElementById("aiMaterial") as HTMLTextAreaElement)?.value || "";
+    const numQuestions =
+      (document.getElementById("aiNumQuestions") as HTMLInputElement)?.value ||
+      "10";
+    const numAnswers =
+      (document.getElementById("aiNumAnswers") as HTMLInputElement)?.value ||
+      "4";
+    const difficulty =
+      (document.getElementById("aiDifficulty") as HTMLSelectElement)?.value ||
+      "medium";
+    const materialInChat = (
+      document.getElementById("aiMaterialInChat") as HTMLInputElement
+    )?.checked;
+    const material =
+      (document.getElementById("aiMaterial") as HTMLTextAreaElement)?.value ||
+      "";
 
     if (!materialInChat && !material.trim()) {
       alert(T.aiPromptNoMaterial || "Please enter your study material first!");
@@ -1472,7 +1497,9 @@ Rules:
       prompt += `\n\n[I will paste my study material in the next message]`;
     }
 
-    const output = document.getElementById("aiGeneratedPrompt") as HTMLTextAreaElement;
+    const output = document.getElementById(
+      "aiGeneratedPrompt",
+    ) as HTMLTextAreaElement;
     if (output) output.value = prompt;
 
     const result = document.getElementById("aiPromptResult");
@@ -1480,7 +1507,9 @@ Rules:
   }
 
   async copyGeneratedPrompt(): Promise<void> {
-    const output = document.getElementById("aiGeneratedPrompt") as HTMLTextAreaElement;
+    const output = document.getElementById(
+      "aiGeneratedPrompt",
+    ) as HTMLTextAreaElement;
     if (!output) return;
 
     try {
