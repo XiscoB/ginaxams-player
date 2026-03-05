@@ -70,6 +70,8 @@ export class App {
   // State
   private libraryState: LibraryViewState | null = null;
   private translations: Translations = getTranslations("en");
+  private _currentLang: LanguageCode = "en";
+  get currentLang(): LanguageCode { return this._currentLang; }
 
   // View State Machine
   private pendingAttempt: PendingAttempt | null = null;
@@ -77,6 +79,15 @@ export class App {
   // Cached view states for the current attempt
   private currentAttemptView: AttemptViewState | null = null;
   private currentResultView: AttemptResultViewState | null = null;
+  private simulacroTimerInterval: ReturnType<typeof setInterval> | null = null;
+
+  // Onboarding state
+  private onboardingStep = 1;
+  private readonly totalOnboardingSteps = 5;
+
+  // External link pending
+  private pendingExternalUrl = "";
+  private pendingExternalName = "";
 
   constructor(deps: AppDeps) {
     this.attemptController = deps.attemptController;
@@ -291,6 +302,123 @@ export class App {
 
     // Render results via PracticeManager
     this.practiceManager.renderResults(this.currentResultView);
+
+    // Bind results action buttons
+    const btnTryAgain = document.getElementById("btnTryAgain");
+    if (btnTryAgain) {
+      btnTryAgain.onclick = () => {
+        this.currentResultView = null;
+        if (this.pendingAttempt) {
+          this.setView("attemptConfig");
+        } else {
+          this.setView("library");
+        }
+      };
+    }
+
+    const btnReviewAnswers = document.getElementById("btnReviewAnswers");
+    if (btnReviewAnswers) {
+      btnReviewAnswers.onclick = () => {
+        this.showReviewScreen();
+      };
+    }
+  }
+
+  private showReviewScreen(): void {
+    if (!this.currentResultView) return;
+
+    this.hideAllScreens();
+    const reviewScreen = document.getElementById("reviewScreen");
+    if (reviewScreen) {
+      reviewScreen.classList.remove("hidden");
+    }
+
+    this.renderReviewScreenContent("all");
+
+    // Bind filter buttons
+    const filterAll = document.getElementById("filterAll");
+    const filterWrong = document.getElementById("filterWrong");
+
+    if (filterAll) {
+      filterAll.onclick = () => {
+        filterAll.classList.add("active");
+        filterWrong?.classList.remove("active");
+        this.renderReviewScreenContent("all");
+      };
+    }
+
+    if (filterWrong) {
+      filterWrong.onclick = () => {
+        filterWrong.classList.add("active");
+        filterAll?.classList.remove("active");
+        this.renderReviewScreenContent("wrong");
+      };
+    }
+  }
+
+  private reviewCurrentIndex = 0;
+  private reviewFilteredQuestions: typeof this.currentResultView extends null ? never : NonNullable<typeof this.currentResultView>["questionSummary"] = [];
+
+  private renderReviewScreenContent(filter: "all" | "wrong"): void {
+    if (!this.currentResultView) return;
+
+    const T = this.translations;
+    const summary = this.currentResultView.questionSummary;
+    const filtered = filter === "all"
+      ? summary
+      : summary.filter((q) => !q.isCorrect && !q.isBlank);
+
+    this.reviewFilteredQuestions = filtered;
+    this.reviewCurrentIndex = 0;
+    this.renderReviewQuestion();
+
+    if (filtered.length === 0) {
+      const questionText = document.getElementById("reviewQuestionText");
+      if (questionText) {
+        questionText.textContent = filter === "wrong"
+          ? (T.noWrongAnswers || "No wrong answers to review")
+          : (T.noQuestionsMatch || "No questions match this filter!");
+      }
+    }
+  }
+
+  private renderReviewQuestion(): void {
+    if (!this.currentResultView) return;
+
+    const T = this.translations;
+    const filtered = this.reviewFilteredQuestions;
+
+    if (filtered.length === 0) return;
+
+    const q = filtered[this.reviewCurrentIndex];
+    if (!q) return;
+
+    const questionNumber = document.getElementById("reviewQuestionNumber");
+    if (questionNumber) {
+      questionNumber.textContent = `${T.question || "Question"} ${q.questionNumber}`;
+    }
+
+    const questionText = document.getElementById("reviewQuestionText");
+    if (questionText) {
+      questionText.textContent = q.questionText;
+    }
+
+    const correctText = document.getElementById("correctAnswerText");
+    if (correctText) {
+      correctText.textContent = `${q.correctAnswerLetter}`;
+    }
+
+    // Update progress
+    const progressText = document.getElementById("reviewProgressText");
+    if (progressText) {
+      progressText.textContent = `${this.reviewCurrentIndex + 1}/${filtered.length}`;
+    }
+
+    const progressBar = document.getElementById("reviewProgressBar");
+    if (progressBar) {
+      const pct = filtered.length > 0 ? ((this.reviewCurrentIndex + 1) / filtered.length) * 100 : 0;
+      progressBar.style.width = `${pct}%`;
+    }
   }
 
   // ============================================================================
@@ -347,9 +475,46 @@ export class App {
 
       this.currentAttemptView = viewState;
       this.setView("attemptExecution");
+
+      // Start simulacro timer if needed
+      if (mode === "simulacro") {
+        this.startSimulacroTimer();
+      }
     } catch (e) {
       console.error("Failed to start attempt:", e);
       alert("Failed to start attempt. Please try again.");
+    }
+  }
+
+  // ============================================================================
+  // Simulacro Timer
+  // ============================================================================
+
+  private startSimulacroTimer(): void {
+    this.stopSimulacroTimer();
+
+    const TICK_INTERVAL = 1000;
+    this.simulacroTimerInterval = setInterval(() => {
+      if (!this.attemptController.hasActiveSession()) {
+        this.stopSimulacroTimer();
+        return;
+      }
+
+      this.currentAttemptView = this.attemptController.tick(TICK_INTERVAL);
+      this.practiceManager.render(this.currentAttemptView);
+
+      // Auto-finalize when timer expires
+      if (this.currentAttemptView.isFinished) {
+        this.stopSimulacroTimer();
+        this.handleFinish();
+      }
+    }, TICK_INTERVAL);
+  }
+
+  private stopSimulacroTimer(): void {
+    if (this.simulacroTimerInterval !== null) {
+      clearInterval(this.simulacroTimerInterval);
+      this.simulacroTimerInterval = null;
     }
   }
 
@@ -394,7 +559,17 @@ export class App {
    * Handle finish from UI
    */
   private async handleFinish(): Promise<void> {
-    if (!this.attemptController.hasActiveSession()) return;
+    this.stopSimulacroTimer();
+
+    if (!this.attemptController.hasActiveSession()) {
+      // Called from results screen "Try Again" — restart the same exam
+      if (this.pendingAttempt) {
+        this.setView("attemptConfig");
+      } else {
+        this.setView("library");
+      }
+      return;
+    }
 
     try {
       this.currentResultView = await this.attemptController.finalizeAttempt();
@@ -415,6 +590,9 @@ export class App {
   }
 
   showFileScreen(): void {
+    this.stopSimulacroTimer();
+    this.attemptController.abortAttempt();
+    this.currentAttemptView = null;
     this.setView("library");
   }
 
@@ -434,16 +612,84 @@ export class App {
     }
   }
 
-  private showOnboarding(): void {
+  showOnboarding(): void {
     const onboarding = document.getElementById("onboardingOverlay");
     if (onboarding) {
-      onboarding.classList.remove("hidden");
+      this.onboardingStep = 1;
+      onboarding.classList.add("active");
       this.updateOnboardingStep();
     }
   }
 
+  private hideOnboarding(): void {
+    const onboarding = document.getElementById("onboardingOverlay");
+    if (onboarding) {
+      onboarding.classList.remove("active");
+    }
+    localStorage.setItem("ginaxams_onboarding_completed", "true");
+  }
+
   private updateOnboardingStep(): void {
-    // Implementation preserved from original
+    // Show/hide step content
+    const steps = document.querySelectorAll(".onboarding-step-content");
+    steps.forEach((step) => {
+      const stepNum = parseInt((step as HTMLElement).dataset.step || "0", 10);
+      step.classList.toggle("hidden", stepNum !== this.onboardingStep);
+    });
+
+    // Update dot indicators
+    const dots = document.querySelectorAll(".onboarding-steps .onboarding-step");
+    dots.forEach((dot) => {
+      const dotNum = parseInt((dot as HTMLElement).dataset.step || "0", 10);
+      dot.classList.toggle("active", dotNum === this.onboardingStep);
+    });
+
+    // Update button visibility
+    const prevBtn = document.getElementById("onboardingPrevBtn");
+    const nextBtn = document.getElementById("onboardingNextBtn");
+    const T = this.translations;
+
+    if (prevBtn) {
+      prevBtn.classList.toggle("hidden", this.onboardingStep <= 1);
+    }
+
+    if (nextBtn) {
+      if (this.onboardingStep >= this.totalOnboardingSteps) {
+        // On the last step, hide the Next button (user uses choice buttons)
+        nextBtn.classList.add("hidden");
+      } else {
+        nextBtn.classList.remove("hidden");
+        nextBtn.querySelector("span")!.textContent = T.onboardingNext || "Next";
+      }
+    }
+  }
+
+  skipOnboarding(): void {
+    this.hideOnboarding();
+  }
+
+  nextOnboardingStep(): void {
+    if (this.onboardingStep < this.totalOnboardingSteps) {
+      this.onboardingStep++;
+      this.updateOnboardingStep();
+    }
+  }
+
+  prevOnboardingStep(): void {
+    if (this.onboardingStep > 1) {
+      this.onboardingStep--;
+      this.updateOnboardingStep();
+    }
+  }
+
+  finishOnboardingAndShowAIPrompt(): void {
+    this.hideOnboarding();
+    this.showAIPromptGenerator();
+  }
+
+  finishOnboardingAndShowTemplate(): void {
+    this.hideOnboarding();
+    this.showTemplateModal();
   }
 
   // ============================================================================
@@ -451,16 +697,158 @@ export class App {
   // ============================================================================
 
   private setLanguage(lang: LanguageCode): void {
+    this._currentLang = lang;
     this.translations = getTranslations(lang);
     localStorage.setItem("ginaxams_lang", lang);
+
+    // Update active button states
+    const langEn = document.getElementById("langEn");
+    const langEs = document.getElementById("langEs");
+    langEn?.classList.toggle("active", lang === "en");
+    langEs?.classList.toggle("active", lang === "es");
+
     this.updatePageText();
+
+    // Recreate the attemptConfigScreen so it picks up the new language
+    const existingConfig = document.getElementById("attemptConfigScreen");
+    if (existingConfig) {
+      existingConfig.remove();
+    }
   }
 
   private updatePageText(): void {
-    // Update static text elements
     const T = this.translations;
-    const appTitle = document.getElementById("appTitle");
-    if (appTitle) appTitle.textContent = T.appTitle;
+
+    // Helper to safely set text content by element ID
+    const setText = (id: string, text: string | undefined): void => {
+      const el = document.getElementById(id);
+      if (el && text !== undefined) el.textContent = text;
+    };
+
+    // Helper to safely set innerHTML by element ID  
+    const setHtml = (id: string, html: string | undefined): void => {
+      const el = document.getElementById(id);
+      if (el && html !== undefined) el.innerHTML = html;
+    };
+
+    // Header
+    setText("appTitle", T.appTitle);
+
+    // Library screen
+    setText("txtLoadExamFile", T.loadExamFile);
+    setText("txtClickToSelect", T.clickToSelect);
+    setText("txtAvailableExams", T.availableExams);
+    setText("txtRefresh", T.refresh);
+
+    // Options screen (mode selection)
+    setText("txtOptions", T.options);
+    setText("txtShuffleQuestions", T.shuffleQuestions);
+    setText("txtShuffleAnswers", T.shuffleAnswers);
+    setText("txtShowFeedback", T.showFeedback);
+    setText("btnPracticeMode", T.practiceMode);
+    setText("txtBackToMenu", `← ${T.backToLibrary || T.back}`);
+
+    // Practice screen
+    setText("txtExitReview", T.menu);
+    setText("txtPrevious", T.previous);
+    setText("txtNext", T.next);
+    setText("txtFinish", T.finish);
+
+    // Results screen
+    setText("txtResults", T.results);
+    setText("txtScoreSummary", T.scoreSummary);
+    setText("txtResultCorrectLabel", T.correct);
+    setText("txtResultWrongLabel", T.wrong);
+    setText("txtResultBlankLabel", T.blank);
+    setText("txtResultScoreLabel", T.score);
+    setText("txtStatistics", T.statistics);
+    setText("txtTotalQuestions", T.totalQuestions);
+    setText("txtTimeSpent", T.timeSpent);
+    setText("txtLastScore", T.lastScore);
+    setText("txtBestScore", T.bestScore);
+    setText("lblTryAgain", T.tryAgain);
+    setText("lblReviewAnswers", T.reviewAnswers);
+    setText("txtReviewSummaryTitle", T.reviewSummary);
+    setText("txtBackToLibraryBtn", T.backToLibrary);
+
+    // Review screen
+    setText("txtBackReview", T.back);
+    setText("txtFilterAll", T.filterAll);
+    setText("txtFilterWrong", T.filterWrong);
+    setText("txtCorrectAnswer", T.correctAnswer);
+
+    // Onboarding
+    setText("txtOnboardingSkip", T.onboardingSkip);
+    setText("txtOnboardingBack", T.onboardingBack);
+    setText("txtOnboardingNext", T.onboardingNext);
+    setText("txtOnboardingWelcomeTitle", T.onboardingWelcomeTitle);
+    setText("txtOnboardingWelcomeText", T.onboardingWelcomeText);
+    setText("txtOnboardingStorageTitle", T.onboardingStorageTitle);
+    setText("txtOnboardingStorageText", T.onboardingStorageText);
+    setText("txtOnboardingImportTitle", T.onboardingImportTitle);
+    setText("txtOnboardingImportText", T.onboardingImportText);
+    setText("txtOnboardingPracticeTitle", T.onboardingPracticeTitle);
+    setText("txtOnboardingPracticeText", T.onboardingPracticeText);
+    setText("txtOnboardingCreateTitle", T.onboardingCreateTitle);
+    setText("txtOnboardingCreateText", T.onboardingCreateText);
+    setText("txtOnboardingEasyTitle", T.onboardingEasyTitle);
+    setText("txtOnboardingEasyDesc", T.onboardingEasyDesc);
+    setText("txtOnboardingAdvancedTitle", T.onboardingAdvancedTitle);
+    setText("txtOnboardingAdvancedDesc", T.onboardingAdvancedDesc);
+
+    // Help
+    setText("txtShowOnboarding", T.showOnboarding);
+    setText("txtExamFormat", T.examFormat);
+
+    // Template modal
+    setText("txtExamFormatDesc", T.examFormatDesc);
+    setText("txtUseWithAI", `💡 ${T.useWithAI}`);
+    setText("txtAIHelpText", T.aiHelpText);
+    setText("txtCopyTemplate", T.copyTemplate);
+    setText("txtCopyInstead", T.copyInstead);
+    setText("txtDownloadTemplate", `📥 ${T.downloadTemplate}`);
+
+    // Choice modal
+    setText("txtHowToCreate", T.howToCreate);
+    setText("txtEasyWay", T.easyWay);
+    setText("txtEasyWayDesc", T.easyWayDesc);
+    setText("txtAdvancedWay", T.advancedWay);
+    setText("txtAdvancedWayDesc", T.advancedWayDesc);
+
+    // External link modal
+    setText("txtLeavingSite", T.leavingSite);
+    setText("txtExternalLinkConfirm", T.externalLinkConfirm);
+    setText("txtStayHere", T.stayHere);
+    setText("txtContinue", T.continue);
+
+    // AI Prompt Generator
+    setText("txtAIPromptTitle", T.aiPromptTitle);
+    setText("txtAIPromptSubtitle", T.aiPromptSubtitle);
+    setText("txtNumQuestionsLabel", T.numQuestionsLabel);
+    setText("txtNumAnswersLabel", T.numAnswersLabel);
+    setText("txtDifficultyLabel", T.difficultyLabel);
+    setText("txtDifficultyEasy", T.difficultyEasy);
+    setText("txtDifficultyMedium", T.difficultyMedium);
+    setText("txtDifficultyHard", T.difficultyHard);
+    setText("txtDifficultyMixed", T.difficultyMixed);
+    setText("txtMaterialLabel", T.materialLabel);
+    setText("txtGeneratePromptBtn", T.generatePromptBtn);
+    setText("txtYourPrompt", T.yourPrompt);
+    setText("txtCopyGeneratedPrompt", T.copyGeneratedPrompt);
+    setText("txtNowPaste", T.nowPaste);
+    setHtml("txtMaterialInChatLabel", T.materialInChatLabel);
+    setHtml("txtKimiSuggestion", T.kimiSuggestion);
+
+    // Set textarea placeholder via data attribute
+    const aiMaterial = document.getElementById("aiMaterial") as HTMLTextAreaElement | null;
+    if (aiMaterial) {
+      aiMaterial.placeholder = T.materialPlaceholder || "";
+    }
+
+    // Re-render the library to pick up new translations
+    if (this.libraryState) {
+      this.renderLibrary();
+    }
   }
 
   // ============================================================================
@@ -626,12 +1014,15 @@ export class App {
       }
     });
 
-    // Language selector
-    const langSelect = document.getElementById(
-      "languageSelect",
-    ) as HTMLSelectElement | null;
-    langSelect?.addEventListener("change", (e) => {
-      this.setLanguage((e.target as HTMLSelectElement).value as LanguageCode);
+    // Language selector buttons
+    const langEn = document.getElementById("langEn");
+    const langEs = document.getElementById("langEs");
+
+    langEn?.addEventListener("click", () => {
+      this.setLanguage("en");
+    });
+    langEs?.addEventListener("click", () => {
+      this.setLanguage("es");
     });
   }
 
@@ -876,6 +1267,264 @@ export class App {
     } catch (e) {
       console.error("Failed to import demo data:", e);
     }
+  }
+
+  // ============================================================================
+  // Help Menu
+  // ============================================================================
+
+  toggleHelpMenu(): void {
+    const menu = document.getElementById("helpMenuPopup");
+    const btn = document.getElementById("helpToggleBtn");
+    if (menu) {
+      menu.classList.toggle("hidden");
+      btn?.classList.toggle("active");
+    }
+  }
+
+  // ============================================================================
+  // Template Modal
+  // ============================================================================
+
+  showTemplateModal(): void {
+    const modal = document.getElementById("templateModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      this.loadTemplateCode();
+    }
+  }
+
+  closeTemplateModal(): void {
+    const modal = document.getElementById("templateModal");
+    if (modal) {
+      modal.classList.add("hidden");
+    }
+  }
+
+  private loadTemplateCode(): void {
+    const code = document.getElementById("templateCode");
+    if (!code) return;
+
+    const template = {
+      schema_version: "2.0",
+      exam_id: "my-exam-1",
+      title: "My Exam Title",
+      categorias: ["Category1", "Category2"],
+      total_questions: 1,
+      questions: [
+        {
+          number: 1,
+          text: "Question text here?",
+          categoria: ["Category1"],
+          articulo_referencia: "Art. 1",
+          feedback: {
+            cita_literal: "The literal citation from source",
+            explicacion_fallo: "Explanation of why the wrong answer is wrong",
+          },
+          answers: [
+            { letter: "A", text: "Correct answer", isCorrect: true },
+            { letter: "B", text: "Wrong answer 1", isCorrect: false },
+            { letter: "C", text: "Wrong answer 2", isCorrect: false },
+            { letter: "D", text: "Wrong answer 3", isCorrect: false },
+          ],
+        },
+      ],
+    };
+
+    code.textContent = JSON.stringify(template, null, 2);
+  }
+
+  async copyTemplate(): Promise<void> {
+    const code = document.getElementById("templateCode");
+    if (!code) return;
+
+    try {
+      await navigator.clipboard.writeText(code.textContent || "");
+      alert(this.translations.copied || "Copied to clipboard!");
+    } catch {
+      // Fallback
+      const textarea = document.createElement("textarea");
+      textarea.value = code.textContent || "";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      alert(this.translations.copied || "Copied to clipboard!");
+    }
+  }
+
+  downloadTemplate(): void {
+    const code = document.getElementById("templateCode");
+    if (!code) return;
+
+    const blob = new Blob([code.textContent || ""], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "exam_template.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    alert(this.translations.templateDownloaded || "Template downloaded!");
+  }
+
+  // ============================================================================
+  // Choice Modal
+  // ============================================================================
+
+  showChoiceModal(): void {
+    const modal = document.getElementById("choiceModal");
+    if (modal) modal.classList.remove("hidden");
+  }
+
+  closeChoiceModal(): void {
+    const modal = document.getElementById("choiceModal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  // ============================================================================
+  // AI Prompt Generator
+  // ============================================================================
+
+  showAIPromptGenerator(): void {
+    const modal = document.getElementById("aiPromptModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      // Reset form
+      const result = document.getElementById("aiPromptResult");
+      if (result) result.classList.add("hidden");
+      const destinations = document.getElementById("aiDestinations");
+      if (destinations) destinations.classList.add("hidden");
+    }
+  }
+
+  closeAIPromptGenerator(): void {
+    const modal = document.getElementById("aiPromptModal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  toggleMaterialField(): void {
+    const checkbox = document.getElementById("aiMaterialInChat") as HTMLInputElement | null;
+    const field = document.getElementById("aiMaterialField");
+    if (field && checkbox) {
+      field.style.display = checkbox.checked ? "none" : "block";
+    }
+  }
+
+  generateAIPrompt(): void {
+    const T = this.translations;
+    const numQuestions = (document.getElementById("aiNumQuestions") as HTMLInputElement)?.value || "10";
+    const numAnswers = (document.getElementById("aiNumAnswers") as HTMLInputElement)?.value || "4";
+    const difficulty = (document.getElementById("aiDifficulty") as HTMLSelectElement)?.value || "medium";
+    const materialInChat = (document.getElementById("aiMaterialInChat") as HTMLInputElement)?.checked;
+    const material = (document.getElementById("aiMaterial") as HTMLTextAreaElement)?.value || "";
+
+    if (!materialInChat && !material.trim()) {
+      alert(T.aiPromptNoMaterial || "Please enter your study material first!");
+      return;
+    }
+
+    const difficultyText: Record<string, string> = {
+      easy: T.difficultyEasy || "Easy",
+      medium: T.difficultyMedium || "Medium",
+      hard: T.difficultyHard || "Hard",
+      mixed: T.difficultyMixed || "Mixed",
+    };
+
+    let prompt = `Generate an exam in JSON format with exactly ${numQuestions} questions, each with ${numAnswers} answer options. Difficulty: ${difficultyText[difficulty] || difficulty}.
+
+The JSON must follow this exact schema (schema_version "2.0"):
+
+{
+  "schema_version": "2.0",
+  "exam_id": "unique-exam-id",
+  "title": "Exam Title",
+  "categorias": ["Category1", "Category2"],
+  "total_questions": ${numQuestions},
+  "questions": [
+    {
+      "number": 1,
+      "text": "Question text?",
+      "categoria": ["Category1"],
+      "articulo_referencia": "Reference article",
+      "feedback": {
+        "cita_literal": "Literal citation from source",
+        "explicacion_fallo": "Explanation of why wrong answers are wrong"
+      },
+      "answers": [
+        { "letter": "A", "text": "Answer text", "isCorrect": true },
+        { "letter": "B", "text": "Answer text", "isCorrect": false }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Exactly one answer per question must have "isCorrect": true
+- total_questions must equal the number of questions
+- Each question must have exactly ${numAnswers} answers
+- Output valid JSON only, no extra text`;
+
+    if (!materialInChat && material.trim()) {
+      prompt += `\n\nStudy material to create questions from:\n${material}`;
+    } else if (materialInChat) {
+      prompt += `\n\n[I will paste my study material in the next message]`;
+    }
+
+    const output = document.getElementById("aiGeneratedPrompt") as HTMLTextAreaElement;
+    if (output) output.value = prompt;
+
+    const result = document.getElementById("aiPromptResult");
+    if (result) result.classList.remove("hidden");
+  }
+
+  async copyGeneratedPrompt(): Promise<void> {
+    const output = document.getElementById("aiGeneratedPrompt") as HTMLTextAreaElement;
+    if (!output) return;
+
+    try {
+      await navigator.clipboard.writeText(output.value);
+    } catch {
+      output.select();
+      document.execCommand("copy");
+    }
+
+    // Show AI destinations
+    const destinations = document.getElementById("aiDestinations");
+    if (destinations) destinations.classList.remove("hidden");
+  }
+
+  // ============================================================================
+  // External Link Confirmation
+  // ============================================================================
+
+  openExternalLink(url: string, name: string): void {
+    this.pendingExternalUrl = url;
+    this.pendingExternalName = name;
+
+    const modal = document.getElementById("externalLinkModal");
+    const urlDisplay = document.getElementById("externalLinkUrl");
+    const titleDisplay = document.getElementById("txtLeavingSite");
+    if (modal) modal.classList.remove("hidden");
+    if (urlDisplay) urlDisplay.textContent = url;
+    if (titleDisplay) {
+      titleDisplay.textContent = `${this.translations.leavingSite || "You're about to leave GinaXams Player"} → ${this.pendingExternalName}`;
+    }
+  }
+
+  closeExternalLinkModal(): void {
+    const modal = document.getElementById("externalLinkModal");
+    if (modal) modal.classList.add("hidden");
+    this.pendingExternalUrl = "";
+    this.pendingExternalName = "";
+  }
+
+  confirmExternalLink(): void {
+    if (this.pendingExternalUrl) {
+      window.open(this.pendingExternalUrl, "_blank");
+    }
+    this.closeExternalLinkModal();
   }
 
   // ============================================================================

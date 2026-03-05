@@ -4023,6 +4023,9 @@
           <button id="nextBtn" class="nav-btn next">
             <span id="txtNext">Next</span>
           </button>
+          <button id="finishBtn" class="nav-btn next" style="display:none;">
+            <span id="txtFinish">Finish</span>
+          </button>
         </div>
       </div>
 
@@ -4035,9 +4038,14 @@
           🏆 Results
         </h2>
 
+        <!-- Mode indicator -->
+        <div style="text-align:center; margin-bottom: var(--space-sm);">
+          <span id="resultModeLabel" style="color: var(--text-muted); font-size: 0.9em;"></span>
+        </div>
+
         <!-- Score Summary Section -->
         <div class="results-section">
-          <div class="results-section__title">Score Summary</div>
+          <div class="results-section__title" id="txtScoreSummary">Score Summary</div>
 
           <!-- Main Score Circle -->
           <div class="score-circle-container">
@@ -4051,21 +4059,21 @@
           <div id="resultsStatsGrid" class="results-stats-grid">
             <div class="results-stat results-stat--correct">
               <span class="results-stat__value" id="resultCorrectCount">0</span>
-              <span class="results-stat__label">Correct</span>
+              <span class="results-stat__label" id="txtResultCorrectLabel">Correct</span>
             </div>
             <div class="results-stat results-stat--wrong">
               <span class="results-stat__value" id="resultWrongCount">0</span>
-              <span class="results-stat__label">Wrong</span>
+              <span class="results-stat__label" id="txtResultWrongLabel">Wrong</span>
             </div>
             <div class="results-stat results-stat--blank">
               <span class="results-stat__value" id="resultBlankCount">0</span>
-              <span class="results-stat__label">Blank</span>
+              <span class="results-stat__label" id="txtResultBlankLabel">Blank</span>
             </div>
           </div>
 
           <!-- Score & Percentage Row -->
           <div class="results-score-row">
-            <span class="results-score-row__label">Score</span>
+            <span class="results-score-row__label" id="txtResultScoreLabel">Score</span>
             <span class="results-score-row__value" id="resultScoreValue"
               >0</span
             >
@@ -4074,15 +4082,15 @@
 
         <!-- Statistics Section -->
         <div class="results-section">
-          <div class="results-section__title">Statistics</div>
+          <div class="results-section__title" id="txtStatistics">Statistics</div>
           <div class="results-time-row">
-            <span class="results-time-row__label">Total Questions</span>
+            <span class="results-time-row__label" id="txtTotalQuestions">Total Questions</span>
             <span class="results-time-row__value" id="resultTotalQuestions"
               >0</span
             >
           </div>
           <div class="results-time-row">
-            <span class="results-time-row__label">Time Spent</span>
+            <span class="results-time-row__label" id="txtTimeSpent">Time Spent</span>
             <span class="results-time-row__value" id="timeSpent">0:00</span>
           </div>
         </div>

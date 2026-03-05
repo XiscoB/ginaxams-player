@@ -223,6 +223,20 @@ export const LANG_EN = {
   referenceArticle: "Reference",
   literalCitation: "Citation",
   explanation: "Explanation",
+
+  // Results Screen
+  scoreSummary: "Score Summary",
+  correct: "Correct",
+  wrong: "Wrong",
+  blank: "Blank",
+  score: "Score",
+  statistics: "Statistics",
+  totalQuestions: "Total Questions",
+  timeSpent: "Time Spent",
+  modeLabel: "Mode",
+  modeFree: "Free",
+  modeSimulacro: "Simulacro",
+  modeReview: "Review",
 };
 
 export type TranslationKey = keyof typeof LANG_EN;

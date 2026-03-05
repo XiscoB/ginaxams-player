@@ -225,4 +225,18 @@ export const LANG_ES = {
   referenceArticle: "Referencia",
   literalCitation: "Cita",
   explanation: "Explicación",
+
+  // Results Screen
+  scoreSummary: "Resumen de Puntuación",
+  correct: "Correctas",
+  wrong: "Incorrectas",
+  blank: "Sin responder",
+  score: "Puntuación",
+  statistics: "Estadísticas",
+  totalQuestions: "Total de Preguntas",
+  timeSpent: "Tiempo Empleado",
+  modeLabel: "Modo",
+  modeFree: "Libre",
+  modeSimulacro: "Simulacro",
+  modeReview: "Repaso",
 } as const;

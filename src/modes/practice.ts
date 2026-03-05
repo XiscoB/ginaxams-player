@@ -62,9 +62,8 @@ export class PracticeManager {
       this.config.onNext();
     });
 
-    document.getElementById("btnTryAgain")?.addEventListener("click", () => {
-      this.config.onFinish();
-    });
+    // btnTryAgain is handled dynamically via onclick in renderResults
+    // to avoid stale handler issues when session is already cleared
   }
 
   /**
@@ -110,7 +109,19 @@ export class PracticeManager {
       scoreCategory,
       totalQuestions,
       timeSpentMs,
+      mode,
     } = result;
+
+    // Update mode label
+    const modeLabel = document.getElementById("resultModeLabel");
+    if (modeLabel) {
+      const modeNames: Record<string, string> = {
+        free: T.modeFree || "Free",
+        simulacro: T.modeSimulacro || "Simulacro",
+        review: T.modeReview || "Review",
+      };
+      modeLabel.textContent = `${T.modeLabel || "Mode"}: ${modeNames[mode] || mode}`;
+    }
 
     // Update score circle
     const scoreCircle = document.getElementById("scoreCircle");
@@ -155,6 +166,52 @@ export class PracticeManager {
       const seconds = totalSeconds % 60;
       timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
     }
+
+    // Update translated labels on the results screen
+    const txtScoreSummary = document.getElementById("txtScoreSummary");
+    if (txtScoreSummary) txtScoreSummary.textContent = T.scoreSummary || "Score Summary";
+
+    const txtCorrectLabel = document.getElementById("txtResultCorrectLabel");
+    if (txtCorrectLabel) txtCorrectLabel.textContent = T.correct || "Correct";
+
+    const txtWrongLabel = document.getElementById("txtResultWrongLabel");
+    if (txtWrongLabel) txtWrongLabel.textContent = T.wrong || "Wrong";
+
+    const txtBlankLabel = document.getElementById("txtResultBlankLabel");
+    if (txtBlankLabel) txtBlankLabel.textContent = T.blank || "Blank";
+
+    const txtScoreLabel = document.getElementById("txtResultScoreLabel");
+    if (txtScoreLabel) txtScoreLabel.textContent = T.score || "Score";
+
+    const txtStatistics = document.getElementById("txtStatistics");
+    if (txtStatistics) txtStatistics.textContent = T.statistics || "Statistics";
+
+    const txtTotalQuestions = document.getElementById("txtTotalQuestions");
+    if (txtTotalQuestions) txtTotalQuestions.textContent = T.totalQuestions || "Total Questions";
+
+    const txtTimeSpent = document.getElementById("txtTimeSpent");
+    if (txtTimeSpent) txtTimeSpent.textContent = T.timeSpent || "Time Spent";
+
+    const txtResults = document.getElementById("txtResults");
+    if (txtResults) txtResults.textContent = T.results || "🏆 Results";
+
+    const lblTryAgain = document.getElementById("lblTryAgain");
+    if (lblTryAgain) lblTryAgain.textContent = T.tryAgain || "Try Again";
+
+    const lblReviewAnswers = document.getElementById("lblReviewAnswers");
+    if (lblReviewAnswers) lblReviewAnswers.textContent = T.reviewAnswers || "Review Answers";
+
+    const txtReviewSummaryTitle = document.getElementById("txtReviewSummaryTitle");
+    if (txtReviewSummaryTitle) txtReviewSummaryTitle.textContent = T.reviewSummary || "Review Summary";
+
+    const txtBackToLibraryBtn = document.getElementById("txtBackToLibraryBtn");
+    if (txtBackToLibraryBtn) txtBackToLibraryBtn.textContent = T.backToLibrary || "📚 Back to Library";
+
+    const txtLastScore = document.getElementById("txtLastScore");
+    if (txtLastScore) txtLastScore.textContent = T.lastScore || "Last Score";
+
+    const txtBestScore = document.getElementById("txtBestScore");
+    if (txtBestScore) txtBestScore.textContent = T.bestScore || "Best Score";
 
     // Render per-question review summary
     this.renderReviewSummary(result);
