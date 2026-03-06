@@ -246,6 +246,10 @@ export class App {
                 <option value="3600000" selected>${T.timer60 || "60 minutes"}</option>
                 <option value="5400000">${T.timer90 || "90 minutes"}</option>
               </select>
+              <label style="display: flex; align-items: center; gap: var(--space-xs); color: var(--text-secondary); font-size: 0.85em; cursor: pointer;">
+                <input type="checkbox" id="simulacroShowExplanations" />
+                ${T.showFeedbackToggle || "Show feedback during exam"}
+              </label>
             </div>
             <div class="mode-card__actions">
               <button id="btnSimulacroMode" class="btn btn--primary">${T.modeStartButton || "Start"}</button>
@@ -510,7 +514,10 @@ export class App {
 
     const correctText = document.getElementById("correctAnswerText");
     if (correctText) {
-      correctText.textContent = `${q.correctAnswerLetter}`;
+      const label = T.correctAnswerLabel || "Correct answer";
+      correctText.textContent = q.correctAnswerText
+        ? `${label}: ${q.correctAnswerLetter} — ${q.correctAnswerText}`
+        : `${label}: ${q.correctAnswerLetter}`;
     }
 
     // Update progress
@@ -602,12 +609,19 @@ export class App {
     try {
       // Read simulacro timer config from UI
       let timeLimitMs = 3600000; // default 60 minutes
+      let showExplanations = false;
       if (mode === "simulacro") {
         const timerSelect = document.getElementById(
           "simulacroTimerSelect",
         ) as HTMLSelectElement | null;
         if (timerSelect) {
           timeLimitMs = parseInt(timerSelect.value, 10);
+        }
+        const explCheckbox = document.getElementById(
+          "simulacroShowExplanations",
+        ) as HTMLInputElement | null;
+        if (explCheckbox) {
+          showExplanations = explCheckbox.checked;
         }
       }
 
@@ -621,6 +635,7 @@ export class App {
                 timeLimitMs,
                 penalty: 0,
                 reward: 1,
+                showExplanations,
               }
             : undefined,
       });

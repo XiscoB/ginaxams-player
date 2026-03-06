@@ -69,6 +69,8 @@ interface SessionState {
   primaryExamId: string;
   /** Timestamp (ms) when the session started */
   startedAtMs: number;
+  /** Whether to show explanations during simulacro (UI-only, default false) */
+  showExplanations: boolean;
 }
 
 // ============================================================================
@@ -159,6 +161,7 @@ export class AttemptController {
       questions,
       primaryExamId,
       startedAtMs: Date.now(),
+      showExplanations: config?.showExplanations ?? false,
     };
 
     return this.getViewState();
@@ -315,12 +318,18 @@ export class AttemptController {
     const answer = state.answers[currentQuestion.number];
     const isAnswered = answer !== undefined;
 
-    // Build answers view
-    const answers = this.buildAnswersView(currentQuestion, answer);
+    // Determine whether to show feedback (suppress in simulacro unless toggle is on)
+    const showFeedback =
+      attempt.type !== "simulacro" || this.session!.showExplanations;
 
-    // Build feedback (all modes, when answered)
+    // Build answers view (suppress correctness info in simulacro without feedback)
+    const answers = showFeedback
+      ? this.buildAnswersView(currentQuestion, answer)
+      : this.buildAnswersView(currentQuestion);
+
+    // Build feedback
     let feedback: FeedbackView | undefined;
-    if (isAnswered) {
+    if (isAnswered && showFeedback) {
       const correctAnswer = currentQuestion.answers.find((a) => a.isCorrect);
       const selectedAnswer =
         answer.selectedIndex !== null
@@ -449,6 +458,7 @@ export class AttemptController {
     const questionSummary: QuestionResultView[] = questions.map((q) => {
       const correctAnswer = q.answers.find((a) => a.isCorrect);
       const correctLetter = correctAnswer?.letter ?? "?";
+      const correctText = correctAnswer?.text ?? "";
 
       // Use actual answer data when available (active session)
       const answer = answers?.[q.number];
@@ -464,6 +474,7 @@ export class AttemptController {
           isBlank: answer.selectedIndex === null,
           selectedAnswerLetter: selectedLetter,
           correctAnswerLetter: correctLetter,
+          correctAnswerText: correctText,
           referenceArticle: q.articulo_referencia,
           literalCitation: q.feedback.cita_literal,
           explanation: q.feedback.explicacion_fallo,
@@ -478,6 +489,7 @@ export class AttemptController {
         isBlank: true,
         selectedAnswerLetter: null,
         correctAnswerLetter: correctLetter,
+        correctAnswerText: correctText,
         referenceArticle: q.articulo_referencia,
         literalCitation: q.feedback.cita_literal,
         explanation: q.feedback.explicacion_fallo,

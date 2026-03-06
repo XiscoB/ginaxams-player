@@ -255,6 +255,7 @@ export class PracticeManager {
       div.className = "answer-option";
 
       if (answered) {
+        // Full correctness info available (free mode, review, simulacro with feedback)
         const resultAns = ans as AnswerViewWithResult;
         if (resultAns.isCorrect) {
           div.classList.add("correct");
@@ -263,6 +264,10 @@ export class PracticeManager {
         } else if (resultAns.isSelected) {
           div.classList.add("selected");
         }
+      } else if (state.isAnswered && state.selectedAnswerIndex === ans.index) {
+        // No correctness info but answered (simulacro without feedback) —
+        // show neutral selection highlight only
+        div.classList.add("selected");
       }
 
       div.innerHTML = `
@@ -373,43 +378,22 @@ export class PracticeManager {
     this.lastRenderedFeedbackKey = feedbackKey;
     feedbackSection.classList.remove("hidden");
 
-    const isCorrect = state.feedback.isCorrect;
-    const panelClass = isCorrect
-      ? "feedback-panel--correct"
-      : "feedback-panel--wrong";
-    const headerIcon = isCorrect ? "✓" : "✗";
+    const headerText = this.buildFeedbackHeaderText(
+      state.feedback.isCorrect,
+      state.feedback.selectedAnswer,
+      state.feedback.correctAnswer,
+      T,
+    );
 
-    let headerText: string;
-    if (isCorrect) {
-      headerText = T.correctAnswer || "Correct!";
-    } else {
-      const selected = state.feedback.selectedAnswer ?? "—";
-      const correct = state.feedback.correctAnswer;
-      headerText = `${T.wrongAnswer || "Incorrect"} (${selected} → ${correct})`;
-    }
-
-    feedbackSection.innerHTML = `
-      <div class="feedback-panel ${panelClass}">
-        <div class="feedback-panel__header">
-          <span>${headerIcon}</span>
-          <span>${headerText}</span>
-        </div>
-        <div class="feedback-panel__body">
-          <div class="feedback-panel__field">
-            <span class="feedback-panel__label">${T.referenceArticle || "Reference"}</span>
-            <span class="feedback-panel__value">${state.feedback.referenceArticle}</span>
-          </div>
-          <div class="feedback-panel__field">
-            <span class="feedback-panel__label">${T.literalCitation || "Citation"}</span>
-            <blockquote class="feedback-panel__citation">${state.feedback.literalCitation}</blockquote>
-          </div>
-          <div class="feedback-panel__field">
-            <span class="feedback-panel__label">${T.explanation || "Explanation"}</span>
-            <span class="feedback-panel__value">${state.feedback.explanation}</span>
-          </div>
-        </div>
-      </div>
-    `;
+    this.renderFeedbackPanelHTML(
+      feedbackSection,
+      state.feedback.isCorrect,
+      headerText,
+      state.feedback.referenceArticle,
+      state.feedback.literalCitation,
+      state.feedback.explanation,
+      T,
+    );
   }
 
   /**
@@ -458,22 +442,66 @@ export class PracticeManager {
       return;
     }
 
-    const isCorrect = question.isCorrect;
+    container.classList.remove("hidden");
+
+    const headerText = this.buildFeedbackHeaderText(
+      question.isCorrect,
+      question.selectedAnswerLetter,
+      question.correctAnswerLetter,
+      T,
+    );
+
+    this.renderFeedbackPanelHTML(
+      container,
+      question.isCorrect,
+      headerText,
+      question.referenceArticle || "",
+      question.literalCitation || "",
+      question.explanation || "",
+      T,
+    );
+  }
+
+  // ==========================================================================
+  // Private — Shared Feedback Rendering
+  // ==========================================================================
+
+  /**
+   * Build the header text for a feedback panel.
+   * Single source of truth for both in-exam and review feedback headers.
+   */
+  private buildFeedbackHeaderText(
+    isCorrect: boolean,
+    selectedAnswer: string | null | undefined,
+    correctAnswer: string,
+    T: Translations,
+  ): string {
+    if (isCorrect) {
+      return T.correctAnswer || "Correct!";
+    }
+    const selected = selectedAnswer ?? "—";
+    return `${T.wrongAnswer || "Incorrect"} (${selected} → ${correctAnswer})`;
+  }
+
+  /**
+   * Render unified feedback panel HTML into a container.
+   * Single renderer used by both updateFeedback (in-exam) and
+   * renderFeedbackPanel (review screen) to ensure layout consistency.
+   */
+  private renderFeedbackPanelHTML(
+    container: HTMLElement,
+    isCorrect: boolean,
+    headerText: string,
+    referenceArticle: string,
+    literalCitation: string,
+    explanation: string,
+    T: Translations,
+  ): void {
     const panelClass = isCorrect
       ? "feedback-panel--correct"
       : "feedback-panel--wrong";
     const headerIcon = isCorrect ? "✓" : "✗";
 
-    let headerText: string;
-    if (isCorrect) {
-      headerText = T.correctAnswer || "Correct!";
-    } else {
-      const selected = question.selectedAnswerLetter ?? "—";
-      const correct = question.correctAnswerLetter;
-      headerText = `${T.wrongAnswer || "Incorrect"} (${selected} → ${correct})`;
-    }
-
-    container.classList.remove("hidden");
     container.innerHTML = `
       <div class="feedback-panel ${panelClass}">
         <div class="feedback-panel__header">
@@ -483,15 +511,15 @@ export class PracticeManager {
         <div class="feedback-panel__body">
           <div class="feedback-panel__field">
             <span class="feedback-panel__label">${T.referenceArticle || "Reference"}</span>
-            <span class="feedback-panel__value">${question.referenceArticle || ""}</span>
+            <span class="feedback-panel__value">${referenceArticle}</span>
           </div>
           <div class="feedback-panel__field">
             <span class="feedback-panel__label">${T.literalCitation || "Citation"}</span>
-            <blockquote class="feedback-panel__citation">${question.literalCitation || ""}</blockquote>
+            <blockquote class="feedback-panel__citation">${literalCitation}</blockquote>
           </div>
           <div class="feedback-panel__field">
             <span class="feedback-panel__label">${T.explanation || "Explanation"}</span>
-            <span class="feedback-panel__value">${question.explanation || ""}</span>
+            <span class="feedback-panel__value">${explanation}</span>
           </div>
         </div>
       </div>

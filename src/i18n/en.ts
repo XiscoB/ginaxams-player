@@ -51,7 +51,7 @@ export const LANG_EN = {
   // Review
   filterAll: "All",
   filterWrong: "❌ Wrong",
-  correctAnswer: "✓ Correct answer:",
+  correctAnswer: "Correct!",
   noQuestionsMatch: "No questions match this filter!",
   noWrongAnswers: "No wrong answers to review",
 
@@ -262,6 +262,12 @@ export const LANG_EN = {
   // Timer Visibility
   showTimer: "Show Timer",
   hideTimer: "Hide Timer",
+
+  // Simulacro Options
+  showFeedbackToggle: "Show feedback during exam",
+
+  // Review
+  correctAnswerLabel: "Correct answer",
 };
 
 export type TranslationKey = keyof typeof LANG_EN;

@@ -201,6 +201,8 @@ export interface QuestionResultView {
   selectedAnswerLetter: string | null;
   /** The correct answer letter */
   correctAnswerLetter: string;
+  /** The correct answer text */
+  correctAnswerText: string;
   /** Reference article for the question */
   referenceArticle?: string;
   /** Literal citation from source material */
@@ -271,6 +273,8 @@ export interface StartAttemptParams {
     penalty?: number;
     reward?: number;
     examWeights?: Record<string, number>;
+    /** Show explanations during simulacro (default: false) */
+    showExplanations?: boolean;
     /** Review-specific */
     reviewQuestionCount?: number;
     wrongWeight?: number;

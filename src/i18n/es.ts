@@ -52,7 +52,7 @@ export const LANG_ES = {
   // Review
   filterAll: "Todas",
   filterWrong: "❌ Falladas",
-  correctAnswer: "✓ Respuesta correcta:",
+  correctAnswer: "¡Correcto!",
   noQuestionsMatch: "¡Ninguna pregunta coincide con este filtro!",
   noWrongAnswers: "No hay respuestas incorrectas para repasar",
 
@@ -264,4 +264,10 @@ export const LANG_ES = {
   // Timer Visibility
   showTimer: "Mostrar Temporizador",
   hideTimer: "Ocultar Temporizador",
+
+  // Simulacro Options
+  showFeedbackToggle: "Mostrar retroalimentación durante el examen",
+
+  // Review
+  correctAnswerLabel: "Respuesta correcta",
 } as const;
