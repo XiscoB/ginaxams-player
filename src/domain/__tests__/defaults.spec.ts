@@ -65,7 +65,10 @@ describe("DEFAULTS", () => {
     expect(keys).toContain("difficultyEasyBoost");
     expect(keys).toContain("difficultyMediumBoost");
     expect(keys).toContain("difficultyHardPenalty");
-    expect(keys).toHaveLength(16);
+    expect(keys).toContain("trapPossibleThreshold");
+    expect(keys).toContain("trapConfirmedThreshold");
+    expect(keys).toContain("readinessSimulacroWindow");
+    expect(keys).toHaveLength(19);
   });
 
   it("values are of correct types", () => {

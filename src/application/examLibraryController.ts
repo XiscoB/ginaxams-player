@@ -45,6 +45,16 @@ import {
   computeQuestionDifficulty,
   type QuestionDifficulty,
 } from "../domain/questionDifficulty.js";
+import {
+  computeTrapSignals,
+  type TrapSignal,
+  type TrapThresholds,
+} from "../domain/trapDetection.js";
+import {
+  computeExamReadiness,
+  type ExamReadiness,
+  type ReadinessConfig,
+} from "../domain/examReadiness.js";
 
 import type { ExamStorage } from "../storage/db.js";
 import { DB_VERSION } from "../storage/db.js";
@@ -472,6 +482,98 @@ export class ExamLibraryController {
 
     const telemetry = await this.storage.getTelemetryByExam(examId);
     return computeQuestionDifficulty(storedExam.data.questions, telemetry);
+  }
+
+  // ==========================================================================
+  // Trap Question Detection (Phase 9)
+  // ==========================================================================
+
+  /**
+   * Compute trap signals for all questions in an exam.
+   *
+   * A trap question is one where category mastery is high but the user
+   * repeatedly fails the question, indicating misleading wording or trick answers.
+   *
+   * @param examId - The storage ID of the exam
+   * @returns Array of TrapSignal sorted by questionNumber ASC
+   * @throws Error if exam not found
+   */
+  async getTrapSignals(examId: string): Promise<TrapSignal[]> {
+    const storedExam = await this.storage.getExam(examId);
+    if (!storedExam) {
+      throw new Error(`Exam not found: ${examId}`);
+    }
+
+    const telemetry = await this.storage.getTelemetryByExam(examId);
+
+    const effectiveWeights: WeaknessWeights = {
+      wrongWeight: DEFAULTS.wrongWeight,
+      blankWeight: DEFAULTS.blankWeight,
+      recoveryWeight: DEFAULTS.recoveryWeight,
+      weakTimeThresholdMs: DEFAULTS.weakTimeThresholdMs,
+    };
+
+    const categoryMastery = computeCategoryMastery(
+      storedExam.data.questions,
+      telemetry,
+      effectiveWeights,
+      DEFAULT_MASTERY_THRESHOLDS,
+    );
+
+    const thresholds: TrapThresholds = {
+      possibleThreshold: DEFAULTS.trapPossibleThreshold,
+      confirmedThreshold: DEFAULTS.trapConfirmedThreshold,
+    };
+
+    return computeTrapSignals(
+      storedExam.data.questions,
+      telemetry,
+      categoryMastery,
+      thresholds,
+    );
+  }
+
+  // ==========================================================================
+  // Exam Readiness Estimation (Phase 9)
+  // ==========================================================================
+
+  /**
+   * Compute the overall exam readiness score and classification.
+   *
+   * Uses category mastery, recent simulacro accuracy, and weakness
+   * recovery rate to estimate whether the user is ready for the real exam.
+   *
+   * @returns ExamReadiness with score (0–100) and classification
+   */
+  async getExamReadiness(): Promise<ExamReadiness> {
+    const [storedExams, attempts, telemetry] = await Promise.all([
+      this.storage.getExams(),
+      this.storage.getAllAttempts(),
+      this.storage.getAllQuestionTelemetry(),
+    ]);
+
+    // Collect all questions from all exams
+    const allQuestions = storedExams.flatMap((e) => e.data.questions);
+
+    const effectiveWeights: WeaknessWeights = {
+      wrongWeight: DEFAULTS.wrongWeight,
+      blankWeight: DEFAULTS.blankWeight,
+      recoveryWeight: DEFAULTS.recoveryWeight,
+      weakTimeThresholdMs: DEFAULTS.weakTimeThresholdMs,
+    };
+
+    const categoryMastery = computeCategoryMastery(
+      allQuestions,
+      telemetry,
+      effectiveWeights,
+      DEFAULT_MASTERY_THRESHOLDS,
+    );
+
+    const config: ReadinessConfig = {
+      simulacroWindow: DEFAULTS.readinessSimulacroWindow,
+    };
+
+    return computeExamReadiness(categoryMastery, attempts, telemetry, config);
   }
 
   // ==========================================================================

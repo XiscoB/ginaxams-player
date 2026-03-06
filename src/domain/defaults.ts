@@ -42,6 +42,13 @@ export const DEFAULTS = {
   difficultyEasyBoost: 1.2,
   difficultyMediumBoost: 1.0,
   difficultyHardPenalty: 0.85,
+
+  // Trap detection thresholds (Phase 9)
+  trapPossibleThreshold: 0.4,
+  trapConfirmedThreshold: 0.7,
+
+  // Exam readiness (Phase 9)
+  readinessSimulacroWindow: 5,
 } as const;
 
 /**
@@ -91,6 +98,9 @@ export function withDefaults(
     difficultyEasyBoost: number;
     difficultyMediumBoost: number;
     difficultyHardPenalty: number;
+    trapPossibleThreshold: number;
+    trapConfirmedThreshold: number;
+    readinessSimulacroWindow: number;
   }>,
 ): {
   reviewQuestionCount: number;
@@ -109,6 +119,9 @@ export function withDefaults(
   difficultyEasyBoost: number;
   difficultyMediumBoost: number;
   difficultyHardPenalty: number;
+  trapPossibleThreshold: number;
+  trapConfirmedThreshold: number;
+  readinessSimulacroWindow: number;
 } {
   return {
     reviewQuestionCount:
@@ -138,5 +151,11 @@ export function withDefaults(
       overrides.difficultyMediumBoost ?? DEFAULTS.difficultyMediumBoost,
     difficultyHardPenalty:
       overrides.difficultyHardPenalty ?? DEFAULTS.difficultyHardPenalty,
+    trapPossibleThreshold:
+      overrides.trapPossibleThreshold ?? DEFAULTS.trapPossibleThreshold,
+    trapConfirmedThreshold:
+      overrides.trapConfirmedThreshold ?? DEFAULTS.trapConfirmedThreshold,
+    readinessSimulacroWindow:
+      overrides.readinessSimulacroWindow ?? DEFAULTS.readinessSimulacroWindow,
   };
 }
