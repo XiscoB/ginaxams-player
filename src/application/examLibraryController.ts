@@ -27,12 +27,18 @@ import type {
   Attempt,
   CategoryWeakness,
   CategoryStats,
+  CategoryMastery,
 } from "../domain/types.js";
 
 import { validateExam } from "../domain/validation.js";
 import { getAttemptStatsForExam } from "../domain/attemptSelectors.js";
 import { computeCategoryWeakness } from "../domain/categoryWeakness.js";
 import { computeCategoryStats } from "../domain/categoryStats.js";
+import {
+  computeCategoryMastery,
+  DEFAULT_MASTERY_THRESHOLDS,
+  type MasteryThresholds,
+} from "../domain/categoryMastery.js";
 import { DEFAULTS } from "../domain/defaults.js";
 import type { WeaknessWeights } from "../domain/weakness.js";
 
@@ -388,6 +394,55 @@ export class ExamLibraryController {
       storedExam.data.questions,
       telemetry,
       effectiveWeights,
+    );
+  }
+
+  /**
+   * Compute per-category mastery classification for an exam (Phase 6).
+   *
+   * @param examId - The storage ID of the exam
+   * @param weights - Optional weakness weight overrides
+   * @param thresholds - Optional mastery threshold overrides
+   * @returns Array of CategoryMastery sorted by category ASC
+   * @throws Error if exam not found
+   */
+  async getCategoryMastery(
+    examId: string,
+    weights?: Partial<WeaknessWeights>,
+    thresholds?: Partial<MasteryThresholds>,
+  ): Promise<CategoryMastery[]> {
+    const storedExam = await this.storage.getExam(examId);
+    if (!storedExam) {
+      throw new Error(`Exam not found: ${examId}`);
+    }
+
+    const telemetry = await this.storage.getTelemetryByExam(examId);
+
+    const effectiveWeights: WeaknessWeights = {
+      wrongWeight: weights?.wrongWeight ?? DEFAULTS.wrongWeight,
+      blankWeight: weights?.blankWeight ?? DEFAULTS.blankWeight,
+      recoveryWeight: weights?.recoveryWeight ?? DEFAULTS.recoveryWeight,
+      weakTimeThresholdMs:
+        weights?.weakTimeThresholdMs ?? DEFAULTS.weakTimeThresholdMs,
+    };
+
+    const effectiveThresholds: MasteryThresholds = {
+      weakThreshold:
+        thresholds?.weakThreshold ?? DEFAULT_MASTERY_THRESHOLDS.weakThreshold,
+      masteredThreshold:
+        thresholds?.masteredThreshold ??
+        DEFAULT_MASTERY_THRESHOLDS.masteredThreshold,
+      accuracyLow:
+        thresholds?.accuracyLow ?? DEFAULT_MASTERY_THRESHOLDS.accuracyLow,
+      accuracyHigh:
+        thresholds?.accuracyHigh ?? DEFAULT_MASTERY_THRESHOLDS.accuracyHigh,
+    };
+
+    return computeCategoryMastery(
+      storedExam.data.questions,
+      telemetry,
+      effectiveWeights,
+      effectiveThresholds,
     );
   }
 

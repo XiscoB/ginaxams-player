@@ -285,5 +285,9 @@ export interface StartAttemptParams {
     reviewWeakRatio?: number;
     reviewMediumRatio?: number;
     reviewRandomRatio?: number;
+    /** Category mastery boost/penalty multipliers (Phase 6) */
+    masteryWeakBoost?: number;
+    masteryLearningBoost?: number;
+    masteryMasteredPenalty?: number;
   };
 }

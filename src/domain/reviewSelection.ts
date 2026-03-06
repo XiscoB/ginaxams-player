@@ -18,11 +18,19 @@
  * - No imports from defaults (config injected via arguments)
  */
 
-import type { Question, QuestionTelemetry } from "./types.js";
+import type {
+  Question,
+  QuestionTelemetry,
+  MasteryBoostConfig,
+} from "./types.js";
 import { computeWeakScore, type WeaknessWeights } from "./weakness.js";
 import { createInitialTelemetry } from "./telemetry.js";
 import { randomSampleWithoutReplacement } from "./distribution.js";
 import { createSeededRNG, hashStringToSeed } from "./seededRng.js";
+import {
+  computeCategoryMastery,
+  DEFAULT_MASTERY_THRESHOLDS,
+} from "./categoryMastery.js";
 
 /**
  * Question with its computed weakness and selection metadata
@@ -177,6 +185,7 @@ export function sortByLastSeen(items: ReviewQuestion[]): ReviewQuestion[] {
  * @param weights - Weakness calculation weights
  * @param seed - Deterministic seed for random selection (e.g., attempt ID)
  * @param ratios - Distribution ratios (defaults to 0.6/0.3/0.1)
+ * @param masteryConfig - Optional mastery boost/penalty multipliers (Phase 6)
  * @returns Selected review questions (at most `count`; fewer if not enough questions)
  */
 export function selectReviewQuestions(
@@ -186,6 +195,7 @@ export function selectReviewQuestions(
   weights: WeaknessWeights,
   seed: string = "",
   ratios?: ReviewMixRatios,
+  masteryConfig?: MasteryBoostConfig,
 ): ReviewQuestion[] {
   const effectiveCount = Math.max(0, Math.min(count, questions.length));
 
@@ -225,6 +235,17 @@ export function selectReviewQuestions(
       isWeaknessBased: false,
     };
   });
+
+  // Apply mastery boost/penalty if configured (Phase 6)
+  if (masteryConfig) {
+    applyMasteryBoost(
+      allItems,
+      questions,
+      telemetryList,
+      weights,
+      masteryConfig,
+    );
+  }
 
   // Sort all items by weakness DESC (deterministic)
   sortByWeaknessDescending(allItems);
@@ -322,4 +343,71 @@ export function selectReviewQuestions(
   }
 
   return result;
+}
+
+/**
+ * Apply mastery-based boost/penalty multipliers to weakness scores (Phase 6).
+ *
+ * For each question, determines the mastery level of its category (or the
+ * worst mastery level if it belongs to multiple categories), then multiplies
+ * its weakness score by the corresponding boost/penalty factor.
+ *
+ * Mutates the items array in place for efficiency (internal use only).
+ *
+ * @param items - Review items with computed weakness scores
+ * @param questions - All questions (needed for category mastery computation)
+ * @param telemetryList - Telemetry data
+ * @param weights - Weakness calculation weights
+ * @param config - Mastery boost/penalty configuration
+ */
+function applyMasteryBoost(
+  items: ReviewQuestion[],
+  questions: Question[],
+  telemetryList: QuestionTelemetry[],
+  weights: WeaknessWeights,
+  config: MasteryBoostConfig,
+): void {
+  // Compute category mastery for all categories
+  const masteryList = computeCategoryMastery(
+    questions,
+    telemetryList,
+    weights,
+    DEFAULT_MASTERY_THRESHOLDS,
+  );
+
+  // Build lookup: category → MasteryLevel
+  const masteryMap = new Map<string, "weak" | "learning" | "mastered">();
+  for (const cm of masteryList) {
+    masteryMap.set(cm.category, cm.level);
+  }
+
+  // Mastery level priority: weak > learning > mastered
+  const levelPriority: Record<string, number> = {
+    weak: 2,
+    learning: 1,
+    mastered: 0,
+  };
+
+  // Multiplier lookup
+  const multiplierForLevel: Record<string, number> = {
+    weak: config.weakBoost,
+    learning: config.learningBoost,
+    mastered: config.masteredPenalty,
+  };
+
+  for (const item of items) {
+    const categories = item.question.categoria;
+
+    // Find the worst (highest priority) mastery level across all categories
+    let worstLevel: "weak" | "learning" | "mastered" = "mastered";
+    for (const cat of categories) {
+      const level = masteryMap.get(cat) ?? "learning";
+      if (levelPriority[level] > levelPriority[worstLevel]) {
+        worstLevel = level;
+      }
+    }
+
+    // Apply multiplier to weakness score
+    item.weakness = item.weakness * multiplierForLevel[worstLevel];
+  }
 }

@@ -28,6 +28,11 @@ export const DEFAULTS = {
   reviewWeakRatio: 0.6,
   reviewMediumRatio: 0.3,
   reviewRandomRatio: 0.1,
+
+  // Category mastery boost/penalty multipliers (Phase 6)
+  masteryWeakBoost: 1.2,
+  masteryLearningBoost: 1.1,
+  masteryMasteredPenalty: 0.85,
 } as const;
 
 /**
@@ -69,6 +74,9 @@ export function withDefaults(
     reviewWeakRatio: number;
     reviewMediumRatio: number;
     reviewRandomRatio: number;
+    masteryWeakBoost: number;
+    masteryLearningBoost: number;
+    masteryMasteredPenalty: number;
   }>,
 ): {
   reviewQuestionCount: number;
@@ -79,6 +87,9 @@ export function withDefaults(
   reviewWeakRatio: number;
   reviewMediumRatio: number;
   reviewRandomRatio: number;
+  masteryWeakBoost: number;
+  masteryLearningBoost: number;
+  masteryMasteredPenalty: number;
 } {
   return {
     reviewQuestionCount:
@@ -93,5 +104,10 @@ export function withDefaults(
       overrides.reviewMediumRatio ?? DEFAULTS.reviewMediumRatio,
     reviewRandomRatio:
       overrides.reviewRandomRatio ?? DEFAULTS.reviewRandomRatio,
+    masteryWeakBoost: overrides.masteryWeakBoost ?? DEFAULTS.masteryWeakBoost,
+    masteryLearningBoost:
+      overrides.masteryLearningBoost ?? DEFAULTS.masteryLearningBoost,
+    masteryMasteredPenalty:
+      overrides.masteryMasteredPenalty ?? DEFAULTS.masteryMasteredPenalty,
   };
 }

@@ -460,3 +460,43 @@ export interface CategoryStats {
   questionsCorrect: number;
   accuracy: number;
 }
+
+// ============================================================================
+// Category Mastery Types (Phase 6)
+// ============================================================================
+
+/**
+ * Discrete mastery classification for a category.
+ *
+ * Derived at runtime from combined weakness + accuracy signals.
+ * Never stored — always recomputed from telemetry.
+ */
+export type MasteryLevel = "weak" | "learning" | "mastered";
+
+/**
+ * Full mastery model for a category.
+ * Combines weakness score and accuracy into a single classification.
+ */
+export interface CategoryMastery {
+  category: string;
+  /** Average weakness score for this category (from CategoryWeakness) */
+  weaknessScore: number;
+  /** Accuracy ratio for this category (from CategoryStats) */
+  accuracy: number;
+  /** Derived mastery classification */
+  level: MasteryLevel;
+}
+
+/**
+ * Configuration for mastery-based review boost/penalty multipliers.
+ * Applied to weakness scores during review selection to bias toward
+ * weak categories and away from mastered ones.
+ */
+export interface MasteryBoostConfig {
+  /** Multiplier for questions in "weak" categories (> 1.0 = boost) */
+  weakBoost: number;
+  /** Multiplier for questions in "learning" categories (> 1.0 = slight boost) */
+  learningBoost: number;
+  /** Multiplier for questions in "mastered" categories (< 1.0 = penalty) */
+  masteredPenalty: number;
+}

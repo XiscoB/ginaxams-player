@@ -544,6 +544,17 @@ export class AttemptController {
       weights,
       attemptId,
       ratios,
+      config?.masteryWeakBoost != null ||
+        config?.masteryLearningBoost != null ||
+        config?.masteryMasteredPenalty != null
+        ? {
+            weakBoost: config?.masteryWeakBoost ?? DEFAULTS.masteryWeakBoost,
+            learningBoost:
+              config?.masteryLearningBoost ?? DEFAULTS.masteryLearningBoost,
+            masteredPenalty:
+              config?.masteryMasteredPenalty ?? DEFAULTS.masteryMasteredPenalty,
+          }
+        : undefined,
     );
 
     return reviewQuestions.map((rq) => rq.question);

@@ -57,7 +57,10 @@ describe("DEFAULTS", () => {
     expect(keys).toContain("reviewWeakRatio");
     expect(keys).toContain("reviewMediumRatio");
     expect(keys).toContain("reviewRandomRatio");
-    expect(keys).toHaveLength(8);
+    expect(keys).toContain("masteryWeakBoost");
+    expect(keys).toContain("masteryLearningBoost");
+    expect(keys).toContain("masteryMasteredPenalty");
+    expect(keys).toHaveLength(11);
   });
 
   it("values are of correct types", () => {
@@ -77,6 +80,26 @@ describe("DEFAULTS", () => {
     expect(DEFAULTS.reviewWeakRatio).toBeGreaterThan(0);
     expect(DEFAULTS.reviewMediumRatio).toBeGreaterThan(0);
     expect(DEFAULTS.reviewRandomRatio).toBeGreaterThan(0);
+  });
+
+  it("has correct mastery boost/penalty defaults (Phase 6)", () => {
+    expect(DEFAULTS.masteryWeakBoost).toBe(1.2);
+    expect(DEFAULTS.masteryLearningBoost).toBe(1.1);
+    expect(DEFAULTS.masteryMasteredPenalty).toBe(0.85);
+  });
+
+  it("mastery multipliers have correct ordering", () => {
+    // weakBoost > learningBoost > masteredPenalty
+    expect(DEFAULTS.masteryWeakBoost).toBeGreaterThan(
+      DEFAULTS.masteryLearningBoost,
+    );
+    expect(DEFAULTS.masteryLearningBoost).toBeGreaterThan(
+      DEFAULTS.masteryMasteredPenalty,
+    );
+    // weakBoost and learningBoost are >= 1.0 (boost), masteredPenalty < 1.0 (penalty)
+    expect(DEFAULTS.masteryWeakBoost).toBeGreaterThanOrEqual(1.0);
+    expect(DEFAULTS.masteryLearningBoost).toBeGreaterThanOrEqual(1.0);
+    expect(DEFAULTS.masteryMasteredPenalty).toBeLessThan(1.0);
   });
 
   it("review mix ratios have correct default values", () => {
@@ -142,6 +165,18 @@ describe("getDefault", () => {
     expect(getDefault("reviewRandomRatio")).toBe(0.1);
   });
 
+  it("returns correct value for masteryWeakBoost", () => {
+    expect(getDefault("masteryWeakBoost")).toBe(1.2);
+  });
+
+  it("returns correct value for masteryLearningBoost", () => {
+    expect(getDefault("masteryLearningBoost")).toBe(1.1);
+  });
+
+  it("returns correct value for masteryMasteredPenalty", () => {
+    expect(getDefault("masteryMasteredPenalty")).toBe(0.85);
+  });
+
   it("returns same values as direct DEFAULTS access", () => {
     (Object.keys(DEFAULTS) as DefaultKey[]).forEach((key) => {
       expect(getDefault(key)).toBe(DEFAULTS[key]);
@@ -172,6 +207,9 @@ describe("withDefaults", () => {
     expect(result.reviewWeakRatio).toBe(0.6);
     expect(result.reviewMediumRatio).toBe(0.3);
     expect(result.reviewRandomRatio).toBe(0.1);
+    expect(result.masteryWeakBoost).toBe(1.2);
+    expect(result.masteryLearningBoost).toBe(1.1);
+    expect(result.masteryMasteredPenalty).toBe(0.85);
   });
 
   it("applies single override correctly", () => {
@@ -269,6 +307,10 @@ describe("Defaults Integration", () => {
     expect(DEFAULTS.reviewWeakRatio).toBe(0.6);
     expect(DEFAULTS.reviewMediumRatio).toBe(0.3);
     expect(DEFAULTS.reviewRandomRatio).toBe(0.1);
+    // Phase 6 mastery defaults
+    expect(DEFAULTS.masteryWeakBoost).toBe(1.2);
+    expect(DEFAULTS.masteryLearningBoost).toBe(1.1);
+    expect(DEFAULTS.masteryMasteredPenalty).toBe(0.85);
   });
 
   it("can be used with weakness calculation", () => {
@@ -319,8 +361,11 @@ describe("Defaults Type Safety", () => {
       "reviewWeakRatio",
       "reviewMediumRatio",
       "reviewRandomRatio",
+      "masteryWeakBoost",
+      "masteryLearningBoost",
+      "masteryMasteredPenalty",
     ];
-    expect(validKeys).toHaveLength(8);
+    expect(validKeys).toHaveLength(11);
   });
 
   it("Defaults type has correct structure", () => {
