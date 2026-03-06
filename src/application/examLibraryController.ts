@@ -41,6 +41,10 @@ import {
 } from "../domain/categoryMastery.js";
 import { DEFAULTS } from "../domain/defaults.js";
 import type { WeaknessWeights } from "../domain/weakness.js";
+import {
+  computeQuestionDifficulty,
+  type QuestionDifficulty,
+} from "../domain/questionDifficulty.js";
 
 import type { ExamStorage } from "../storage/db.js";
 import { DB_VERSION } from "../storage/db.js";
@@ -444,6 +448,30 @@ export class ExamLibraryController {
       effectiveWeights,
       effectiveThresholds,
     );
+  }
+
+  // ==========================================================================
+  // Question Difficulty Analytics (Phase 8)
+  // ==========================================================================
+
+  /**
+   * Compute per-question difficulty estimations for an exam.
+   *
+   * Difficulty is derived from telemetry: (timesWrong + timesBlank) / totalSeen.
+   * Questions without telemetry default to difficulty 0 (easy).
+   *
+   * @param examId - The storage ID of the exam
+   * @returns Array of QuestionDifficulty sorted by questionNumber ASC
+   * @throws Error if exam not found
+   */
+  async getQuestionDifficulty(examId: string): Promise<QuestionDifficulty[]> {
+    const storedExam = await this.storage.getExam(examId);
+    if (!storedExam) {
+      throw new Error(`Exam not found: ${examId}`);
+    }
+
+    const telemetry = await this.storage.getTelemetryByExam(examId);
+    return computeQuestionDifficulty(storedExam.data.questions, telemetry);
   }
 
   // ==========================================================================

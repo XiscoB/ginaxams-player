@@ -610,4 +610,240 @@ describe("Review Selection", () => {
       expect(numbers.size).toBe(10);
     });
   });
+
+  describe("Difficulty adjustment interaction (Phase 8)", () => {
+    const difficultyConfig = {
+      easyBoost: 1.2,
+      mediumBoost: 1.0,
+      hardPenalty: 0.85,
+    };
+
+    it("easy questions get higher priority when failed (boosted weakness)", () => {
+      // Q1: easy question (always correct in telemetry) but has high weakness from wrong answers
+      // Q2: hard question (mostly wrong in telemetry) with same raw weakness
+      const questions = Array.from({ length: 10 }, (_, i) =>
+        createMockQuestion(i + 1),
+      );
+
+      const telemetry = [
+        // Q1: 2 wrong, but 8 correct → difficulty = 2/10 = 0.2 (easy) → boost 1.2
+        createMockTelemetry(1, 2, 0, 0, "2024-01-01T00:00:00Z", "exam-1"),
+        // Q2: 2 wrong, but only 3 total seen → difficulty = 2/3 ≈ 0.67 (hard) → penalty 0.85
+        {
+          ...createMockTelemetry(2, 2, 0, 0, "2024-01-01T00:00:00Z", "exam-1"),
+          timesCorrect: 1,
+          totalSeen: 3,
+        },
+      ];
+
+      // Override totalSeen for Q1 to make it "easy"
+      telemetry[0] = {
+        ...telemetry[0],
+        timesCorrect: 8,
+        totalSeen: 10,
+      };
+
+      const ratios = { weakRatio: 1.0, mediumRatio: 0.0, randomRatio: 0.0 };
+
+      const withDifficulty = selectReviewQuestions(
+        questions,
+        telemetry,
+        2,
+        DEFAULT_WEIGHTS,
+        "test-seed",
+        ratios,
+        undefined,
+        undefined,
+        undefined,
+        difficultyConfig,
+      );
+
+      const withoutDifficulty = selectReviewQuestions(
+        questions,
+        telemetry,
+        2,
+        DEFAULT_WEIGHTS,
+        "test-seed",
+        ratios,
+      );
+
+      // Q1 raw weakness = 2*2 = 4, Q2 raw weakness = 2*2 = 4
+      // With difficulty: Q1 effective = 4 * 1.2 = 4.8, Q2 effective = 4 * 0.85 = 3.4
+      // So Q1 should be first with difficulty adjustment
+      expect(withDifficulty[0].question.number).toBe(1);
+
+      // Without difficulty, they have equal weakness, tie-break by lastSeenAt then number
+      expect(withoutDifficulty[0].question.number).toBe(1); // Same lastSeenAt, lower number
+    });
+
+    it("hard questions receive lower weight (reduced effective weakness)", () => {
+      const questions = [createMockQuestion(1), createMockQuestion(2)];
+
+      // Both have same raw weakness (timesWrong=3)
+      // Q1: difficulty = 3/4 = 0.75 (hard) → penalty 0.85
+      // Q2: difficulty = 3/15 = 0.2 (easy) → boost 1.2
+      const telemetry = [
+        {
+          ...createMockTelemetry(1, 3, 0, 0, "2024-01-01T00:00:00Z"),
+          timesCorrect: 1,
+          totalSeen: 4,
+        },
+        {
+          ...createMockTelemetry(2, 3, 0, 0, "2024-01-01T00:00:00Z"),
+          timesCorrect: 12,
+          totalSeen: 15,
+        },
+      ];
+
+      const ratios = { weakRatio: 1.0, mediumRatio: 0.0, randomRatio: 0.0 };
+
+      const result = selectReviewQuestions(
+        questions,
+        telemetry,
+        2,
+        DEFAULT_WEIGHTS,
+        "test-seed",
+        ratios,
+        undefined,
+        undefined,
+        undefined,
+        difficultyConfig,
+      );
+
+      // Q1 effective weakness: 6 * 0.85 = 5.1 (hard)
+      // Q2 effective weakness: 6 * 1.2  = 7.2 (easy, boosted)
+      // Q2 should rank first
+      expect(result[0].question.number).toBe(2);
+      expect(result[1].question.number).toBe(1);
+    });
+
+    it("review selection remains deterministic with difficulty", () => {
+      const questions = Array.from({ length: 10 }, (_, i) =>
+        createMockQuestion(i + 1),
+      );
+      const telemetry = questions.map((q, i) => ({
+        ...createMockTelemetry(
+          q.number,
+          i % 3,
+          i % 2,
+          0,
+          `2024-01-0${(i % 9) + 1}T00:00:00Z`,
+        ),
+        timesCorrect: 5,
+        totalSeen: 5 + (i % 3) + (i % 2),
+      }));
+
+      const result1 = selectReviewQuestions(
+        questions,
+        telemetry,
+        5,
+        DEFAULT_WEIGHTS,
+        "test-seed",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        difficultyConfig,
+      );
+      const result2 = selectReviewQuestions(
+        questions,
+        telemetry,
+        5,
+        DEFAULT_WEIGHTS,
+        "test-seed",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        difficultyConfig,
+      );
+
+      expect(result1.map((r) => r.question.number)).toEqual(
+        result2.map((r) => r.question.number),
+      );
+    });
+
+    it("cooldown still respected with difficulty adjustment", () => {
+      const now = new Date("2025-06-15T12:00:00Z").getTime();
+      const justSeen = new Date(now - 30_000).toISOString(); // 30s ago
+      const longAgo = new Date(now - 600_000).toISOString(); // 10min ago
+
+      const questions = [createMockQuestion(1), createMockQuestion(2)];
+      const telemetry = [
+        // Q1: high weakness, just seen → cooldown penalizes heavily, easy → difficulty boosts
+        {
+          ...createMockTelemetry(1, 5, 0, 0, justSeen),
+          timesCorrect: 8,
+          totalSeen: 13,
+        },
+        // Q2: high weakness, seen long ago → no cooldown, hard → difficulty penalizes
+        {
+          ...createMockTelemetry(2, 5, 0, 0, longAgo),
+          timesCorrect: 1,
+          totalSeen: 6,
+        },
+      ];
+
+      const cooldownConfig = {
+        cooldownWindowMs: 300_000,
+        cooldownMinMultiplier: 0.2,
+      };
+
+      const ratios = { weakRatio: 1.0, mediumRatio: 0.0, randomRatio: 0.0 };
+
+      const result = selectReviewQuestions(
+        questions,
+        telemetry,
+        2,
+        DEFAULT_WEIGHTS,
+        "test-seed",
+        ratios,
+        undefined,
+        cooldownConfig,
+        now,
+        difficultyConfig,
+      );
+
+      // Q1 raw weakness=10, cooldown ≈ 0.2 → 2.0, difficulty easy (5/13≈0.38 → medium) → *1.0 = 2.0
+      // Q2 raw weakness=10, no cooldown → 10, difficulty hard (5/6≈0.83) → *0.85 = 8.5
+      // Q2 should be first
+      expect(result[0].question.number).toBe(2);
+      expect(result[1].question.number).toBe(1);
+    });
+
+    it("60/30/10 distribution preserved with difficulty adjustment", () => {
+      const now = new Date("2025-06-15T12:00:00Z").getTime();
+      const longAgo = new Date(now - 600_000).toISOString();
+
+      const questions = Array.from({ length: 20 }, (_, i) =>
+        createMockQuestion(i + 1),
+      );
+      const telemetry = questions.map((q, i) => ({
+        ...createMockTelemetry(q.number, 10 - Math.floor(i / 2), 0, 0, longAgo),
+        timesCorrect: Math.floor(i / 2),
+        totalSeen: 10,
+      }));
+
+      const ratios = { weakRatio: 0.6, mediumRatio: 0.3, randomRatio: 0.1 };
+
+      const result = selectReviewQuestions(
+        questions,
+        telemetry,
+        10,
+        DEFAULT_WEIGHTS,
+        "seed",
+        ratios,
+        undefined,
+        undefined,
+        undefined,
+        difficultyConfig,
+      );
+
+      // Should still select 10 questions
+      expect(result).toHaveLength(10);
+      // No duplicates
+      const numbers = new Set(result.map((r) => r.question.number));
+      expect(numbers.size).toBe(10);
+    });
+  });
 });

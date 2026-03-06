@@ -62,7 +62,10 @@ describe("DEFAULTS", () => {
     expect(keys).toContain("masteryMasteredPenalty");
     expect(keys).toContain("reviewCooldownWindowMs");
     expect(keys).toContain("cooldownMinMultiplier");
-    expect(keys).toHaveLength(13);
+    expect(keys).toContain("difficultyEasyBoost");
+    expect(keys).toContain("difficultyMediumBoost");
+    expect(keys).toContain("difficultyHardPenalty");
+    expect(keys).toHaveLength(16);
   });
 
   it("values are of correct types", () => {
@@ -113,6 +116,26 @@ describe("DEFAULTS", () => {
     expect(DEFAULTS.reviewCooldownWindowMs).toBeGreaterThan(0);
     expect(DEFAULTS.cooldownMinMultiplier).toBeGreaterThanOrEqual(0);
     expect(DEFAULTS.cooldownMinMultiplier).toBeLessThanOrEqual(1);
+  });
+
+  it("has correct difficulty adjustment defaults (Phase 8)", () => {
+    expect(DEFAULTS.difficultyEasyBoost).toBe(1.2);
+    expect(DEFAULTS.difficultyMediumBoost).toBe(1.0);
+    expect(DEFAULTS.difficultyHardPenalty).toBe(0.85);
+  });
+
+  it("difficulty multipliers have correct ordering", () => {
+    // easyBoost > mediumBoost > hardPenalty
+    expect(DEFAULTS.difficultyEasyBoost).toBeGreaterThan(
+      DEFAULTS.difficultyMediumBoost,
+    );
+    expect(DEFAULTS.difficultyMediumBoost).toBeGreaterThan(
+      DEFAULTS.difficultyHardPenalty,
+    );
+    // easyBoost >= 1.0 (boost), hardPenalty < 1.0 (penalty)
+    expect(DEFAULTS.difficultyEasyBoost).toBeGreaterThanOrEqual(1.0);
+    expect(DEFAULTS.difficultyMediumBoost).toBeGreaterThanOrEqual(1.0);
+    expect(DEFAULTS.difficultyHardPenalty).toBeLessThan(1.0);
   });
 
   it("review mix ratios have correct default values", () => {
@@ -198,6 +221,18 @@ describe("getDefault", () => {
     expect(getDefault("cooldownMinMultiplier")).toBe(0.2);
   });
 
+  it("returns correct value for difficultyEasyBoost", () => {
+    expect(getDefault("difficultyEasyBoost")).toBe(1.2);
+  });
+
+  it("returns correct value for difficultyMediumBoost", () => {
+    expect(getDefault("difficultyMediumBoost")).toBe(1.0);
+  });
+
+  it("returns correct value for difficultyHardPenalty", () => {
+    expect(getDefault("difficultyHardPenalty")).toBe(0.85);
+  });
+
   it("returns same values as direct DEFAULTS access", () => {
     (Object.keys(DEFAULTS) as DefaultKey[]).forEach((key) => {
       expect(getDefault(key)).toBe(DEFAULTS[key]);
@@ -233,6 +268,9 @@ describe("withDefaults", () => {
     expect(result.masteryMasteredPenalty).toBe(0.85);
     expect(result.reviewCooldownWindowMs).toBe(300000);
     expect(result.cooldownMinMultiplier).toBe(0.2);
+    expect(result.difficultyEasyBoost).toBe(1.2);
+    expect(result.difficultyMediumBoost).toBe(1.0);
+    expect(result.difficultyHardPenalty).toBe(0.85);
   });
 
   it("applies single override correctly", () => {
@@ -337,6 +375,10 @@ describe("Defaults Integration", () => {
     // Phase 7 cooldown defaults
     expect(DEFAULTS.reviewCooldownWindowMs).toBe(300000);
     expect(DEFAULTS.cooldownMinMultiplier).toBe(0.2);
+    // Phase 8 difficulty defaults
+    expect(DEFAULTS.difficultyEasyBoost).toBe(1.2);
+    expect(DEFAULTS.difficultyMediumBoost).toBe(1.0);
+    expect(DEFAULTS.difficultyHardPenalty).toBe(0.85);
   });
 
   it("can be used with weakness calculation", () => {
@@ -392,8 +434,11 @@ describe("Defaults Type Safety", () => {
       "masteryMasteredPenalty",
       "reviewCooldownWindowMs",
       "cooldownMinMultiplier",
+      "difficultyEasyBoost",
+      "difficultyMediumBoost",
+      "difficultyHardPenalty",
     ];
-    expect(validKeys).toHaveLength(13);
+    expect(validKeys).toHaveLength(16);
   });
 
   it("Defaults type has correct structure", () => {

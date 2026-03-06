@@ -35,6 +35,12 @@ import {
   applyCooldownScheduling,
   type CooldownConfig,
 } from "./spacedRepetition.js";
+import {
+  computeDifficultyScore,
+  classifyDifficulty,
+  getDifficultyMultiplier,
+  type DifficultyAdjustmentConfig,
+} from "./questionDifficulty.js";
 
 /**
  * Question with its computed weakness and selection metadata
@@ -192,6 +198,7 @@ export function sortByLastSeen(items: ReviewQuestion[]): ReviewQuestion[] {
  * @param masteryConfig - Optional mastery boost/penalty multipliers (Phase 6)
  * @param cooldownConfig - Optional cooldown scheduling config (Phase 7)
  * @param now - Current timestamp in ms for cooldown calculation (injected, Phase 7)
+ * @param difficultyConfig - Optional difficulty adjustment config (Phase 8)
  * @returns Selected review questions (at most `count`; fewer if not enough questions)
  */
 export function selectReviewQuestions(
@@ -204,6 +211,7 @@ export function selectReviewQuestions(
   masteryConfig?: MasteryBoostConfig,
   cooldownConfig?: CooldownConfig,
   now?: number,
+  difficultyConfig?: DifficultyAdjustmentConfig,
 ): ReviewQuestion[] {
   const effectiveCount = Math.max(0, Math.min(count, questions.length));
 
@@ -269,6 +277,11 @@ export function selectReviewQuestions(
       const multiplier = cooldownMap.get(item.question.number) ?? 1;
       item.weakness = item.weakness * multiplier;
     }
+  }
+
+  // Apply difficulty adjustment if configured (Phase 8)
+  if (difficultyConfig) {
+    applyDifficultyAdjustment(allItems, telemetryMap, difficultyConfig);
   }
 
   // Sort all items by weakness DESC (deterministic)
@@ -433,5 +446,35 @@ function applyMasteryBoost(
 
     // Apply multiplier to weakness score
     item.weakness = item.weakness * multiplierForLevel[worstLevel];
+  }
+}
+
+/**
+ * Apply difficulty-based adjustment to weakness scores (Phase 8).
+ *
+ * For each question, computes a difficulty score from telemetry, classifies it,
+ * then multiplies the weakness score by the corresponding adjustment multiplier.
+ *
+ * This allows the engine to distinguish between user weakness and inherent
+ * question difficulty, preventing hard questions from dominating review sessions
+ * and boosting the signal when users fail easy questions.
+ *
+ * Mutates the items array in place for efficiency (internal use only).
+ *
+ * @param items - Review items with computed weakness scores
+ * @param telemetryMap - Telemetry lookup by questionNumber
+ * @param config - Difficulty adjustment multiplier configuration
+ */
+function applyDifficultyAdjustment(
+  items: ReviewQuestion[],
+  telemetryMap: Map<number, QuestionTelemetry>,
+  config: DifficultyAdjustmentConfig,
+): void {
+  for (const item of items) {
+    const telemetry = telemetryMap.get(item.question.number);
+    const difficultyScore = telemetry ? computeDifficultyScore(telemetry) : 0;
+    const level = classifyDifficulty(difficultyScore);
+    const multiplier = getDifficultyMultiplier(level, config);
+    item.weakness = item.weakness * multiplier;
   }
 }

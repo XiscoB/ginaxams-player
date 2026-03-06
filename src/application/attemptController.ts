@@ -562,6 +562,13 @@ export class AttemptController {
           config?.cooldownMinMultiplier ?? DEFAULTS.cooldownMinMultiplier,
       },
       Date.now(),
+      {
+        easyBoost: config?.difficultyEasyBoost ?? DEFAULTS.difficultyEasyBoost,
+        mediumBoost:
+          config?.difficultyMediumBoost ?? DEFAULTS.difficultyMediumBoost,
+        hardPenalty:
+          config?.difficultyHardPenalty ?? DEFAULTS.difficultyHardPenalty,
+      },
     );
 
     return reviewQuestions.map((rq) => rq.question);

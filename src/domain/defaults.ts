@@ -37,6 +37,11 @@ export const DEFAULTS = {
   // Spaced repetition cooldown (Phase 7)
   reviewCooldownWindowMs: 5 * 60 * 1000, // 5 minutes
   cooldownMinMultiplier: 0.2,
+
+  // Question difficulty adjustment (Phase 8)
+  difficultyEasyBoost: 1.2,
+  difficultyMediumBoost: 1.0,
+  difficultyHardPenalty: 0.85,
 } as const;
 
 /**
@@ -83,6 +88,9 @@ export function withDefaults(
     masteryMasteredPenalty: number;
     reviewCooldownWindowMs: number;
     cooldownMinMultiplier: number;
+    difficultyEasyBoost: number;
+    difficultyMediumBoost: number;
+    difficultyHardPenalty: number;
   }>,
 ): {
   reviewQuestionCount: number;
@@ -98,6 +106,9 @@ export function withDefaults(
   masteryMasteredPenalty: number;
   reviewCooldownWindowMs: number;
   cooldownMinMultiplier: number;
+  difficultyEasyBoost: number;
+  difficultyMediumBoost: number;
+  difficultyHardPenalty: number;
 } {
   return {
     reviewQuestionCount:
@@ -121,5 +132,11 @@ export function withDefaults(
       overrides.reviewCooldownWindowMs ?? DEFAULTS.reviewCooldownWindowMs,
     cooldownMinMultiplier:
       overrides.cooldownMinMultiplier ?? DEFAULTS.cooldownMinMultiplier,
+    difficultyEasyBoost:
+      overrides.difficultyEasyBoost ?? DEFAULTS.difficultyEasyBoost,
+    difficultyMediumBoost:
+      overrides.difficultyMediumBoost ?? DEFAULTS.difficultyMediumBoost,
+    difficultyHardPenalty:
+      overrides.difficultyHardPenalty ?? DEFAULTS.difficultyHardPenalty,
   };
 }

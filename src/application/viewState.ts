@@ -292,5 +292,9 @@ export interface StartAttemptParams {
     /** Spaced repetition cooldown (Phase 7) */
     reviewCooldownWindowMs?: number;
     cooldownMinMultiplier?: number;
+    /** Question difficulty adjustment (Phase 8) */
+    difficultyEasyBoost?: number;
+    difficultyMediumBoost?: number;
+    difficultyHardPenalty?: number;
   };
 }
