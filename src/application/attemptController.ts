@@ -464,6 +464,9 @@ export class AttemptController {
           isBlank: answer.selectedIndex === null,
           selectedAnswerLetter: selectedLetter,
           correctAnswerLetter: correctLetter,
+          referenceArticle: q.articulo_referencia,
+          literalCitation: q.feedback.cita_literal,
+          explanation: q.feedback.explicacion_fallo,
         };
       }
 
@@ -475,6 +478,9 @@ export class AttemptController {
         isBlank: true,
         selectedAnswerLetter: null,
         correctAnswerLetter: correctLetter,
+        referenceArticle: q.articulo_referencia,
+        literalCitation: q.feedback.cita_literal,
+        explanation: q.feedback.explicacion_fallo,
       };
     });
 

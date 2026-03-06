@@ -201,6 +201,12 @@ export interface QuestionResultView {
   selectedAnswerLetter: string | null;
   /** The correct answer letter */
   correctAnswerLetter: string;
+  /** Reference article for the question */
+  referenceArticle?: string;
+  /** Literal citation from source material */
+  literalCitation?: string;
+  /** Explanation of why the wrong answer is wrong */
+  explanation?: string;
 }
 
 // ============================================================================

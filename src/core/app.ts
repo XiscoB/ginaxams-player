@@ -527,6 +527,12 @@ export class App {
           : 0;
       progressBar.style.width = `${pct}%`;
     }
+
+    // Render feedback panel (explanation, citation, reference)
+    const reviewFeedback = document.getElementById("reviewFeedbackSection");
+    if (reviewFeedback) {
+      this.practiceManager.renderFeedbackPanel(reviewFeedback, q, T);
+    }
   }
 
   /**
@@ -737,6 +743,8 @@ export class App {
     if (!this.attemptController.hasActiveSession()) return;
 
     this.currentAttemptView = this.attemptController.nextQuestion();
+    // Clear feedback state before rendering to prevent stale feedback flash
+    this.practiceManager.resetFeedbackState();
     this.practiceManager.render(this.currentAttemptView);
   }
 
@@ -1481,6 +1489,7 @@ export class App {
     const modal = document.getElementById("templateModal");
     if (modal) {
       modal.classList.remove("hidden");
+      modal.classList.add("active");
       this.loadTemplateCode();
     }
   }
@@ -1488,6 +1497,7 @@ export class App {
   closeTemplateModal(): void {
     const modal = document.getElementById("templateModal");
     if (modal) {
+      modal.classList.remove("active");
       modal.classList.add("hidden");
     }
   }

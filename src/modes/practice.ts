@@ -24,6 +24,7 @@ import type {
   AttemptViewState,
   AttemptResultViewState,
   AnswerViewWithResult,
+  QuestionResultView,
 } from "../application/viewState.js";
 import type { Translations } from "../i18n/index.js";
 
@@ -55,10 +56,17 @@ export class PracticeManager {
   }
 
   /**
-   * Reset feedback tracking state (call when starting a new attempt).
+   * Reset feedback tracking state.
+   * Call when starting a new attempt or navigating to a new question.
+   * Clears both the memoization key and the DOM element.
    */
   resetFeedbackState(): void {
     this.lastRenderedFeedbackKey = null;
+    const feedbackSection = document.getElementById("feedbackSection");
+    if (feedbackSection) {
+      feedbackSection.classList.add("hidden");
+      feedbackSection.innerHTML = "";
+    }
   }
 
   /**
@@ -344,17 +352,19 @@ export class PracticeManager {
     const feedbackSection = document.getElementById("feedbackSection");
     if (!feedbackSection) return;
 
-    if (!state.feedback) {
-      if (this.lastRenderedFeedbackKey !== null) {
-        feedbackSection.classList.add("hidden");
-        feedbackSection.innerHTML = "";
-        this.lastRenderedFeedbackKey = null;
-      }
+    // Guard: feedback must only appear when the question has been answered
+    if (!state.feedback || !state.isAnswered) {
+      // Always clear feedback DOM regardless of memoization state
+      feedbackSection.classList.add("hidden");
+      feedbackSection.innerHTML = "";
+      this.lastRenderedFeedbackKey = null;
       return;
     }
 
-    // Build a key to detect whether feedback content changed
-    const feedbackKey = `${state.questionNumber}:${state.feedback.isCorrect}`;
+    // Build a question-scoped key to detect whether feedback content changed.
+    // Uses progress.current (position in attempt) + questionNumber + correctness
+    // to guarantee uniqueness and prevent cross-question feedback reuse.
+    const feedbackKey = `${state.progress.current}:${state.questionNumber}:${state.feedback.isCorrect}`;
     if (feedbackKey === this.lastRenderedFeedbackKey) {
       // Feedback already rendered for this question — skip to avoid flicker
       return;
@@ -426,5 +436,65 @@ export class PracticeManager {
 
       summary.appendChild(div);
     });
+  }
+
+  /**
+   * Render a feedback panel into a given container element.
+   * Reuses the same HTML structure as the practice-mode feedback.
+   * Used by the review screen to display explanation details.
+   */
+  renderFeedbackPanel(
+    container: HTMLElement,
+    question: QuestionResultView,
+    T: Translations,
+  ): void {
+    if (
+      !question.referenceArticle &&
+      !question.literalCitation &&
+      !question.explanation
+    ) {
+      container.classList.add("hidden");
+      container.innerHTML = "";
+      return;
+    }
+
+    const isCorrect = question.isCorrect;
+    const panelClass = isCorrect
+      ? "feedback-panel--correct"
+      : "feedback-panel--wrong";
+    const headerIcon = isCorrect ? "✓" : "✗";
+
+    let headerText: string;
+    if (isCorrect) {
+      headerText = T.correctAnswer || "Correct!";
+    } else {
+      const selected = question.selectedAnswerLetter ?? "—";
+      const correct = question.correctAnswerLetter;
+      headerText = `${T.wrongAnswer || "Incorrect"} (${selected} → ${correct})`;
+    }
+
+    container.classList.remove("hidden");
+    container.innerHTML = `
+      <div class="feedback-panel ${panelClass}">
+        <div class="feedback-panel__header">
+          <span>${headerIcon}</span>
+          <span>${headerText}</span>
+        </div>
+        <div class="feedback-panel__body">
+          <div class="feedback-panel__field">
+            <span class="feedback-panel__label">${T.referenceArticle || "Reference"}</span>
+            <span class="feedback-panel__value">${question.referenceArticle || ""}</span>
+          </div>
+          <div class="feedback-panel__field">
+            <span class="feedback-panel__label">${T.literalCitation || "Citation"}</span>
+            <blockquote class="feedback-panel__citation">${question.literalCitation || ""}</blockquote>
+          </div>
+          <div class="feedback-panel__field">
+            <span class="feedback-panel__label">${T.explanation || "Explanation"}</span>
+            <span class="feedback-panel__value">${question.explanation || ""}</span>
+          </div>
+        </div>
+      </div>
+    `;
   }
 }
