@@ -25,10 +25,16 @@ import type {
   Folder,
   ExportData,
   Attempt,
+  CategoryWeakness,
+  CategoryStats,
 } from "../domain/types.js";
 
 import { validateExam } from "../domain/validation.js";
 import { getAttemptStatsForExam } from "../domain/attemptSelectors.js";
+import { computeCategoryWeakness } from "../domain/categoryWeakness.js";
+import { computeCategoryStats } from "../domain/categoryStats.js";
+import { DEFAULTS } from "../domain/defaults.js";
+import type { WeaknessWeights } from "../domain/weakness.js";
 
 import type { ExamStorage } from "../storage/db.js";
 import { DB_VERSION } from "../storage/db.js";
@@ -328,6 +334,61 @@ export class ExamLibraryController {
    */
   async resetAllTelemetry(): Promise<void> {
     await this.storage.clearAllQuestionTelemetry();
+  }
+
+  // ==========================================================================
+  // Category Analytics (Phase 5)
+  // ==========================================================================
+
+  /**
+   * Compute per-category performance statistics for an exam.
+   *
+   * @param examId - The storage ID of the exam
+   * @returns Array of CategoryStats sorted by category name
+   * @throws Error if exam not found
+   */
+  async getCategoryStats(examId: string): Promise<CategoryStats[]> {
+    const storedExam = await this.storage.getExam(examId);
+    if (!storedExam) {
+      throw new Error(`Exam not found: ${examId}`);
+    }
+
+    const telemetry = await this.storage.getTelemetryByExam(examId);
+    return computeCategoryStats(storedExam.data.questions, telemetry);
+  }
+
+  /**
+   * Compute per-category weakness scores for an exam.
+   *
+   * @param examId - The storage ID of the exam
+   * @param weights - Optional weight overrides (defaults applied from DEFAULTS)
+   * @returns Array of CategoryWeakness sorted by score DESC
+   * @throws Error if exam not found
+   */
+  async getCategoryWeakness(
+    examId: string,
+    weights?: Partial<WeaknessWeights>,
+  ): Promise<CategoryWeakness[]> {
+    const storedExam = await this.storage.getExam(examId);
+    if (!storedExam) {
+      throw new Error(`Exam not found: ${examId}`);
+    }
+
+    const telemetry = await this.storage.getTelemetryByExam(examId);
+
+    const effectiveWeights: WeaknessWeights = {
+      wrongWeight: weights?.wrongWeight ?? DEFAULTS.wrongWeight,
+      blankWeight: weights?.blankWeight ?? DEFAULTS.blankWeight,
+      recoveryWeight: weights?.recoveryWeight ?? DEFAULTS.recoveryWeight,
+      weakTimeThresholdMs:
+        weights?.weakTimeThresholdMs ?? DEFAULTS.weakTimeThresholdMs,
+    };
+
+    return computeCategoryWeakness(
+      storedExam.data.questions,
+      telemetry,
+      effectiveWeights,
+    );
   }
 
   // ==========================================================================

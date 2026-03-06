@@ -38,7 +38,11 @@ describe("DEFAULTS", () => {
 
   it("is frozen (as const) and cannot be modified at compile time", () => {
     // Type-level check: DEFAULTS should be readonly
-    type TestReadonly = typeof DEFAULTS extends { readonly [K in keyof Defaults]: Defaults[K] } ? true : false;
+    type TestReadonly = typeof DEFAULTS extends {
+      readonly [K in keyof Defaults]: Defaults[K];
+    }
+      ? true
+      : false;
     const _typeCheck: TestReadonly = true;
     expect(_typeCheck).toBe(true);
   });
@@ -50,7 +54,10 @@ describe("DEFAULTS", () => {
     expect(keys).toContain("blankWeight");
     expect(keys).toContain("recoveryWeight");
     expect(keys).toContain("weakTimeThresholdMs");
-    expect(keys).toHaveLength(5);
+    expect(keys).toContain("reviewWeakRatio");
+    expect(keys).toContain("reviewMediumRatio");
+    expect(keys).toContain("reviewRandomRatio");
+    expect(keys).toHaveLength(8);
   });
 
   it("values are of correct types", () => {
@@ -67,6 +74,23 @@ describe("DEFAULTS", () => {
     expect(DEFAULTS.blankWeight).toBeGreaterThan(0);
     expect(DEFAULTS.recoveryWeight).toBeGreaterThan(0);
     expect(DEFAULTS.weakTimeThresholdMs).toBeGreaterThan(0);
+    expect(DEFAULTS.reviewWeakRatio).toBeGreaterThan(0);
+    expect(DEFAULTS.reviewMediumRatio).toBeGreaterThan(0);
+    expect(DEFAULTS.reviewRandomRatio).toBeGreaterThan(0);
+  });
+
+  it("review mix ratios have correct default values", () => {
+    expect(DEFAULTS.reviewWeakRatio).toBe(0.6);
+    expect(DEFAULTS.reviewMediumRatio).toBe(0.3);
+    expect(DEFAULTS.reviewRandomRatio).toBe(0.1);
+  });
+
+  it("review mix ratios sum to 1.0", () => {
+    const sum =
+      DEFAULTS.reviewWeakRatio +
+      DEFAULTS.reviewMediumRatio +
+      DEFAULTS.reviewRandomRatio;
+    expect(sum).toBeCloseTo(1.0, 10);
   });
 
   it("reviewQuestionCount is an integer", () => {
@@ -106,6 +130,18 @@ describe("getDefault", () => {
     expect(getDefault("weakTimeThresholdMs")).toBe(15000);
   });
 
+  it("returns correct value for reviewWeakRatio", () => {
+    expect(getDefault("reviewWeakRatio")).toBe(0.6);
+  });
+
+  it("returns correct value for reviewMediumRatio", () => {
+    expect(getDefault("reviewMediumRatio")).toBe(0.3);
+  });
+
+  it("returns correct value for reviewRandomRatio", () => {
+    expect(getDefault("reviewRandomRatio")).toBe(0.1);
+  });
+
   it("returns same values as direct DEFAULTS access", () => {
     (Object.keys(DEFAULTS) as DefaultKey[]).forEach((key) => {
       expect(getDefault(key)).toBe(DEFAULTS[key]);
@@ -133,6 +169,9 @@ describe("withDefaults", () => {
     expect(result.blankWeight).toBe(1.2);
     expect(result.recoveryWeight).toBe(1);
     expect(result.weakTimeThresholdMs).toBe(15000);
+    expect(result.reviewWeakRatio).toBe(0.6);
+    expect(result.reviewMediumRatio).toBe(0.3);
+    expect(result.reviewRandomRatio).toBe(0.1);
   });
 
   it("applies single override correctly", () => {
@@ -226,6 +265,10 @@ describe("Defaults Integration", () => {
     expect(DEFAULTS.blankWeight).toBe(1.2);
     expect(DEFAULTS.recoveryWeight).toBe(1);
     expect(DEFAULTS.weakTimeThresholdMs).toBe(15000);
+    // Phase 5 adaptive review mix ratios
+    expect(DEFAULTS.reviewWeakRatio).toBe(0.6);
+    expect(DEFAULTS.reviewMediumRatio).toBe(0.3);
+    expect(DEFAULTS.reviewRandomRatio).toBe(0.1);
   });
 
   it("can be used with weakness calculation", () => {
@@ -273,8 +316,11 @@ describe("Defaults Type Safety", () => {
       "blankWeight",
       "recoveryWeight",
       "weakTimeThresholdMs",
+      "reviewWeakRatio",
+      "reviewMediumRatio",
+      "reviewRandomRatio",
     ];
-    expect(validKeys).toHaveLength(5);
+    expect(validKeys).toHaveLength(8);
   });
 
   it("Defaults type has correct structure", () => {

@@ -281,5 +281,9 @@ export interface StartAttemptParams {
     blankWeight?: number;
     recoveryWeight?: number;
     weakTimeThresholdMs?: number;
+    /** Adaptive review mix ratios (Phase 5) */
+    reviewWeakRatio?: number;
+    reviewMediumRatio?: number;
+    reviewRandomRatio?: number;
   };
 }

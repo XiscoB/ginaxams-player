@@ -23,6 +23,11 @@ export const DEFAULTS = {
 
   // Time threshold for weakness calculation (15 seconds)
   weakTimeThresholdMs: 15000,
+
+  // Adaptive review mix ratios (must sum to 1.0)
+  reviewWeakRatio: 0.6,
+  reviewMediumRatio: 0.3,
+  reviewRandomRatio: 0.1,
 } as const;
 
 /**
@@ -61,13 +66,19 @@ export function withDefaults(
     blankWeight: number;
     recoveryWeight: number;
     weakTimeThresholdMs: number;
-  }>
+    reviewWeakRatio: number;
+    reviewMediumRatio: number;
+    reviewRandomRatio: number;
+  }>,
 ): {
   reviewQuestionCount: number;
   wrongWeight: number;
   blankWeight: number;
   recoveryWeight: number;
   weakTimeThresholdMs: number;
+  reviewWeakRatio: number;
+  reviewMediumRatio: number;
+  reviewRandomRatio: number;
 } {
   return {
     reviewQuestionCount:
@@ -77,5 +88,10 @@ export function withDefaults(
     recoveryWeight: overrides.recoveryWeight ?? DEFAULTS.recoveryWeight,
     weakTimeThresholdMs:
       overrides.weakTimeThresholdMs ?? DEFAULTS.weakTimeThresholdMs,
+    reviewWeakRatio: overrides.reviewWeakRatio ?? DEFAULTS.reviewWeakRatio,
+    reviewMediumRatio:
+      overrides.reviewMediumRatio ?? DEFAULTS.reviewMediumRatio,
+    reviewRandomRatio:
+      overrides.reviewRandomRatio ?? DEFAULTS.reviewRandomRatio,
   };
 }

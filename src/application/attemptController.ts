@@ -94,10 +94,11 @@ export class AttemptController {
    *
    * Flow:
    * 1. Load exam(s) from storage
-   * 2. Prepare questions (shuffle for free/simulacro, weakness-sort for review)
-   * 3. Create and persist Attempt record
-   * 4. Instantiate AttemptRunner
-   * 5. Start the runner
+   * 2. Create Attempt record (needed for deterministic seed in review mode)
+   * 3. Prepare questions (shuffle for free/simulacro, weakness-sort for review)
+   * 4. Persist Attempt record
+   * 5. Instantiate AttemptRunner
+   * 6. Start the runner
    *
    * @param params - Attempt configuration from the UI
    * @returns Initial view state
@@ -118,7 +119,10 @@ export class AttemptController {
 
     const examData = storedExam.data;
 
-    // 2. Prepare questions based on mode
+    // 2. Create attempt record early (ID needed as seed for review mode)
+    const attempt = this.createAttemptRecord(mode, examIds, config);
+
+    // 3. Prepare questions based on mode
     let questions: Question[];
 
     switch (mode) {
@@ -135,6 +139,7 @@ export class AttemptController {
           examData.questions,
           primaryExamId,
           config,
+          attempt.id,
         );
         break;
 
@@ -142,8 +147,7 @@ export class AttemptController {
         throw new Error(`Unknown attempt mode: ${mode}`);
     }
 
-    // 3. Create and persist attempt record
-    const attempt = this.createAttemptRecord(mode, examIds, config);
+    // 4. Persist attempt record
     await this.storage.saveAttempt(attempt);
 
     // 4. Load existing telemetry for the runner
@@ -512,7 +516,8 @@ export class AttemptController {
   private async prepareReviewQuestions(
     allQuestions: Question[],
     examId: string,
-    config?: StartAttemptParams["config"],
+    config: StartAttemptParams["config"] | undefined,
+    attemptId: string,
   ): Promise<Question[]> {
     const telemetryList = await this.storage.getTelemetryByExam(examId);
 
@@ -526,11 +531,19 @@ export class AttemptController {
 
     const count = config?.reviewQuestionCount ?? DEFAULTS.reviewQuestionCount;
 
+    const ratios = {
+      weakRatio: config?.reviewWeakRatio ?? DEFAULTS.reviewWeakRatio,
+      mediumRatio: config?.reviewMediumRatio ?? DEFAULTS.reviewMediumRatio,
+      randomRatio: config?.reviewRandomRatio ?? DEFAULTS.reviewRandomRatio,
+    };
+
     const reviewQuestions = selectReviewQuestions(
       allQuestions,
       telemetryList,
       count,
       weights,
+      attemptId,
+      ratios,
     );
 
     return reviewQuestions.map((rq) => rq.question);

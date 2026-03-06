@@ -1,6 +1,6 @@
 /**
  * Domain Types - Core type definitions for the exam system
- * 
+ *
  * These types represent the fundamental data structures used throughout
  * the application. They are pure types with no dependencies.
  */
@@ -417,7 +417,7 @@ export interface TelemetryUpdate {
  */
 export type TelemetryLookup = (
   examId: string,
-  questionNumber: number
+  questionNumber: number,
 ) => QuestionTelemetry | undefined;
 
 // ============================================================================
@@ -435,4 +435,28 @@ export interface QuestionTelemetry {
   avgResponseTimeMs: number;
   totalSeen: number;
   lastSeenAt: string;
+}
+
+// ============================================================================
+// Category Analytics Types (Phase 5)
+// ============================================================================
+
+/**
+ * Weakness score aggregated at the category level.
+ * Computed as the average weakness of all questions in that category.
+ */
+export interface CategoryWeakness {
+  category: string;
+  score: number;
+}
+
+/**
+ * Performance statistics aggregated at the category level.
+ * Derived from per-question telemetry at runtime.
+ */
+export interface CategoryStats {
+  category: string;
+  questionsAttempted: number;
+  questionsCorrect: number;
+  accuracy: number;
 }
