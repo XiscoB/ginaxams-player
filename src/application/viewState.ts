@@ -289,5 +289,8 @@ export interface StartAttemptParams {
     masteryWeakBoost?: number;
     masteryLearningBoost?: number;
     masteryMasteredPenalty?: number;
+    /** Spaced repetition cooldown (Phase 7) */
+    reviewCooldownWindowMs?: number;
+    cooldownMinMultiplier?: number;
   };
 }

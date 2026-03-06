@@ -60,7 +60,9 @@ describe("DEFAULTS", () => {
     expect(keys).toContain("masteryWeakBoost");
     expect(keys).toContain("masteryLearningBoost");
     expect(keys).toContain("masteryMasteredPenalty");
-    expect(keys).toHaveLength(11);
+    expect(keys).toContain("reviewCooldownWindowMs");
+    expect(keys).toContain("cooldownMinMultiplier");
+    expect(keys).toHaveLength(13);
   });
 
   it("values are of correct types", () => {
@@ -100,6 +102,17 @@ describe("DEFAULTS", () => {
     expect(DEFAULTS.masteryWeakBoost).toBeGreaterThanOrEqual(1.0);
     expect(DEFAULTS.masteryLearningBoost).toBeGreaterThanOrEqual(1.0);
     expect(DEFAULTS.masteryMasteredPenalty).toBeLessThan(1.0);
+  });
+
+  it("has correct spaced repetition cooldown defaults (Phase 7)", () => {
+    expect(DEFAULTS.reviewCooldownWindowMs).toBe(5 * 60 * 1000);
+    expect(DEFAULTS.cooldownMinMultiplier).toBe(0.2);
+  });
+
+  it("cooldown defaults have reasonable values", () => {
+    expect(DEFAULTS.reviewCooldownWindowMs).toBeGreaterThan(0);
+    expect(DEFAULTS.cooldownMinMultiplier).toBeGreaterThanOrEqual(0);
+    expect(DEFAULTS.cooldownMinMultiplier).toBeLessThanOrEqual(1);
   });
 
   it("review mix ratios have correct default values", () => {
@@ -177,6 +190,14 @@ describe("getDefault", () => {
     expect(getDefault("masteryMasteredPenalty")).toBe(0.85);
   });
 
+  it("returns correct value for reviewCooldownWindowMs", () => {
+    expect(getDefault("reviewCooldownWindowMs")).toBe(300000);
+  });
+
+  it("returns correct value for cooldownMinMultiplier", () => {
+    expect(getDefault("cooldownMinMultiplier")).toBe(0.2);
+  });
+
   it("returns same values as direct DEFAULTS access", () => {
     (Object.keys(DEFAULTS) as DefaultKey[]).forEach((key) => {
       expect(getDefault(key)).toBe(DEFAULTS[key]);
@@ -210,6 +231,8 @@ describe("withDefaults", () => {
     expect(result.masteryWeakBoost).toBe(1.2);
     expect(result.masteryLearningBoost).toBe(1.1);
     expect(result.masteryMasteredPenalty).toBe(0.85);
+    expect(result.reviewCooldownWindowMs).toBe(300000);
+    expect(result.cooldownMinMultiplier).toBe(0.2);
   });
 
   it("applies single override correctly", () => {
@@ -311,6 +334,9 @@ describe("Defaults Integration", () => {
     expect(DEFAULTS.masteryWeakBoost).toBe(1.2);
     expect(DEFAULTS.masteryLearningBoost).toBe(1.1);
     expect(DEFAULTS.masteryMasteredPenalty).toBe(0.85);
+    // Phase 7 cooldown defaults
+    expect(DEFAULTS.reviewCooldownWindowMs).toBe(300000);
+    expect(DEFAULTS.cooldownMinMultiplier).toBe(0.2);
   });
 
   it("can be used with weakness calculation", () => {
@@ -364,8 +390,10 @@ describe("Defaults Type Safety", () => {
       "masteryWeakBoost",
       "masteryLearningBoost",
       "masteryMasteredPenalty",
+      "reviewCooldownWindowMs",
+      "cooldownMinMultiplier",
     ];
-    expect(validKeys).toHaveLength(11);
+    expect(validKeys).toHaveLength(13);
   });
 
   it("Defaults type has correct structure", () => {

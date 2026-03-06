@@ -33,6 +33,10 @@ export const DEFAULTS = {
   masteryWeakBoost: 1.2,
   masteryLearningBoost: 1.1,
   masteryMasteredPenalty: 0.85,
+
+  // Spaced repetition cooldown (Phase 7)
+  reviewCooldownWindowMs: 5 * 60 * 1000, // 5 minutes
+  cooldownMinMultiplier: 0.2,
 } as const;
 
 /**
@@ -77,6 +81,8 @@ export function withDefaults(
     masteryWeakBoost: number;
     masteryLearningBoost: number;
     masteryMasteredPenalty: number;
+    reviewCooldownWindowMs: number;
+    cooldownMinMultiplier: number;
   }>,
 ): {
   reviewQuestionCount: number;
@@ -90,6 +96,8 @@ export function withDefaults(
   masteryWeakBoost: number;
   masteryLearningBoost: number;
   masteryMasteredPenalty: number;
+  reviewCooldownWindowMs: number;
+  cooldownMinMultiplier: number;
 } {
   return {
     reviewQuestionCount:
@@ -109,5 +117,9 @@ export function withDefaults(
       overrides.masteryLearningBoost ?? DEFAULTS.masteryLearningBoost,
     masteryMasteredPenalty:
       overrides.masteryMasteredPenalty ?? DEFAULTS.masteryMasteredPenalty,
+    reviewCooldownWindowMs:
+      overrides.reviewCooldownWindowMs ?? DEFAULTS.reviewCooldownWindowMs,
+    cooldownMinMultiplier:
+      overrides.cooldownMinMultiplier ?? DEFAULTS.cooldownMinMultiplier,
   };
 }

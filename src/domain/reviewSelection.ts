@@ -31,6 +31,10 @@ import {
   computeCategoryMastery,
   DEFAULT_MASTERY_THRESHOLDS,
 } from "./categoryMastery.js";
+import {
+  applyCooldownScheduling,
+  type CooldownConfig,
+} from "./spacedRepetition.js";
 
 /**
  * Question with its computed weakness and selection metadata
@@ -186,6 +190,8 @@ export function sortByLastSeen(items: ReviewQuestion[]): ReviewQuestion[] {
  * @param seed - Deterministic seed for random selection (e.g., attempt ID)
  * @param ratios - Distribution ratios (defaults to 0.6/0.3/0.1)
  * @param masteryConfig - Optional mastery boost/penalty multipliers (Phase 6)
+ * @param cooldownConfig - Optional cooldown scheduling config (Phase 7)
+ * @param now - Current timestamp in ms for cooldown calculation (injected, Phase 7)
  * @returns Selected review questions (at most `count`; fewer if not enough questions)
  */
 export function selectReviewQuestions(
@@ -196,6 +202,8 @@ export function selectReviewQuestions(
   seed: string = "",
   ratios?: ReviewMixRatios,
   masteryConfig?: MasteryBoostConfig,
+  cooldownConfig?: CooldownConfig,
+  now?: number,
 ): ReviewQuestion[] {
   const effectiveCount = Math.max(0, Math.min(count, questions.length));
 
@@ -245,6 +253,22 @@ export function selectReviewQuestions(
       weights,
       masteryConfig,
     );
+  }
+
+  // Apply cooldown scheduling if configured (Phase 7)
+  if (cooldownConfig && now != null) {
+    const cooldownMap = applyCooldownScheduling(
+      questions,
+      telemetryList,
+      now,
+      cooldownConfig.cooldownWindowMs,
+      cooldownConfig.cooldownMinMultiplier,
+    );
+
+    for (const item of allItems) {
+      const multiplier = cooldownMap.get(item.question.number) ?? 1;
+      item.weakness = item.weakness * multiplier;
+    }
   }
 
   // Sort all items by weakness DESC (deterministic)

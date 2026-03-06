@@ -555,6 +555,13 @@ export class AttemptController {
               config?.masteryMasteredPenalty ?? DEFAULTS.masteryMasteredPenalty,
           }
         : undefined,
+      {
+        cooldownWindowMs:
+          config?.reviewCooldownWindowMs ?? DEFAULTS.reviewCooldownWindowMs,
+        cooldownMinMultiplier:
+          config?.cooldownMinMultiplier ?? DEFAULTS.cooldownMinMultiplier,
+      },
+      Date.now(),
     );
 
     return reviewQuestions.map((rq) => rq.question);
