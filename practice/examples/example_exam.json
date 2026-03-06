@@ -12,13 +12,13 @@
       "articulo_referencia": "MDN — HTML Heading Elements",
       "feedback": {
         "cita_literal": "The <h1> element represents a top-level heading. There should be only one <h1> per page, representing the primary topic.",
-        "explicacion_fallo": "<h1> is the correct top-level heading element. <header> is a sectioning element, <title> sets the browser tab text (not visible on the page), and <head> contains metadata."
+        "explicacion_fallo": "h1 is the correct top-level heading element. <header> is a sectioning element, <title> sets the browser tab text (not visible on the page), and <head> contains metadata."
       },
       "answers": [
-        { "letter": "A", "text": "<header>", "isCorrect": false },
-        { "letter": "B", "text": "<h1>", "isCorrect": true },
-        { "letter": "C", "text": "<title>", "isCorrect": false },
-        { "letter": "D", "text": "<head>", "isCorrect": false }
+        { "letter": "A", "text": "header", "isCorrect": false },
+        { "letter": "B", "text": "h1", "isCorrect": true },
+        { "letter": "C", "text": "title", "isCorrect": false },
+        { "letter": "D", "text": "head", "isCorrect": false }
       ]
     },
     {
