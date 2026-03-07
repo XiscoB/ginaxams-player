@@ -285,6 +285,11 @@ export const LANG_EN = {
   // Review UX (Phase 14)
   nextWrongQuestion: "Next Wrong",
   nextBlankQuestion: "Next Blank",
+
+  // Navigation Tabs (Phase 15.1)
+  tabLibrary: "Library",
+  tabInsights: "Insights",
+  tabTelemetry: "Telemetry",
 };
 
 export type TranslationKey = keyof typeof LANG_EN;

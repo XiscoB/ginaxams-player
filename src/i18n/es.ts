@@ -287,4 +287,9 @@ export const LANG_ES = {
   // Review UX (Phase 14)
   nextWrongQuestion: "Siguiente Incorrecta",
   nextBlankQuestion: "Siguiente Sin Responder",
+
+  // Navigation Tabs (Phase 15.1)
+  tabLibrary: "Biblioteca",
+  tabInsights: "Análisis",
+  tabTelemetry: "Telemetría",
 } as const;

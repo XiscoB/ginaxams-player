@@ -71,6 +71,8 @@ import type {
   HomeViewData,
   InsightsViewData,
   InsightsQuestionData,
+  TelemetryViewData,
+  TelemetryQuestionData,
 } from "./viewState.js";
 import { SNAPSHOT_VERSION } from "./viewState.js";
 import { validateBackupSnapshot } from "./backupValidation.js";
@@ -765,6 +767,65 @@ export class ExamLibraryController {
       questions,
       attempts,
       difficultyDistribution: distribution,
+    };
+  }
+
+  // ==========================================================================
+  // Telemetry Dashboard Data (Phase 15)
+  // ==========================================================================
+
+  /**
+   * Produce all data needed by the Telemetry Dashboard in a single call.
+   *
+   * Loads exams and telemetry once, then joins question metadata with
+   * per-question telemetry records. No analytics computation is performed
+   * here — that belongs in UI-layer helpers.
+   *
+   * @returns TelemetryViewData for the Telemetry Dashboard
+   */
+  async getTelemetryData(): Promise<TelemetryViewData> {
+    const [storedExams, allTelemetry] = await Promise.all([
+      this.storage.getExams(),
+      this.storage.getAllQuestionTelemetry(),
+    ]);
+
+    // Build a lookup map: "examId::questionNumber" → QuestionTelemetry
+    const telemetryMap = new Map<string, import("../domain/types.js").QuestionTelemetry>();
+    for (const t of allTelemetry) {
+      telemetryMap.set(`${t.examId}::${t.questionNumber}`, t);
+    }
+
+    const allCategories = new Set<string>();
+    const questions: TelemetryQuestionData[] = [];
+
+    for (const exam of storedExams) {
+      for (const q of exam.data.questions) {
+        for (const cat of q.categoria) {
+          allCategories.add(cat);
+        }
+
+        const tel = telemetryMap.get(`${exam.id}::${q.number}`);
+
+        questions.push({
+          examId: exam.id,
+          examTitle: exam.title,
+          questionNumber: q.number,
+          questionText: q.text,
+          categories: q.categoria,
+          timesCorrect: tel?.timesCorrect ?? 0,
+          timesWrong: tel?.timesWrong ?? 0,
+          timesBlank: tel?.timesBlank ?? 0,
+          consecutiveCorrect: tel?.consecutiveCorrect ?? 0,
+          avgResponseTimeMs: tel?.avgResponseTimeMs ?? 0,
+          totalSeen: tel?.totalSeen ?? 0,
+          lastSeenAt: tel?.lastSeenAt ?? "",
+        });
+      }
+    }
+
+    return {
+      questions,
+      allCategories: [...allCategories].sort(),
     };
   }
 

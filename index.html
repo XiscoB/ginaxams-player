@@ -206,6 +206,46 @@
         box-shadow: 0 12px 40px rgba(0, 212, 255, 0.15);
       }
 
+      /* Library Tab Bar */
+      .library-tab-bar {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 4px;
+        box-shadow: var(--shadow);
+      }
+
+      .library-tab-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-secondary, #888);
+        font-size: 0.9em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .library-tab-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary, #fff);
+      }
+
+      .library-tab-btn.active {
+        background: var(--accent-primary, #00d4ff);
+        color: #000;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+      }
+
       .file-label {
         display: block;
         cursor: pointer;
@@ -4050,7 +4090,21 @@
             </label>
           </div>
 
+          <!-- Library Tab Bar -->
+          <div class="library-tab-bar">
+            <button class="library-tab-btn active" data-tab="library" onclick="window.app.showLibraryTab('library')">
+              📚 <span id="txtTabLibrary">Library</span>
+            </button>
+            <button class="library-tab-btn" data-tab="insights" onclick="window.app.showLibraryTab('insights')">
+              📊 <span id="txtTabInsights">Insights</span>
+            </button>
+            <button class="library-tab-btn" data-tab="telemetry" onclick="window.app.showLibraryTab('telemetry')">
+              📈 <span id="txtTabTelemetry">Telemetry</span>
+            </button>
+          </div>
+
           <div
+            id="libraryHeaderBar"
             style="
               display: flex;
               justify-content: space-between;

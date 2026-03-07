@@ -356,6 +356,54 @@ export interface InsightsViewData {
 }
 
 // ============================================================================
+// Telemetry Dashboard View Data (Phase 15)
+// ============================================================================
+
+/**
+ * Per-question data combining question metadata with raw telemetry fields.
+ * Used by the Telemetry Dashboard to display per-question performance tables.
+ * Read-only — no mutations.
+ */
+export interface TelemetryQuestionData {
+  /** Storage ID of the exam this question belongs to */
+  examId: string;
+  /** Display title of the exam */
+  examTitle: string;
+  /** Question number within the exam */
+  questionNumber: number;
+  /** Question text (for display / search) */
+  questionText: string;
+  /** Categories this question belongs to */
+  categories: string[];
+  /** Number of times answered correctly */
+  timesCorrect: number;
+  /** Number of times answered wrong */
+  timesWrong: number;
+  /** Number of times left blank */
+  timesBlank: number;
+  /** Current streak of consecutive correct answers */
+  consecutiveCorrect: number;
+  /** Average response time in milliseconds */
+  avgResponseTimeMs: number;
+  /** Total number of times the question has been seen */
+  totalSeen: number;
+  /** ISO 8601 timestamp of last presentation (empty string if never seen) */
+  lastSeenAt: string;
+}
+
+/**
+ * Complete data payload for the Telemetry Dashboard view (Phase 15).
+ * Produced by ExamLibraryController.getTelemetryData().
+ * Read-only analytics — no mutations.
+ */
+export interface TelemetryViewData {
+  /** All questions enriched with their telemetry data */
+  questions: TelemetryQuestionData[];
+  /** All distinct categories across all exams */
+  allCategories: string[];
+}
+
+// ============================================================================
 // Application-level Action Types
 // ============================================================================
 

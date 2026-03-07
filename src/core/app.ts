@@ -45,6 +45,8 @@ import {
   type LanguageCode,
   type Translations,
 } from "../i18n/index.js";
+import { renderInsightsView } from "../ui/views/InsightsView.js";
+import { renderTelemetryView } from "../ui/views/TelemetryView.js";
 
 /**
  * View state for UI routing
@@ -156,6 +158,9 @@ export class App {
       // Initial Load
       await this.refreshLibrary();
 
+      // Auto-load example exam on first run (empty database)
+      await this.autoLoadExampleExam();
+
       this.bindEvents();
       this.setView("library");
 
@@ -208,7 +213,8 @@ export class App {
     if (examTitle) {
       examTitle.textContent = "";
     }
-    this.refreshLibrary();
+    // Reset to library tab and show appropriate state
+    this.showLibraryTab(this.activeLibraryTab);
   }
 
   private showAttemptConfigScreen(): void {
@@ -1082,6 +1088,62 @@ export class App {
   }
 
   // ============================================================================
+  // Dashboard Navigation (Phase 15.1)
+  // ============================================================================
+
+  /** Currently active library tab */
+  private activeLibraryTab: "library" | "insights" | "telemetry" = "library";
+
+  /**
+   * Switch the library screen to show a specific tab.
+   * Library = normal exam list, Insights = InsightsView, Telemetry = TelemetryView
+   */
+  async showLibraryTab(tab: "library" | "insights" | "telemetry"): Promise<void> {
+    this.activeLibraryTab = tab;
+    this.updateTabButtons();
+
+    const examListEl = document.getElementById("examList");
+    const fileInputArea = document.querySelector(".file-input-area") as HTMLElement | null;
+    const libraryHeader = document.getElementById("libraryHeaderBar");
+
+    if (tab === "library") {
+      // Show normal library elements
+      if (fileInputArea) fileInputArea.style.display = "";
+      if (libraryHeader) libraryHeader.style.display = "";
+      await this.refreshLibrary();
+    } else {
+      // Hide library-specific elements
+      if (fileInputArea) fileInputArea.style.display = "none";
+      if (libraryHeader) libraryHeader.style.display = "none";
+
+      if (examListEl) {
+        examListEl.innerHTML = `<div class="no-exams">${this.translations.loading || "Loading..."}</div>`;
+        try {
+          let view: HTMLElement;
+          if (tab === "insights") {
+            view = await renderInsightsView(this.libraryController);
+          } else {
+            view = await renderTelemetryView(this.libraryController);
+          }
+          examListEl.innerHTML = "";
+          examListEl.appendChild(view);
+        } catch (e) {
+          console.error(`Failed to load ${tab} view:`, e);
+          examListEl.innerHTML = `<div class="no-exams">Failed to load ${tab} view.</div>`;
+        }
+      }
+    }
+  }
+
+  private updateTabButtons(): void {
+    const tabs = document.querySelectorAll(".library-tab-btn");
+    tabs.forEach((btn) => {
+      const tabId = (btn as HTMLElement).dataset.tab;
+      btn.classList.toggle("active", tabId === this.activeLibraryTab);
+    });
+  }
+
+  // ============================================================================
   // Legacy Compatibility (Preserved during migration)
   // ============================================================================
 
@@ -1095,6 +1157,7 @@ export class App {
     this.cleanupPracticeSession();
     this.attemptController.abortAttempt();
     this.currentAttemptView = null;
+    this.activeLibraryTab = "library";
     this.setView("library");
   }
 
@@ -1243,6 +1306,11 @@ export class App {
     setText("txtClickToSelect", T.clickToSelect);
     setText("txtAvailableExams", T.availableExams);
     setText("txtRefresh", T.refresh);
+
+    // Navigation Tabs
+    setText("txtTabLibrary", T.tabLibrary);
+    setText("txtTabInsights", T.tabInsights);
+    setText("txtTabTelemetry", T.tabTelemetry);
 
     // Options screen (mode selection)
     setText("txtOptions", T.options);
@@ -1693,78 +1761,116 @@ export class App {
   }
 
   // ============================================================================
+  // Auto-Load Example Exam (Phase 15.1)
+  // ============================================================================
+
+  /**
+   * Automatically load the example exam when the database is empty.
+   * Only runs once per empty database — does not overwrite existing exams.
+   */
+  private async autoLoadExampleExam(): Promise<void> {
+    if (!this.libraryState) return;
+
+    const hasExams = this.libraryState.exams.length > 0;
+    if (hasExams) return;
+
+    try {
+      await this.importDemoData();
+    } catch (e) {
+      console.error("Failed to auto-load example exam:", e);
+    }
+  }
+
+  // ============================================================================
   // Demo Data
   // ============================================================================
 
   async importDemoData(): Promise<void> {
     const demoExam = {
       schema_version: "2.0" as const,
-      exam_id: "demo-exam-1",
-      title: "Sample Exam: Web Development Basics",
-      categorias: ["HTML", "CSS", "JavaScript"],
-      total_questions: 3,
+      exam_id: "sample-basic-arithmetic",
+      title: "Sample Exam: Basic Arithmetic",
+      categorias: ["Arithmetic"],
+      total_questions: 5,
       questions: [
         {
           number: 1,
-          text: "What does HTML stand for?",
-          categoria: ["HTML"],
-          articulo_referencia: "HTML-1.1",
+          text: "What is 2 + 2?",
+          categoria: ["Arithmetic"],
+          articulo_referencia: "Basic Addition Rules",
           feedback: {
-            cita_literal: "HTML stands for HyperText Markup Language",
-            explicacion_fallo:
-              "HTML is the standard markup language for documents designed to be displayed in a web browser.",
+            cita_literal: "The sum of two and two equals four. Addition is the process of combining two or more numbers to obtain a total.",
+            explicacion_fallo: "2 + 2 = 4. The number 3 is too low (that would be 1 + 2), 5 is too high (that would be 2 + 3), and 6 is the result of 2 + 4.",
           },
           answers: [
-            { letter: "A", text: "HyperText Markup Language", isCorrect: true },
-            {
-              letter: "B",
-              text: "HighText Machine Language",
-              isCorrect: false,
-            },
-            {
-              letter: "C",
-              text: "HyperText Markdown Language",
-              isCorrect: false,
-            },
-            {
-              letter: "D",
-              text: "Home Tool Markup Language",
-              isCorrect: false,
-            },
+            { letter: "A", text: "3", isCorrect: false },
+            { letter: "B", text: "4", isCorrect: true },
+            { letter: "C", text: "5", isCorrect: false },
+            { letter: "D", text: "6", isCorrect: false },
           ],
         },
         {
           number: 2,
-          text: "Which CSS property is used to change text color?",
-          categoria: ["CSS"],
-          articulo_referencia: "CSS-2.1",
+          text: "What is 5 − 3?",
+          categoria: ["Arithmetic"],
+          articulo_referencia: "Basic Subtraction Rules",
           feedback: {
-            cita_literal: "The color property sets the color of text",
-            explicacion_fallo:
-              "The color CSS property sets the foreground color value of an element's text content.",
+            cita_literal: "Subtraction is the inverse of addition. When we subtract 3 from 5, we remove 3 units from 5, leaving 2.",
+            explicacion_fallo: "5 − 3 = 2. The number 1 would be 4 − 3, the number 3 would be 6 − 3, and 8 would be 5 + 3 (addition, not subtraction).",
           },
           answers: [
-            { letter: "A", text: "text-color", isCorrect: false },
-            { letter: "B", text: "font-color", isCorrect: false },
-            { letter: "C", text: "color", isCorrect: true },
-            { letter: "D", text: "text-style", isCorrect: false },
+            { letter: "A", text: "1", isCorrect: false },
+            { letter: "B", text: "2", isCorrect: true },
+            { letter: "C", text: "3", isCorrect: false },
+            { letter: "D", text: "8", isCorrect: false },
           ],
         },
         {
           number: 3,
-          text: "What is the correct syntax for referring to an external script called 'app.js'?",
-          categoria: ["JavaScript"],
-          articulo_referencia: "JS-1.1",
+          text: "What is 10 ÷ 2?",
+          categoria: ["Arithmetic"],
+          articulo_referencia: "Basic Division Rules",
           feedback: {
-            cita_literal: "<script src='app.js'></script>",
-            explicacion_fallo:
-              "The src attribute specifies the URL of an external script file.",
+            cita_literal: "Division distributes a number into equal parts. Dividing 10 by 2 yields 5, meaning 10 can be split into two groups of 5.",
+            explicacion_fallo: "10 ÷ 2 = 5. The number 2 would be 10 ÷ 5, the number 8 would be 10 − 2, and 20 would be 10 × 2 (multiplication, not division).",
           },
           answers: [
-            { letter: "A", text: "script href='app.js'>", isCorrect: false },
-            { letter: "B", text: "script src='app.js'>", isCorrect: true },
-            { letter: "C", text: "script link='app.js'>", isCorrect: false },
-            { letter: "D", text: "script file='app.js'>", isCorrect: false },
+            { letter: "A", text: "2", isCorrect: false },
+            { letter: "B", text: "5", isCorrect: true },
+            { letter: "C", text: "8", isCorrect: false },
+            { letter: "D", text: "20", isCorrect: false },
+          ],
+        },
+        {
+          number: 4,
+          text: "What is 3 × 3?",
+          categoria: ["Arithmetic"],
+          articulo_referencia: "Basic Multiplication Rules",
+          feedback: {
+            cita_literal: "Multiplication is repeated addition. 3 × 3 means adding 3 three times: 3 + 3 + 3 = 9.",
+            explicacion_fallo: "3 × 3 = 9. The number 6 would be 3 × 2 or 3 + 3, the number 12 would be 3 × 4, and 27 would be 3 × 3 × 3 (3 cubed).",
+          },
+          answers: [
+            { letter: "A", text: "6", isCorrect: false },
+            { letter: "B", text: "9", isCorrect: true },
+            { letter: "C", text: "12", isCorrect: false },
+            { letter: "D", text: "27", isCorrect: false },
+          ],
+        },
+        {
+          number: 5,
+          text: "What is 7 + 1?",
+          categoria: ["Arithmetic"],
+          articulo_referencia: "Basic Addition Rules",
+          feedback: {
+            cita_literal: "Adding 1 to any number gives the next consecutive number. 7 + 1 = 8.",
+            explicacion_fallo: "7 + 1 = 8. The number 6 would be 7 − 1, the number 7 would be 7 + 0, and 9 would be 7 + 2.",
+          },
+          answers: [
+            { letter: "A", text: "6", isCorrect: false },
+            { letter: "B", text: "7", isCorrect: false },
+            { letter: "C", text: "8", isCorrect: true },
+            { letter: "D", text: "9", isCorrect: false },
           ],
         },
       ],
