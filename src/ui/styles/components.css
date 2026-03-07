@@ -1,0 +1,269 @@
+/**
+ * GinaXams Player — UI Component Styles
+ *
+ * Shared styles for the UI primitives library.
+ * Uses existing CSS custom properties from :root.
+ * Prefixed with gx- to avoid collisions.
+ */
+
+/* ─── Card ─────────────────────────────────────────────── */
+
+.gx-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.gx-card:hover {
+  border-color: var(--border-hover);
+}
+
+.gx-card__header {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.gx-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.gx-card__body {
+  padding: var(--space-lg);
+}
+
+.gx-card__footer {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+/* ─── Badge ────────────────────────────────────────────── */
+
+.gx-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.gx-badge--neutral {
+  color: var(--color-neutral);
+  background: var(--color-neutral-bg);
+  border: 1px solid var(--color-neutral-border);
+}
+
+.gx-badge--success {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+}
+
+.gx-badge--warning {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+}
+
+.gx-badge--danger {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+}
+
+.gx-badge--info {
+  color: var(--accent-primary);
+  background: rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+}
+
+/* ─── Button ───────────────────────────────────────────── */
+
+.gx-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast);
+  user-select: none;
+  font-family: inherit;
+}
+
+.gx-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gx-button--primary {
+  color: var(--bg-primary);
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.gx-button--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-primary) 85%, white);
+}
+
+.gx-button--secondary {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.gx-button--secondary:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  background: color-mix(in srgb, var(--bg-secondary) 80%, white);
+}
+
+.gx-button--danger {
+  color: #fff;
+  background: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.gx-button--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 85%, white);
+}
+
+/* ─── Progress Bar ─────────────────────────────────────── */
+
+.gx-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.gx-progress__track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.gx-progress__fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-normal);
+}
+
+.gx-progress__fill--default {
+  background: var(--accent-primary);
+}
+
+.gx-progress__fill--success {
+  background: var(--color-success);
+}
+
+.gx-progress__fill--warning {
+  background: var(--color-warning);
+}
+
+.gx-progress__fill--danger {
+  background: var(--color-error);
+}
+
+.gx-progress__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 3ch;
+  text-align: right;
+}
+
+/* ─── Gauge ────────────────────────────────────────────── */
+
+.gx-gauge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.gx-gauge__svg {
+  display: block;
+}
+
+.gx-gauge__value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  fill: var(--text-primary);
+  font-family: inherit;
+}
+
+.gx-gauge__fill {
+  transition: stroke-dashoffset var(--transition-normal);
+}
+
+.gx-gauge__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ─── List ─────────────────────────────────────────────── */
+
+.gx-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.gx-list__item {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.gx-list__item:last-child {
+  border-bottom: none;
+}
+
+.gx-list__empty {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* ─── Stack ────────────────────────────────────────────── */
+
+.gx-stack {
+  display: flex;
+}
+
+/* ─── Section ──────────────────────────────────────────── */
+
+.gx-section {
+  margin-bottom: var(--space-xl);
+}
+
+.gx-section__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.gx-section__description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-md) 0;
+  line-height: 1.5;
+}
