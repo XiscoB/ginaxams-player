@@ -128,35 +128,53 @@ describe("computeReviewNavigatorItems", () => {
     }));
 
   it("creates correct number of items", () => {
-    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 0);
+    const items = computeReviewNavigatorItems(
+      makeResults("correct", "wrong", "blank"),
+      0,
+    );
     expect(items).toHaveLength(3);
   });
 
   it("labels are 1-based", () => {
-    const items = computeReviewNavigatorItems(makeResults("correct", "wrong"), 0);
+    const items = computeReviewNavigatorItems(
+      makeResults("correct", "wrong"),
+      0,
+    );
     expect(items.map((i) => i.label)).toEqual(["1", "2"]);
   });
 
   it("maps correct questions to 'correct' state", () => {
-    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 1);
+    const items = computeReviewNavigatorItems(
+      makeResults("correct", "wrong", "blank"),
+      1,
+    );
     expect(items[0].state).toBe("correct");
     expect(items[0].resultState).toBe("correct");
   });
 
   it("maps wrong questions to 'wrong' state", () => {
-    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 0);
+    const items = computeReviewNavigatorItems(
+      makeResults("correct", "wrong", "blank"),
+      0,
+    );
     expect(items[1].state).toBe("wrong");
     expect(items[1].resultState).toBe("wrong");
   });
 
   it("maps blank questions to 'blank' state", () => {
-    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 0);
+    const items = computeReviewNavigatorItems(
+      makeResults("correct", "wrong", "blank"),
+      0,
+    );
     expect(items[2].state).toBe("blank");
     expect(items[2].resultState).toBe("blank");
   });
 
   it("current question gets 'current' state but preserves resultState", () => {
-    const items = computeReviewNavigatorItems(makeResults("wrong", "correct"), 0);
+    const items = computeReviewNavigatorItems(
+      makeResults("wrong", "correct"),
+      0,
+    );
     expect(items[0].state).toBe("current");
     expect(items[0].resultState).toBe("wrong");
     expect(items[0].isCurrent).toBe(true);
