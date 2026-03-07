@@ -36,5 +36,8 @@ export type {
   BackupSnapshot,
   HomeViewData,
   ReadinessBreakdown,
+  InsightsViewData,
+  InsightsQuestionData,
+  InsightsDifficultyDistribution,
 } from "./viewState.js";
 export { SNAPSHOT_VERSION } from "./viewState.js";

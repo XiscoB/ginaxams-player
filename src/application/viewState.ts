@@ -288,6 +288,77 @@ export interface HomeViewData {
 // Application-level Action Types
 // ============================================================================
 
+// ============================================================================
+// Insights View Data (Phase 12)
+// ============================================================================
+
+/**
+ * Per-question data enriched with all analytical signals.
+ * Used by the Insights view to display weak questions, trap questions,
+ * and category drill-downs without additional domain calls.
+ */
+export interface InsightsQuestionData {
+  /** Storage ID of the exam this question belongs to */
+  examId: string;
+  /** Display title of the exam */
+  examTitle: string;
+  /** Question number within the exam */
+  questionNumber: number;
+  /** Question text (truncatable in display) */
+  questionText: string;
+  /** Categories this question belongs to */
+  categories: string[];
+  /** Reference article citation */
+  referenceArticle: string;
+  /** Computed weakness score (0 if no telemetry) */
+  weaknessScore: number;
+  /** Difficulty classification */
+  difficultyLevel: "easy" | "medium" | "hard";
+  /** Raw difficulty score in [0, 1] */
+  difficultyScore: number;
+  /** Trap classification */
+  trapLevel: "none" | "possible" | "confirmed";
+  /** Raw trap score */
+  trapScore: number;
+  /** Answer options */
+  answers: ReadonlyArray<{ letter: string; text: string; isCorrect: boolean }>;
+  /** Feedback for wrong answers */
+  feedback: {
+    literalCitation: string;
+    explanation: string;
+  };
+}
+
+/**
+ * Difficulty distribution counts across all questions.
+ */
+export interface InsightsDifficultyDistribution {
+  easy: number;
+  medium: number;
+  hard: number;
+  total: number;
+}
+
+/**
+ * Complete data payload for the Insights view (Phase 12).
+ * Produced by ExamLibraryController.getInsightsData().
+ * Read-only analytics — no mutations.
+ */
+export interface InsightsViewData {
+  /** Category mastery across all exams, sorted weakest first */
+  categoryMastery: import("../domain/types.js").CategoryMastery[];
+  /** All questions enriched with weakness, difficulty, and trap data */
+  questions: InsightsQuestionData[];
+  /** All completed attempts for the progress timeline */
+  attempts: import("../domain/types.js").Attempt[];
+  /** Difficulty distribution aggregate */
+  difficultyDistribution: InsightsDifficultyDistribution;
+}
+
+// ============================================================================
+// Application-level Action Types
+// ============================================================================
+
 /**
  * Start attempt configuration.
  */

@@ -41,6 +41,7 @@ import {
 } from "../domain/categoryMastery.js";
 import { DEFAULTS } from "../domain/defaults.js";
 import type { WeaknessWeights } from "../domain/weakness.js";
+import { computeWeakScore } from "../domain/weakness.js";
 import {
   computeQuestionDifficulty,
   type QuestionDifficulty,
@@ -68,6 +69,8 @@ import type {
   LibraryViewState,
   BackupSnapshot,
   HomeViewData,
+  InsightsViewData,
+  InsightsQuestionData,
 } from "./viewState.js";
 import { SNAPSHOT_VERSION } from "./viewState.js";
 import { validateBackupSnapshot } from "./backupValidation.js";
@@ -648,6 +651,120 @@ export class ExamLibraryController {
       },
       categoryMastery,
       attempts,
+    };
+  }
+
+  // ==========================================================================
+  // Insights Data (Phase 12)
+  // ==========================================================================
+
+  /**
+   * Produce all data needed by the Insights view in a single call.
+   *
+   * Loads exams, attempts, and telemetry once, then computes:
+   * - Category mastery across all exams (sorted weakest first)
+   * - Per-question enriched data (weakness, difficulty, trap signals)
+   * - Difficulty distribution aggregate
+   * - Raw attempt history
+   *
+   * Read-only — no mutations or telemetry updates.
+   *
+   * @returns InsightsViewData for the Insights view
+   */
+  async getInsightsData(): Promise<InsightsViewData> {
+    const [storedExams, attempts, allTelemetry] = await Promise.all([
+      this.storage.getExams(),
+      this.storage.getAllAttempts(),
+      this.storage.getAllQuestionTelemetry(),
+    ]);
+
+    const allQuestions = storedExams.flatMap((e) => e.data.questions);
+
+    const effectiveWeights: WeaknessWeights = {
+      wrongWeight: DEFAULTS.wrongWeight,
+      blankWeight: DEFAULTS.blankWeight,
+      recoveryWeight: DEFAULTS.recoveryWeight,
+      weakTimeThresholdMs: DEFAULTS.weakTimeThresholdMs,
+    };
+
+    const categoryMastery = computeCategoryMastery(
+      allQuestions,
+      allTelemetry,
+      effectiveWeights,
+      DEFAULT_MASTERY_THRESHOLDS,
+    );
+
+    const trapThresholds: TrapThresholds = {
+      possibleThreshold: DEFAULTS.trapPossibleThreshold,
+      confirmedThreshold: DEFAULTS.trapConfirmedThreshold,
+    };
+
+    // Build per-question enriched data across all exams
+    const questions: InsightsQuestionData[] = [];
+    const distribution = { easy: 0, medium: 0, hard: 0, total: 0 };
+
+    for (const exam of storedExams) {
+      const examTelemetry = allTelemetry.filter((t) => t.examId === exam.id);
+
+      const difficultyResults = computeQuestionDifficulty(
+        exam.data.questions,
+        examTelemetry,
+      );
+
+      const trapResults = computeTrapSignals(
+        exam.data.questions,
+        examTelemetry,
+        categoryMastery,
+        trapThresholds,
+      );
+
+      for (const q of exam.data.questions) {
+        const tel = examTelemetry.find((t) => t.questionNumber === q.number);
+        const weakScore = tel ? computeWeakScore(tel, effectiveWeights) : 0;
+        const diff = difficultyResults.find(
+          (d) => d.questionNumber === q.number,
+        );
+        const trap = trapResults.find((t) => t.questionNumber === q.number);
+
+        const diffLevel = diff?.difficultyLevel ?? "easy";
+        distribution[diffLevel]++;
+        distribution.total++;
+
+        questions.push({
+          examId: exam.id,
+          examTitle: exam.title,
+          questionNumber: q.number,
+          questionText: q.text,
+          categories: q.categoria,
+          referenceArticle: q.articulo_referencia,
+          weaknessScore: weakScore,
+          difficultyLevel: diffLevel,
+          difficultyScore: diff?.difficultyScore ?? 0,
+          trapLevel: trap?.trapLevel ?? "none",
+          trapScore: trap?.trapScore ?? 0,
+          answers: q.answers.map((a) => ({
+            letter: a.letter,
+            text: a.text,
+            isCorrect: a.isCorrect,
+          })),
+          feedback: {
+            literalCitation: q.feedback.cita_literal,
+            explanation: q.feedback.explicacion_fallo,
+          },
+        });
+      }
+    }
+
+    // Sort mastery: weakest first (highest weakness score first)
+    const sortedMastery = [...categoryMastery].sort(
+      (a, b) => b.weaknessScore - a.weaknessScore,
+    );
+
+    return {
+      categoryMastery: sortedMastery,
+      questions,
+      attempts,
+      difficultyDistribution: distribution,
     };
   }
 
