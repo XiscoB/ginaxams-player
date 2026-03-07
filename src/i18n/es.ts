@@ -270,4 +270,17 @@ export const LANG_ES = {
 
   // Review
   correctAnswerLabel: "Respuesta correcta",
+
+  // Practice UX (Phase 13)
+  flagQuestion: "Marcar",
+  unflagQuestion: "Desmarcar",
+  examSummary: "Resumen del Examen",
+  answered: "Respondidas",
+  unanswered: "Sin responder",
+  flagged: "Marcadas",
+  submitExam: "Entregar Examen",
+  returnToQuestions: "Volver a las Preguntas",
+  jumpToUnanswered: "Ir a Sin Responder",
+  jumpToFlagged: "Ir a Marcadas",
+  navigator: "Navegador",
 } as const;

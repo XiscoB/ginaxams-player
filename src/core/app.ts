@@ -18,9 +18,21 @@ import type {
   ExamCardView,
   LibraryViewState,
 } from "../application/viewState.js";
+import {
+  createPracticeSessionUiState,
+  type PracticeSessionUiState,
+} from "../application/viewState.js";
 import { AttemptController } from "../application/attemptController.js";
 import { ExamLibraryController } from "../application/examLibraryController.js";
 import { PracticeManager } from "../modes/practice.js";
+import {
+  computeNavigatorItems,
+} from "../ui/practice/buildQuestionNavigator.js";
+import {
+  computeSummaryData,
+  renderSummaryModal,
+} from "../ui/practice/buildQuestionSummaryModal.js";
+import { attachKeyboardShortcuts } from "../ui/practice/buildKeyboardShortcuts.js";
 import {
   getTranslations,
   detectBrowserLanguage,
@@ -84,6 +96,10 @@ export class App {
   private simulacroTimerInterval: ReturnType<typeof setInterval> | null = null;
   private timerVisible = true;
 
+  // Practice session UI state (Phase 13)
+  private practiceUiState: PracticeSessionUiState = createPracticeSessionUiState();
+  private cleanupKeyboardShortcuts: (() => void) | null = null;
+
   // Onboarding state
   private onboardingStep = 1;
   private readonly totalOnboardingSteps = 5;
@@ -101,8 +117,13 @@ export class App {
     this.practiceManager = new PracticeManager({
       onAnswer: (answerIndex: number) => this.handleAnswer(answerIndex),
       onNext: () => this.handleNext(),
-      onFinish: () => this.handleFinish(),
+      onPrevious: () => this.handlePrevious(),
+      onGoTo: (index: number) => this.handleGoTo(index),
+      onFlag: () => this.handleFlag(),
+      onFinish: () => this.handleFinishRequest(),
       getTranslations: () => this.translations,
+      getFlaggedQuestions: () => this.practiceUiState.flaggedQuestions,
+      getAnsweredIndices: () => this.getAnsweredIndicesSet(),
     });
 
     this.init();
@@ -641,6 +662,7 @@ export class App {
       });
 
       this.currentAttemptView = viewState;
+      this.initPracticeSession();
       this.setView("attemptExecution");
 
       // Start simulacro timer if needed
@@ -737,6 +759,10 @@ export class App {
     // Submit answer via controller
     this.currentAttemptView = this.attemptController.submitAnswer(answerIndex);
 
+    // Track answered index for navigator
+    const answeredIndex = this.currentAttemptView.progress.current - 1;
+    this._answeredIndicesCache.add(answeredIndex);
+
     // Re-render
     this.practiceManager.render(this.currentAttemptView);
 
@@ -764,10 +790,103 @@ export class App {
   }
 
   /**
+   * Handle previous button from UI
+   */
+  private handlePrevious(): void {
+    if (!this.attemptController.hasActiveSession()) return;
+
+    this.currentAttemptView = this.attemptController.previousQuestion();
+    this.practiceManager.resetFeedbackState();
+    this.practiceManager.render(this.currentAttemptView);
+  }
+
+  /**
+   * Handle navigator jump to question
+   */
+  private handleGoTo(index: number): void {
+    if (!this.attemptController.hasActiveSession()) return;
+
+    this.currentAttemptView = this.attemptController.goToQuestion(index);
+    this.practiceManager.resetFeedbackState();
+    this.practiceManager.render(this.currentAttemptView);
+  }
+
+  /**
+   * Handle flag toggle for current question
+   */
+  private handleFlag(): void {
+    if (!this.currentAttemptView) return;
+
+    const currentIndex = this.currentAttemptView.progress.current - 1;
+    const flags = this.practiceUiState.flaggedQuestions;
+
+    if (flags.has(currentIndex)) {
+      flags.delete(currentIndex);
+    } else {
+      flags.add(currentIndex);
+    }
+
+    // Re-render to update flag button and navigator
+    this.practiceManager.render(this.currentAttemptView);
+  }
+
+  /**
+   * Handle finish request — show summary modal before actual submission.
+   */
+  private handleFinishRequest(): void {
+    if (!this.attemptController.hasActiveSession()) {
+      this.handleFinish();
+      return;
+    }
+
+    if (!this.currentAttemptView) {
+      this.handleFinish();
+      return;
+    }
+
+    // Compute summary data
+    const state = this.currentAttemptView;
+    const answeredIndices = this.getAnsweredIndicesSet();
+    const flaggedIndices = this.practiceUiState.flaggedQuestions;
+
+    const navigatorItems = computeNavigatorItems(
+      state.progress.total,
+      state.progress.current - 1,
+      answeredIndices,
+      flaggedIndices,
+    );
+
+    const summaryData = computeSummaryData(
+      state.progress.total,
+      answeredIndices.size,
+      flaggedIndices.size,
+    );
+
+    // Show summary modal
+    renderSummaryModal(
+      summaryData,
+      navigatorItems,
+      {
+        onJump: (index) => {
+          this.handleGoTo(index);
+        },
+        onSubmit: () => {
+          this.handleFinish();
+        },
+        onReturn: () => {
+          // Just close modal — user returns to current question
+        },
+      },
+      this.translations,
+    );
+  }
+
+  /**
    * Handle finish from UI
    */
   private async handleFinish(): Promise<void> {
     this.stopSimulacroTimer();
+    this.cleanupPracticeSession();
 
     if (!this.attemptController.hasActiveSession()) {
       // Called from results screen "Try Again" — restart the same exam
@@ -789,6 +908,74 @@ export class App {
   }
 
   // ============================================================================
+  // Practice Session Helpers (Phase 13)
+  // ============================================================================
+
+  /**
+   * Get the set of 0-based indices of answered questions in the current attempt.
+   */
+  private getAnsweredIndicesSet(): ReadonlySet<number> {
+    if (!this.currentAttemptView) return new Set();
+
+    // The navigator items get rendered from the view state, so we track
+    // answered status based on the progress.answered count and the current
+    // index being answered.
+    //
+    // Better approach: iterate through all questions and check if they've
+    // been answered by getting the full state from the controller.
+    // For efficiency, use a cached set maintained by handleAnswer.
+    return this._answeredIndicesCache;
+  }
+
+  /** Cache of answered question indices (0-based) */
+  private _answeredIndicesCache: Set<number> = new Set();
+
+  /**
+   * Initialize a new practice session UI state.
+   * Called when starting a new attempt.
+   */
+  private initPracticeSession(): void {
+    this.practiceUiState = createPracticeSessionUiState();
+    this._answeredIndicesCache = new Set();
+
+    // Attach keyboard shortcuts
+    this.cleanupKeyboardShortcuts?.();
+    this.cleanupKeyboardShortcuts = attachKeyboardShortcuts(
+      {
+        onSelectAnswer: (index) => {
+          if (this.currentAttemptView && !this.currentAttemptView.isAnswered) {
+            this.handleAnswer(index);
+          }
+        },
+        onNext: () => this.handleNext(),
+        onPrevious: () => this.handlePrevious(),
+        onFlag: () => this.handleFlag(),
+        onSubmitAnswer: () => {
+          if (this.currentAttemptView?.isAnswered) {
+            if (this.currentAttemptView.canGoNext) {
+              this.handleNext();
+            } else {
+              this.handleFinishRequest();
+            }
+          }
+        },
+      },
+      () => this.attemptController.hasActiveSession(),
+    );
+  }
+
+  /**
+   * Clean up practice session state.
+   * Called when finishing or aborting an attempt.
+   */
+  private cleanupPracticeSession(): void {
+    this.practiceUiState = createPracticeSessionUiState();
+    this._answeredIndicesCache = new Set();
+    this.cleanupKeyboardShortcuts?.();
+    this.cleanupKeyboardShortcuts = null;
+  }
+
+  // ============================================================================
   // Legacy Compatibility (Preserved during migration)
   // ============================================================================
 
@@ -799,6 +986,7 @@ export class App {
 
   showFileScreen(): void {
     this.stopSimulacroTimer();
+    this.cleanupPracticeSession();
     this.attemptController.abortAttempt();
     this.currentAttemptView = null;
     this.setView("library");

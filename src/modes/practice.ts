@@ -27,6 +27,11 @@ import type {
   QuestionResultView,
 } from "../application/viewState.js";
 import type { Translations } from "../i18n/index.js";
+import {
+  computeNavigatorItems,
+  renderNavigator,
+  type NavigatorItem,
+} from "../ui/practice/buildQuestionNavigator.js";
 
 /**
  * Type guard: checks whether the answers include result information.
@@ -40,8 +45,13 @@ function isAnsweredView(
 export interface PracticeManagerConfig {
   onAnswer: (answerIndex: number) => void;
   onNext: () => void;
+  onPrevious: () => void;
+  onGoTo: (index: number) => void;
+  onFlag: () => void;
   onFinish: () => void;
   getTranslations: () => Translations;
+  getFlaggedQuestions: () => ReadonlySet<number>;
+  getAnsweredIndices: () => ReadonlySet<number>;
 }
 
 /**
@@ -77,6 +87,10 @@ export class PracticeManager {
       this.config.onNext();
     });
 
+    document.getElementById("prevBtn")?.addEventListener("click", () => {
+      this.config.onPrevious();
+    });
+
     // btnTryAgain is handled dynamically via onclick in renderResults
     // to avoid stale handler issues when session is already cleared
   }
@@ -104,11 +118,17 @@ export class PracticeManager {
       questionNumber.textContent = `${T.question || "Question"} ${state.progress.current}/${state.progress.total}`;
     }
 
+    // Render flag button
+    this.renderFlagButton(state, T);
+
     // Render answers
     this.renderAnswers(state);
 
     // Update navigation buttons
     this.updateNavigation(state, T);
+
+    // Update navigator grid
+    this.updateNavigator(state);
 
     // Show/hide feedback
     this.updateFeedback(state, T);
@@ -339,6 +359,74 @@ export class PracticeManager {
         this.config.onFinish();
       };
     }
+  }
+
+  /**
+   * Render the flag button next to the question number.
+   * Inserts/updates the flag button inside the question-number element area.
+   */
+  private renderFlagButton(state: AttemptViewState, T: Translations): void {
+    const questionNumber = document.getElementById("questionNumber");
+    if (!questionNumber) return;
+
+    const currentIndex = state.progress.current - 1;
+    const isFlagged = this.config.getFlaggedQuestions().has(currentIndex);
+
+    // Find or create flag button
+    let flagBtn = document.getElementById("flagBtn");
+    if (!flagBtn) {
+      flagBtn = document.createElement("button");
+      flagBtn.id = "flagBtn";
+      flagBtn.className = "flag-btn";
+      // Insert after questionNumber in the parent
+      questionNumber.parentElement?.insertBefore(
+        flagBtn,
+        questionNumber.nextSibling,
+      );
+    }
+
+    flagBtn.textContent = isFlagged
+      ? `⚑ ${T.unflagQuestion || "Unflag"}`
+      : `⚐ ${T.flagQuestion || "Flag"}`;
+    flagBtn.className = isFlagged ? "flag-btn flagged" : "flag-btn";
+
+    flagBtn.onclick = () => {
+      this.config.onFlag();
+    };
+  }
+
+  /**
+   * Update the navigator grid with current state.
+   */
+  private updateNavigator(state: AttemptViewState): void {
+    const container = document.getElementById("practiceMinimapContainer");
+    if (!container) return;
+
+    const currentIndex = state.progress.current - 1;
+    const answeredIndices = this.config.getAnsweredIndices();
+    const flaggedIndices = this.config.getFlaggedQuestions();
+
+    const items = computeNavigatorItems(
+      state.progress.total,
+      currentIndex,
+      answeredIndices,
+      flaggedIndices,
+    );
+
+    // Store items for potential summary modal use
+    this.lastNavigatorItems = items;
+
+    renderNavigator(container, items, (index) => {
+      this.config.onGoTo(index);
+    });
+  }
+
+  /** Last computed navigator items, available for summary modal */
+  private lastNavigatorItems: NavigatorItem[] = [];
+
+  /** Get the last computed navigator items */
+  getLastNavigatorItems(): readonly NavigatorItem[] {
+    return this.lastNavigatorItems;
   }
 
   /**

@@ -222,6 +222,34 @@ export class AttemptController {
   }
 
   /**
+   * Move to the previous question.
+   *
+   * @returns Updated view state
+   */
+  previousQuestion(): AttemptViewState {
+    this.requireActiveSession();
+
+    const state = this.session!.runner.getState();
+    if (state.currentIndex > 0) {
+      this.session!.runner.goTo(state.currentIndex - 1);
+    }
+    return this.getViewState();
+  }
+
+  /**
+   * Jump to a specific question by 0-based index.
+   *
+   * @param index - 0-based question index
+   * @returns Updated view state
+   */
+  goToQuestion(index: number): AttemptViewState {
+    this.requireActiveSession();
+
+    this.session!.runner.goTo(index);
+    return this.getViewState();
+  }
+
+  /**
    * Advance the simulacro timer.
    * Should be called by the application timer at regular intervals.
    *
@@ -381,9 +409,9 @@ export class AttemptController {
       },
       timer,
       isFinished: state.isFinished,
-      canGoPrevious: false, // Forward-only navigation for now
-      canGoNext: isAnswered && !isLastQuestion,
-      canFinish: isAnswered && isLastQuestion,
+      canGoPrevious: state.currentIndex > 0,
+      canGoNext: !isLastQuestion,
+      canFinish: true,
     };
   }
 

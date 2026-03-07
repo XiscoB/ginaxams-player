@@ -397,3 +397,29 @@ export interface StartAttemptParams {
     difficultyHardPenalty?: number;
   };
 }
+
+// ============================================================================
+// Practice Session UI State (Phase 13)
+// ============================================================================
+
+/**
+ * Session-only UI state for practice UX features.
+ * NOT persisted to attempts or telemetry.
+ * Lives entirely in the UI layer during an active attempt.
+ */
+export interface PracticeSessionUiState {
+  /** Set of 0-based question indices flagged by the user */
+  flaggedQuestions: Set<number>;
+  /** Whether the summary modal is currently visible */
+  showSummaryModal: boolean;
+}
+
+/**
+ * Create a fresh PracticeSessionUiState for a new attempt.
+ */
+export function createPracticeSessionUiState(): PracticeSessionUiState {
+  return {
+    flaggedQuestions: new Set(),
+    showSummaryModal: false,
+  };
+}

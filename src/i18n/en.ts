@@ -268,6 +268,19 @@ export const LANG_EN = {
 
   // Review
   correctAnswerLabel: "Correct answer",
+
+  // Practice UX (Phase 13)
+  flagQuestion: "Flag",
+  unflagQuestion: "Unflag",
+  examSummary: "Exam Summary",
+  answered: "Answered",
+  unanswered: "Unanswered",
+  flagged: "Flagged",
+  submitExam: "Submit Exam",
+  returnToQuestions: "Return to Questions",
+  jumpToUnanswered: "Jump to Unanswered",
+  jumpToFlagged: "Jump to Flagged",
+  navigator: "Navigator",
 };
 
 export type TranslationKey = keyof typeof LANG_EN;

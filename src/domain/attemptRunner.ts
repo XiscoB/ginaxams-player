@@ -64,7 +64,7 @@ export class AttemptRunner {
   constructor(
     attempt: Attempt,
     questions: Question[],
-    config: AttemptRunnerConfig = {}
+    config: AttemptRunnerConfig = {},
   ) {
     this.attempt = attempt;
     this.config = config;
@@ -101,9 +101,8 @@ export class AttemptRunner {
    */
   start(): AttemptSessionState {
     // Only simulacro gets remainingTimeMs
-    const remainingTimeMs = this.attempt.type === "simulacro" 
-      ? this.config.timeLimitMs 
-      : undefined;
+    const remainingTimeMs =
+      this.attempt.type === "simulacro" ? this.config.timeLimitMs : undefined;
 
     this.state = {
       ...this.state,
@@ -213,11 +212,7 @@ export class AttemptRunner {
 
     // Compute telemetry update for non-free attempts
     if (this.attempt.type !== "free") {
-      this.computeTelemetryUpdate(
-        currentQuestion,
-        answerIndex,
-        isCorrect
-      );
+      this.computeTelemetryUpdate(currentQuestion, answerIndex, isCorrect);
     }
 
     return this.getState();
@@ -244,6 +239,33 @@ export class AttemptRunner {
       };
       this.answerStartTime = Date.now();
     }
+
+    return this.getState();
+  }
+
+  /**
+   * Jump to a specific question by index.
+   *
+   * Bounds-checked: indices outside [0, questions.length) are ignored.
+   * Resets answer start time for response time tracking.
+   *
+   * @param index - 0-based question index to jump to
+   * @returns Updated session state
+   */
+  goTo(index: number): AttemptSessionState {
+    if (this.state.isFinished) {
+      return this.getState();
+    }
+
+    if (index < 0 || index >= this.state.questions.length) {
+      return this.getState();
+    }
+
+    this.state = {
+      ...this.state,
+      currentIndex: index,
+    };
+    this.answerStartTime = Date.now();
 
     return this.getState();
   }
@@ -319,7 +341,7 @@ export class AttemptRunner {
   private computeTelemetryUpdate(
     question: Question,
     answerIndex: number | null,
-    isCorrect: boolean
+    isCorrect: boolean,
   ): void {
     const examId = this.attempt.sourceExamIds[0]; // Primary exam ID
     const questionNumber = question.number;
@@ -362,7 +384,7 @@ export class AttemptRunner {
       next.avgResponseTimeMs = responseTimeMs;
     } else {
       next.avgResponseTimeMs =
-        (previous.avgResponseTimeMs * (previous.totalSeen) + responseTimeMs) /
+        (previous.avgResponseTimeMs * previous.totalSeen + responseTimeMs) /
         next.totalSeen;
     }
 
