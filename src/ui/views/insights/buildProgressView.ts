@@ -98,7 +98,9 @@ function buildSparkline(attempts: Attempt[]): HTMLElement {
 
   const toX = (i: number) => padding + i * xStep;
   const toY = (v: number) =>
-    height - padding - ((v - minVal) / (maxVal - minVal)) * (height - padding * 2);
+    height -
+    padding -
+    ((v - minVal) / (maxVal - minVal)) * (height - padding * 2);
 
   // Build SVG path
   let pathD = `M ${toX(0)} ${toY(points[0])}`;
@@ -189,10 +191,7 @@ function buildAttemptRow(
   dateEl.style.fontSize = "0.8rem";
   dateEl.style.minWidth = "8ch";
 
-  const modeBadge = createBadge(
-    attempt.type,
-    modeBadgeVariant(attempt.type),
-  );
+  const modeBadge = createBadge(attempt.type, modeBadgeVariant(attempt.type));
 
   left.appendChild(dateEl);
   left.appendChild(modeBadge);
@@ -239,9 +238,7 @@ function formatDate(isoString: string): string {
   }
 }
 
-function modeBadgeVariant(
-  mode: "free" | "simulacro" | "review",
-): BadgeVariant {
+function modeBadgeVariant(mode: "free" | "simulacro" | "review"): BadgeVariant {
   switch (mode) {
     case "simulacro":
       return "info";

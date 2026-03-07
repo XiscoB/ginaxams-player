@@ -20,7 +20,10 @@ import { createList } from "../../components/List.js";
 import { createProgressBar } from "../../components/ProgressBar.js";
 import { createBadge } from "../../components/Badge.js";
 
-import { computeDifficultyPercentages, truncateText } from "./insightsHelpers.js";
+import {
+  computeDifficultyPercentages,
+  truncateText,
+} from "./insightsHelpers.js";
 
 // ============================================================================
 // Main Builder

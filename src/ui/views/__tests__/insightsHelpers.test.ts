@@ -308,7 +308,10 @@ describe("truncateText", () => {
   });
 
   it("truncates and adds ellipsis when over max", () => {
-    const result = truncateText("This is a long text that needs truncation", 20);
+    const result = truncateText(
+      "This is a long text that needs truncation",
+      20,
+    );
     expect(result.length).toBeLessThanOrEqual(21); // 20 + ellipsis char
     expect(result.endsWith("…")).toBe(true);
   });

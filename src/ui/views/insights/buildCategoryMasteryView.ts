@@ -43,7 +43,8 @@ export function buildCategoryMasteryView(data: InsightsViewData): HTMLElement {
 
   if (data.categoryMastery.length === 0) {
     const empty = document.createElement("p");
-    empty.textContent = "No category data available. Import exams to see mastery levels.";
+    empty.textContent =
+      "No category data available. Import exams to see mastery levels.";
     empty.style.color = "var(--text-secondary)";
     empty.style.fontSize = "0.875rem";
     return createCard({ title: "Category Mastery", content: empty });
@@ -152,7 +153,8 @@ function buildDrillDown(questions: InsightsQuestionData[]): HTMLElement {
   const panel = document.createElement("div");
   panel.className = "gx-insights-drilldown";
   panel.style.paddingLeft = "16px";
-  panel.style.borderLeft = "2px solid var(--border-color, rgba(255,255,255,0.1))";
+  panel.style.borderLeft =
+    "2px solid var(--border-color, rgba(255,255,255,0.1))";
   panel.style.marginBottom = "8px";
 
   if (questions.length === 0) {
@@ -187,7 +189,10 @@ function buildDrillDown(questions: InsightsQuestionData[]): HTMLElement {
     weakLabel.textContent = `W: ${q.weaknessScore.toFixed(1)}`;
     weakLabel.style.color = "var(--text-secondary)";
 
-    const diffBadge = createBadge(q.difficultyLevel, difficultyBadgeVariant(q.difficultyLevel));
+    const diffBadge = createBadge(
+      q.difficultyLevel,
+      difficultyBadgeVariant(q.difficultyLevel),
+    );
 
     const preview = document.createElement("span");
     preview.textContent = truncateText(q.questionText, 50);

@@ -165,7 +165,8 @@ function buildWeakQuestionRow(q: InsightsQuestionData): HTMLElement {
 function buildFeedbackPanel(q: InsightsQuestionData): HTMLElement {
   const panel = document.createElement("div");
   panel.style.paddingLeft = "16px";
-  panel.style.borderLeft = "2px solid var(--border-color, rgba(255,255,255,0.1))";
+  panel.style.borderLeft =
+    "2px solid var(--border-color, rgba(255,255,255,0.1))";
   panel.style.marginTop = "4px";
   panel.style.fontSize = "0.8rem";
 

@@ -99,7 +99,8 @@ function buildTrapRow(q: InsightsQuestionData): HTMLElement {
   const feedbackPanel = document.createElement("div");
   feedbackPanel.style.display = "none";
   feedbackPanel.style.paddingLeft = "16px";
-  feedbackPanel.style.borderLeft = "2px solid var(--border-color, rgba(255,255,255,0.1))";
+  feedbackPanel.style.borderLeft =
+    "2px solid var(--border-color, rgba(255,255,255,0.1))";
   feedbackPanel.style.marginTop = "4px";
   feedbackPanel.style.fontSize = "0.8rem";
 
