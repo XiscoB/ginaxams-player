@@ -48,9 +48,7 @@ export function computeQuickStats(data: HomeViewData): QuickStats {
   for (const attempt of data.attempts) {
     if (attempt.createdAt >= todayISO && attempt.result) {
       questionsSeenToday +=
-        attempt.result.correct +
-        attempt.result.wrong +
-        attempt.result.blank;
+        attempt.result.correct + attempt.result.wrong + attempt.result.blank;
     }
   }
 

@@ -27,7 +27,10 @@ import {
   buildRecommendation,
   type Recommendation,
 } from "./home/buildRecommendation.js";
-import { computeQuickStats, type QuickStats } from "./home/computeQuickStats.js";
+import {
+  computeQuickStats,
+  type QuickStats,
+} from "./home/computeQuickStats.js";
 
 // ============================================================================
 // HomeView
@@ -104,44 +107,46 @@ function buildReadinessCard(data: HomeViewData): HTMLElement {
     },
   ];
 
-  const breakdownList = createList(
-    breakdownItems,
-    (item) => {
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.justifyContent = "space-between";
-      row.style.gap = "var(--space-md)";
+  const breakdownList = createList(breakdownItems, (item) => {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.justifyContent = "space-between";
+    row.style.gap = "var(--space-md)";
 
-      const label = document.createElement("span");
-      label.textContent = item.label;
-      label.style.color = "var(--text-secondary)";
-      label.style.fontSize = "0.875rem";
+    const label = document.createElement("span");
+    label.textContent = item.label;
+    label.style.color = "var(--text-secondary)";
+    label.style.fontSize = "0.875rem";
 
-      const barContainer = document.createElement("div");
-      barContainer.style.flex = "1";
-      barContainer.style.maxWidth = "120px";
-      barContainer.appendChild(
-        createProgressBar({
-          percent: item.value,
-          variant: item.value >= 70 ? "success" : item.value >= 40 ? "warning" : "danger",
-        }),
-      );
+    const barContainer = document.createElement("div");
+    barContainer.style.flex = "1";
+    barContainer.style.maxWidth = "120px";
+    barContainer.appendChild(
+      createProgressBar({
+        percent: item.value,
+        variant:
+          item.value >= 70
+            ? "success"
+            : item.value >= 40
+              ? "warning"
+              : "danger",
+      }),
+    );
 
-      const valueEl = document.createElement("span");
-      valueEl.textContent = `${item.value}%`;
-      valueEl.style.fontSize = "0.875rem";
-      valueEl.style.fontWeight = "600";
-      valueEl.style.color = "var(--text-primary)";
-      valueEl.style.minWidth = "3ch";
-      valueEl.style.textAlign = "right";
+    const valueEl = document.createElement("span");
+    valueEl.textContent = `${item.value}%`;
+    valueEl.style.fontSize = "0.875rem";
+    valueEl.style.fontWeight = "600";
+    valueEl.style.color = "var(--text-primary)";
+    valueEl.style.minWidth = "3ch";
+    valueEl.style.textAlign = "right";
 
-      row.appendChild(label);
-      row.appendChild(barContainer);
-      row.appendChild(valueEl);
-      return row;
-    },
-  );
+    row.appendChild(label);
+    row.appendChild(barContainer);
+    row.appendChild(valueEl);
+    return row;
+  });
 
   const content = createStack({
     direction: "column",
@@ -165,7 +170,10 @@ function buildRecommendationCard(
 ): HTMLElement {
   const rec: Recommendation = buildRecommendation(data, callbacks);
 
-  const badge = createBadge(levelLabel(rec.level), levelBadgeVariant(rec.level));
+  const badge = createBadge(
+    levelLabel(rec.level),
+    levelBadgeVariant(rec.level),
+  );
 
   const message = document.createElement("p");
   message.textContent = rec.message;
