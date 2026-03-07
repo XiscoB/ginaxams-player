@@ -335,6 +335,13 @@ export interface Translations {
   aiPromptNoMaterial: string;
   materialInChatLabel: string;
   kimiSuggestion: string;
+  // AI Prompt body (generated prompt text)
+  aiPromptBody: string;
+  aiPromptSchemaNote: string;
+  aiPromptRules: string;
+  aiPromptMaterialBelow: string;
+  aiPromptMaterialNext: string;
+  aiPromptLanguage: string;
   howToCreate: string;
   easyWay: string;
   easyWayDesc: string;

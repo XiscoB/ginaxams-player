@@ -198,6 +198,20 @@ export const LANG_EN = {
   aiPromptNoMaterial: "Please enter your study material first!",
   materialInChatLabel:
     "<strong>I have the material as a file.</strong> I'll paste it directly in the AI chat after the prompt.",
+  // AI Prompt body (generated prompt text)
+  aiPromptBody:
+    "Based on the following study material, I want you to generate a multiple choice exam with {numQuestions} questions. Each question must have {numAnswers} possible answers (labeled {letters}), with ONE single correct answer per question.",
+  aiPromptSchemaNote: "Please generate a JSON object in this exact format:",
+  aiPromptRules: `IMPORTANT REQUIREMENTS:
+1. Questions should test comprehension, not just memorization
+2. Distractors (wrong answers) must be plausible
+3. Include a mix of question types (conceptual, application, analysis)
+4. Make sure questions match the difficulty level: {difficulty}
+5. Only ONE answer per question must have "isCorrect": true
+6. Return ONLY valid JSON, no markdown formatting or explanations`,
+  aiPromptMaterialBelow: "Study material to create questions from:",
+  aiPromptMaterialNext: "[I will paste my study material in the next message]",
+  aiPromptLanguage: "English",
   kimiSuggestion:
     "💡 <strong>Tip:</strong> This prompt was generated with <a href='#' onclick='window.app.openExternalLink(\"https://kimi.moonshot.cn\", \"Kimi\"); return false;'>Kimi AI</a> in mind - give it a try for even better results!",
 

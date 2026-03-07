@@ -2113,6 +2113,7 @@ export class App {
     const modal = document.getElementById("aiPromptModal");
     if (modal) {
       modal.classList.remove("hidden");
+      modal.classList.add("active");
       // Reset form
       const result = document.getElementById("aiPromptResult");
       if (result) result.classList.add("hidden");
@@ -2123,7 +2124,10 @@ export class App {
 
   closeAIPromptGenerator(): void {
     const modal = document.getElementById("aiPromptModal");
-    if (modal) modal.classList.add("hidden");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.classList.add("hidden");
+    }
   }
 
   toggleMaterialField(): void {
@@ -2166,44 +2170,69 @@ export class App {
       mixed: T.difficultyMixed || "Mixed",
     };
 
-    let prompt = `Generate an exam in JSON format with exactly ${numQuestions} questions, each with ${numAnswers} answer options. Difficulty: ${difficultyText[difficulty] || difficulty}.
+    // Build answer letters: A, B, C, D, ...
+    const numAns = parseInt(numAnswers, 10) || 4;
+    const letters = Array.from({ length: numAns }, (_, i) =>
+      String.fromCharCode(65 + i),
+    );
+    const lettersStr = letters.join(", ");
 
-The JSON must follow this exact schema (schema_version "2.0"):
+    // Build prompt body from translations
+    const body = (T.aiPromptBody || "")
+      .replace("{numQuestions}", numQuestions)
+      .replace("{numAnswers}", numAnswers)
+      .replace("{letters}", lettersStr);
+
+    const diffLabel = difficultyText[difficulty] || difficulty;
+    const lang = T.aiPromptLanguage || "English";
+
+    // Build the example answer entries
+    const exampleAnswers = letters
+      .map(
+        (l, i) =>
+          `        {"letter": "${l}", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": ${i === 0}}`,
+      )
+      .join(",\n");
+
+    const schemaNote = T.aiPromptSchemaNote || "Please generate a JSON object in this exact format:";
+    const rules = (T.aiPromptRules || "").replace("{difficulty}", diffLabel);
+
+    let prompt = `${body}
+
+NIVEL DE DIFICULTAD / DIFFICULTY: ${diffLabel}
+IDIOMA / LANGUAGE: ${lang}
+
+${schemaNote}
 
 {
   "schema_version": "2.0",
-  "exam_id": "unique-exam-id",
-  "title": "Exam Title",
-  "categorias": ["Category1", "Category2"],
+  "exam_id": "exam_${Date.now().toString(36)}",
+  "title": "[${lang === "español" ? "Título descriptivo del examen basado en el material" : "Descriptive exam title based on the material"}]",
+  "categorias": ["${lang === "español" ? "Categoría1" : "Category1"}", "${lang === "español" ? "Categoría2" : "Category2"}"],
   "total_questions": ${numQuestions},
   "questions": [
     {
       "number": 1,
-      "text": "Question text?",
-      "categoria": ["Category1"],
-      "articulo_referencia": "Reference article",
+      "text": "[${lang === "español" ? "Texto de la pregunta aquí" : "Question text here"}]",
+      "categoria": ["${lang === "español" ? "Categoría1" : "Category1"}"],
+      "articulo_referencia": "${lang === "español" ? "Artículo de referencia" : "Reference article"}",
       "feedback": {
-        "cita_literal": "Literal citation from source",
-        "explicacion_fallo": "Explanation of why wrong answers are wrong"
+        "cita_literal": "${lang === "español" ? "Cita literal de la fuente" : "Literal citation from source"}",
+        "explicacion_fallo": "${lang === "español" ? "Explicación de por qué las respuestas incorrectas son erróneas" : "Explanation of why wrong answers are wrong"}"
       },
       "answers": [
-        { "letter": "A", "text": "Answer text", "isCorrect": true },
-        { "letter": "B", "text": "Answer text", "isCorrect": false }
+${exampleAnswers}
       ]
     }
   ]
 }
 
-Rules:
-- Exactly one answer per question must have "isCorrect": true
-- total_questions must equal the number of questions
-- Each question must have exactly ${numAnswers} answers
-- Output valid JSON only, no extra text`;
+${rules}`;
 
     if (!materialInChat && material.trim()) {
-      prompt += `\n\nStudy material to create questions from:\n${material}`;
+      prompt += `\n\n${T.aiPromptMaterialBelow || "Study material to create questions from:"}\n${material}`;
     } else if (materialInChat) {
-      prompt += `\n\n[I will paste my study material in the next message]`;
+      prompt += `\n\n${T.aiPromptMaterialNext || "[I will paste my study material in the next message]"}`;
     }
 
     const output = document.getElementById(
