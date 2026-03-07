@@ -78,6 +78,25 @@ import { SNAPSHOT_VERSION } from "./viewState.js";
 import { validateBackupSnapshot } from "./backupValidation.js";
 
 // ============================================================================
+// Custom Errors
+// ============================================================================
+
+/**
+ * Thrown when attempting to import an exam with an exam_id that already exists.
+ */
+export class DuplicateExamError extends Error {
+  public readonly examId: string;
+  public readonly existingTitle: string;
+
+  constructor(examId: string, existingTitle: string) {
+    super(`Duplicate exam_id: "${examId}" (existing: "${existingTitle}")`);
+    this.name = "DuplicateExamError";
+    this.examId = examId;
+    this.existingTitle = existingTitle;
+  }
+}
+
+// ============================================================================
 // ExamLibraryController
 // ============================================================================
 
@@ -137,6 +156,25 @@ export class ExamLibraryController {
   // ==========================================================================
 
   /**
+   * Validate an exam JSON without importing it.
+   * Returns the validated Exam object if valid, throws on failure.
+   *
+   * @param json - Unknown JSON data to validate
+   * @returns The validated Exam object
+   * @throws Error if validation fails
+   */
+  validateExamJson(json: unknown): Exam {
+    return validateExam(json);
+  }
+
+  /**
+   * Get all stored exams (for duplicate checking, etc.).
+   */
+  async getExams(): Promise<StoredExam[]> {
+    return this.storage.getExams();
+  }
+
+  /**
    * Import and validate an exam from a JSON object.
    *
    * @param json - Unknown JSON data to validate and import
@@ -147,6 +185,7 @@ export class ExamLibraryController {
   async importExam(
     json: unknown,
     folderId: string = "uncategorized",
+    overwriteIfDuplicate: boolean = false,
   ): Promise<string> {
     // Validate through the domain layer
     const validatedExam: Exam = validateExam(json);
@@ -157,12 +196,16 @@ export class ExamLibraryController {
       (e) => e.data.exam_id === validatedExam.exam_id,
     );
 
+    if (duplicate && !overwriteIfDuplicate) {
+      throw new DuplicateExamError(validatedExam.exam_id, duplicate.title);
+    }
+
     const storedExam: StoredExam = {
       id: duplicate?.id ?? crypto.randomUUID(),
       title: validatedExam.title,
       data: validatedExam,
       addedAt: new Date().toISOString(),
-      folderId,
+      folderId: duplicate ? duplicate.folderId : folderId,
     };
 
     return this.storage.saveExam(storedExam);

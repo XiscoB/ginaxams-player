@@ -1386,6 +1386,261 @@
         box-shadow: 0 10px 20px rgba(0, 212, 255, 0.2);
       }
 
+      /* AI Prompt Modal - Exam Name Status */
+      .ai-exam-name-status {
+        font-size: 0.85em;
+        padding: 6px 10px;
+        border-radius: 8px;
+        margin-top: 2px;
+        line-height: 1.4;
+      }
+
+      .ai-exam-name-status.warning {
+        color: #ffb340;
+        background: rgba(255, 179, 64, 0.1);
+        border-left: 3px solid #ffb340;
+      }
+
+      .ai-exam-name-status.error {
+        color: #ff4d6a;
+        background: rgba(255, 77, 106, 0.1);
+        border-left: 3px solid #ff4d6a;
+      }
+
+      /* AI Prompt Modal - Source Attachment Note */
+      .ai-prompt-source-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 16px;
+        background: rgba(0, 212, 255, 0.05);
+        border-radius: 12px;
+        border-left: 3px solid var(--accent-primary);
+      }
+
+      .ai-prompt-source-icon {
+        font-size: 1.3em;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .ai-prompt-source-note p {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      /* AI Prompt Modal - JSON Paste Section */
+      .ai-prompt-paste-divider {
+        text-align: center;
+        margin: 20px 0 15px;
+        color: var(--text-secondary);
+        font-size: 0.85em;
+        position: relative;
+      }
+
+      .ai-prompt-paste-divider::before,
+      .ai-prompt-paste-divider::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 40%;
+        height: 1px;
+        background: var(--border-color);
+      }
+
+      .ai-prompt-paste-divider::before {
+        left: 0;
+      }
+
+      .ai-prompt-paste-divider::after {
+        right: 0;
+      }
+
+      .ai-prompt-have-response-btn {
+        width: 100%;
+        background: var(--bg-card);
+        border: 2px dashed var(--accent-primary);
+        border-radius: 14px;
+        padding: 16px 24px;
+        color: var(--accent-primary);
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-have-response-btn:hover {
+        background: rgba(0, 212, 255, 0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 212, 255, 0.15);
+      }
+
+      .ai-json-paste-section {
+        margin-top: 15px;
+        animation: fadeInUp 0.3s ease;
+      }
+
+      .ai-json-paste-input {
+        width: 100%;
+        min-height: 180px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        color: var(--text-primary);
+        font-size: 0.88em;
+        font-family: "JetBrains Mono", "Consolas", monospace;
+        resize: vertical;
+        line-height: 1.6;
+        margin-bottom: 12px;
+        transition: border-color 0.2s ease;
+      }
+
+      .ai-json-paste-input:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-json-paste-input::placeholder {
+        color: var(--text-secondary);
+        font-family: inherit;
+      }
+
+      .ai-json-validate-row {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .ai-json-paste-clipboard-btn {
+        background: var(--bg-card);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0 14px;
+        color: var(--text-secondary);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .ai-json-paste-clipboard-btn:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        background: rgba(0, 212, 255, 0.05);
+      }
+
+      .ai-json-validate-btn {
+        flex: 1;
+        background: var(--bg-card);
+        border: 2px solid var(--accent-primary);
+        border-radius: 12px;
+        padding: 14px;
+        color: var(--accent-primary);
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-json-validate-btn:hover {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+      }
+
+      .ai-json-paste-status {
+        margin-top: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.9em;
+        line-height: 1.5;
+      }
+
+      .ai-json-paste-status.success {
+        color: #50fa7b;
+        background: rgba(80, 250, 123, 0.1);
+        border-left: 3px solid #50fa7b;
+      }
+
+      .ai-json-paste-status.error {
+        color: #ff4d6a;
+        background: rgba(255, 77, 106, 0.1);
+        border-left: 3px solid #ff4d6a;
+      }
+
+      .ai-json-preview {
+        margin-top: 15px;
+        padding: 16px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+      }
+
+      .ai-json-preview-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+      }
+
+      .ai-json-preview-row:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .ai-json-preview-label {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        font-weight: 500;
+      }
+
+      .ai-json-preview-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.95em;
+        text-align: right;
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ai-json-import-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #50fa7b, #2ecc71);
+        border: none;
+        border-radius: 14px;
+        padding: 16px 24px;
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.05em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-json-import-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(80, 250, 123, 0.3);
+      }
+
       /* AI Prompt Modal */
       .ai-prompt-modal-overlay {
         position: fixed;
@@ -3637,7 +3892,7 @@
           <div class="onboarding-step-content hidden" data-step="5">
             <span class="onboarding-icon">💡</span>
             <h2 class="onboarding-title" id="txtOnboardingCreateTitle">
-              Create Your First Exam
+              Create Your Exam
             </h2>
             <p class="onboarding-text" id="txtOnboardingCreateText">
               Ready to create your own exam? Choose how you want to do it:
@@ -3722,6 +3977,17 @@
 
         <div class="ai-prompt-form">
           <div class="ai-prompt-field">
+            <label id="txtAiExamNameLabel">Exam name</label>
+            <input
+              type="text"
+              id="aiExamName"
+              class="ai-prompt-input"
+              placeholder="e.g. Constitutional Law 2026"
+            />
+            <div id="aiExamNameStatus" class="ai-exam-name-status hidden"></div>
+          </div>
+
+          <div class="ai-prompt-field">
             <label id="txtNumQuestionsLabel">Number of questions</label>
             <input
               type="number"
@@ -3759,25 +4025,12 @@
             </select>
           </div>
 
-          <div class="ai-prompt-checkbox">
-            <input
-              type="checkbox"
-              id="aiMaterialInChat"
-              onchange="window.app.toggleMaterialField()"
-            />
-            <label for="aiMaterialInChat" id="txtMaterialInChatLabel">
-              <strong>I have the material as a file.</strong> I'll paste it
-              directly in the AI chat after the prompt.
-            </label>
-          </div>
-
-          <div class="ai-prompt-field" id="aiMaterialField">
-            <label id="txtMaterialLabel">Your study material</label>
-            <textarea
-              id="aiMaterial"
-              class="ai-prompt-textarea"
-              data-placeholder="materialPlaceholder"
-            ></textarea>
+          <div class="ai-prompt-source-note">
+            <span class="ai-prompt-source-icon">📎</span>
+            <p id="txtAttachSources">
+              Attach your source files or study materials directly in the AI
+              chat alongside this prompt.
+            </p>
           </div>
 
           <button
@@ -3882,6 +4135,81 @@
               >
               in mind - give it a try for even better results!
             </p>
+          </div>
+
+          <!-- JSON Paste Section -->
+          <div class="ai-prompt-paste-divider">
+            <span id="txtAiOrDivider">or</span>
+          </div>
+          <button
+            class="ai-prompt-have-response-btn"
+            id="aiShowPasteBtn"
+            onclick="window.app.toggleJsonPasteSection()"
+          >
+            📥 <span id="txtAiHaveResponse">I have the AI's response</span>
+          </button>
+          <div id="aiJsonPasteSection" class="ai-json-paste-section hidden">
+            <textarea
+              id="aiJsonPasteInput"
+              class="ai-json-paste-input"
+              placeholder="Paste the JSON that the AI generated here..."
+            ></textarea>
+            <div class="ai-json-validate-row">
+              <button
+                class="ai-json-paste-clipboard-btn"
+                onclick="window.app.pasteFromClipboard()"
+                title="Paste from clipboard"
+              >
+                📋
+              </button>
+              <button
+                class="ai-json-validate-btn"
+                id="aiJsonValidateBtn"
+                onclick="window.app.validatePastedJson()"
+              >
+                ✅ <span id="txtAiValidateBtn">Validate Exam</span>
+              </button>
+            </div>
+            <div
+              id="aiJsonPasteStatus"
+              class="ai-json-paste-status hidden"
+            ></div>
+            <div id="aiJsonPreview" class="ai-json-preview hidden">
+              <div class="ai-json-preview-row">
+                <span class="ai-json-preview-label" id="txtAiPreviewTitle"
+                  >Title</span
+                >
+                <span
+                  class="ai-json-preview-value"
+                  id="aiPreviewTitleValue"
+                ></span>
+              </div>
+              <div class="ai-json-preview-row">
+                <span class="ai-json-preview-label" id="txtAiPreviewQuestions"
+                  >Questions</span
+                >
+                <span
+                  class="ai-json-preview-value"
+                  id="aiPreviewQuestionsValue"
+                ></span>
+              </div>
+              <div class="ai-json-preview-row">
+                <span class="ai-json-preview-label" id="txtAiPreviewCategories"
+                  >Categories</span
+                >
+                <span
+                  class="ai-json-preview-value"
+                  id="aiPreviewCategoriesValue"
+                ></span>
+              </div>
+            </div>
+            <button
+              class="ai-json-import-btn hidden"
+              id="aiJsonImportBtn"
+              onclick="window.app.importPastedJson()"
+            >
+              📦 <span id="txtAiImportBtn">Import Exam</span>
+            </button>
           </div>
         </div>
       </div>
@@ -4070,12 +4398,12 @@
               <button
                 class="help-menu-item"
                 onclick="
-                  window.app.showTemplateModal();
+                  window.app.showChoiceModal();
                   window.app.toggleHelpMenu();
                 "
               >
-                <span>📋</span>
-                <span id="txtExamFormatBtn">Exam Format</span>
+                <span>💡</span>
+                <span id="txtExamFormatBtn">Create Exam</span>
               </button>
             </div>
             <input type="file" id="fileInput" accept=".json" class="hidden" />

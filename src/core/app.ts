@@ -24,6 +24,7 @@ import {
 } from "../application/viewState.js";
 import { AttemptController } from "../application/attemptController.js";
 import { ExamLibraryController } from "../application/examLibraryController.js";
+import { DuplicateExamError } from "../application/examLibraryController.js";
 import { SettingsService } from "../application/settingsService.js";
 import type { TabId } from "../application/settingsService.js";
 import { PracticeManager } from "../modes/practice.js";
@@ -1421,7 +1422,7 @@ export class App {
     // Help
     setText("txtShowOnboarding", T.showOnboarding);
     setText("txtExamFormat", T.examFormat);
-    setText("txtExamFormatBtn", T.examFormat);
+    setText("txtExamFormatBtn", T.createExamBtn || T.examFormat);
 
     // Template modal
     setText("txtExamFormatDesc", T.examFormatDesc);
@@ -1461,6 +1462,29 @@ export class App {
     setText("txtNowPaste", T.nowPaste);
     setHtml("txtMaterialInChatLabel", T.materialInChatLabel);
     setHtml("txtKimiSuggestion", T.kimiSuggestion);
+
+    // Exam name & JSON paste
+    setText("txtAiExamNameLabel", T.aiPromptExamName);
+    setText("txtAttachSources", T.aiPromptAttachSources);
+    setText("txtAiHaveResponse", T.aiHaveResponse);
+    setText("txtAiOrDivider", T.aiOrDivider);
+    setText("txtAiValidateBtn", T.aiValidateBtn);
+    setText("txtAiImportBtn", T.aiImportBtn);
+    setText("txtAiPreviewTitle", T.aiPreviewTitle);
+    setText("txtAiPreviewQuestions", T.aiPreviewQuestions);
+    setText("txtAiPreviewCategories", T.aiPreviewCategories);
+
+    // Exam name input placeholder
+    const aiExamName = document.getElementById("aiExamName") as HTMLInputElement | null;
+    if (aiExamName) {
+      aiExamName.placeholder = T.aiPromptExamNamePlaceholder || "";
+    }
+
+    // JSON paste textarea placeholder
+    const aiJsonPasteInput = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+    if (aiJsonPasteInput) {
+      aiJsonPasteInput.placeholder = T.aiPastePlaceholder || "";
+    }
 
     // Set textarea placeholder via data attribute
     const aiMaterial = document.getElementById(
@@ -1706,6 +1730,15 @@ export class App {
     langEs?.addEventListener("click", () => {
       this.setLanguage("es");
     });
+
+    // Exam name availability check (debounced)
+    const aiExamName = document.getElementById("aiExamName");
+    aiExamName?.addEventListener("input", () => {
+      this.checkExamNameAvailability();
+    });
+
+    // Click-outside-to-close for modals
+    this.bindOverlayClose();
   }
 
   // ============================================================================
@@ -1728,6 +1761,27 @@ export class App {
         `${this.translations.importSuccessful || "Import successful"}: ${title}`,
       );
     } catch (e) {
+      if (e instanceof DuplicateExamError) {
+        const msg = (this.translations.confirmOverwriteExam || 'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?')
+          .replace("{examId}", e.examId)
+          .replace("{title}", e.existingTitle);
+        if (confirm(msg)) {
+          try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const examId = await this.libraryController.importExam(data, "uncategorized", true);
+            await this.refreshLibrary();
+            const imported = this.libraryState?.exams.find((ex) => ex.id === examId);
+            const title = imported?.title ?? "Exam";
+            alert(`${this.translations.importSuccessful || "Import successful"}: ${title}`);
+          } catch (e2) {
+            console.error("Import failed:", e2);
+            const message = e2 instanceof Error ? e2.message : "Unknown error";
+            alert(`${this.translations.importFailed}: ${message}`);
+          }
+        }
+        return;
+      }
       console.error("Import failed:", e);
       const message = e instanceof Error ? e.message : "Unknown error";
       alert(`${this.translations.importFailed}: ${message}`);
@@ -2097,12 +2151,18 @@ export class App {
 
   showChoiceModal(): void {
     const modal = document.getElementById("choiceModal");
-    if (modal) modal.classList.remove("hidden");
+    if (modal) {
+      modal.classList.remove("hidden");
+      modal.classList.add("active");
+    }
   }
 
   closeChoiceModal(): void {
     const modal = document.getElementById("choiceModal");
-    if (modal) modal.classList.add("hidden");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.classList.add("hidden");
+    }
   }
 
   // ============================================================================
@@ -2119,6 +2179,20 @@ export class App {
       if (result) result.classList.add("hidden");
       const destinations = document.getElementById("aiDestinations");
       if (destinations) destinations.classList.add("hidden");
+      // Reset JSON paste section
+      const pasteSection = document.getElementById("aiJsonPasteSection");
+      if (pasteSection) pasteSection.classList.add("hidden");
+      const importBtn = document.getElementById("aiJsonImportBtn");
+      if (importBtn) importBtn.classList.add("hidden");
+      const preview = document.getElementById("aiJsonPreview");
+      if (preview) preview.classList.add("hidden");
+      const pasteStatus = document.getElementById("aiJsonPasteStatus");
+      if (pasteStatus) pasteStatus.classList.add("hidden");
+      const pasteInput = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+      if (pasteInput) pasteInput.value = "";
+      // Reset exam name status
+      const nameStatus = document.getElementById("aiExamNameStatus");
+      if (nameStatus) { nameStatus.classList.add("hidden"); nameStatus.className = "ai-exam-name-status hidden"; }
     }
   }
 
@@ -2130,18 +2204,10 @@ export class App {
     }
   }
 
-  toggleMaterialField(): void {
-    const checkbox = document.getElementById(
-      "aiMaterialInChat",
-    ) as HTMLInputElement | null;
-    const field = document.getElementById("aiMaterialField");
-    if (field && checkbox) {
-      field.style.display = checkbox.checked ? "none" : "block";
-    }
-  }
-
   generateAIPrompt(): void {
     const T = this.translations;
+    const examName =
+      (document.getElementById("aiExamName") as HTMLInputElement)?.value?.trim() || "";
     const numQuestions =
       (document.getElementById("aiNumQuestions") as HTMLInputElement)?.value ||
       "10";
@@ -2151,15 +2217,9 @@ export class App {
     const difficulty =
       (document.getElementById("aiDifficulty") as HTMLSelectElement)?.value ||
       "medium";
-    const materialInChat = (
-      document.getElementById("aiMaterialInChat") as HTMLInputElement
-    )?.checked;
-    const material =
-      (document.getElementById("aiMaterial") as HTMLTextAreaElement)?.value ||
-      "";
 
-    if (!materialInChat && !material.trim()) {
-      alert(T.aiPromptNoMaterial || "Please enter your study material first!");
+    if (!examName) {
+      alert(T.aiPromptExamNameRequired || "Please enter an exam name.");
       return;
     }
 
@@ -2194,6 +2254,9 @@ export class App {
       )
       .join(",\n");
 
+    // Use the exam name as both exam_id and title
+    const safeExamId = examName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
     const schemaNote = T.aiPromptSchemaNote || "Please generate a JSON object in this exact format:";
     const rules = (T.aiPromptRules || "").replace("{difficulty}", diffLabel);
 
@@ -2206,8 +2269,8 @@ ${schemaNote}
 
 {
   "schema_version": "2.0",
-  "exam_id": "exam_${Date.now().toString(36)}",
-  "title": "[${lang === "español" ? "Título descriptivo del examen basado en el material" : "Descriptive exam title based on the material"}]",
+  "exam_id": "${safeExamId}",
+  "title": "${examName}",
   "categorias": ["${lang === "español" ? "Categoría1" : "Category1"}", "${lang === "español" ? "Categoría2" : "Category2"}"],
   "total_questions": ${numQuestions},
   "questions": [
@@ -2227,13 +2290,9 @@ ${exampleAnswers}
   ]
 }
 
-${rules}`;
+IMPORTANT: Use "${safeExamId}" as the "exam_id" and "${examName}" as the "title". Do NOT change these values.
 
-    if (!materialInChat && material.trim()) {
-      prompt += `\n\n${T.aiPromptMaterialBelow || "Study material to create questions from:"}\n${material}`;
-    } else if (materialInChat) {
-      prompt += `\n\n${T.aiPromptMaterialNext || "[I will paste my study material in the next message]"}`;
-    }
+${rules}`;
 
     const output = document.getElementById(
       "aiGeneratedPrompt",
@@ -2260,6 +2319,208 @@ ${rules}`;
     // Show AI destinations
     const destinations = document.getElementById("aiDestinations");
     if (destinations) destinations.classList.remove("hidden");
+  }
+
+  // ============================================================================
+  // Exam Name Duplicate Check
+  // ============================================================================
+
+  private examNameCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  checkExamNameAvailability(): void {
+    if (this.examNameCheckTimeout) {
+      clearTimeout(this.examNameCheckTimeout);
+    }
+    this.examNameCheckTimeout = setTimeout(() => {
+      this.doCheckExamName();
+    }, 300);
+  }
+
+  private async doCheckExamName(): Promise<void> {
+    const T = this.translations;
+    const nameInput = document.getElementById("aiExamName") as HTMLInputElement | null;
+    const statusEl = document.getElementById("aiExamNameStatus");
+    if (!nameInput || !statusEl) return;
+
+    const name = nameInput.value.trim();
+    if (!name) {
+      statusEl.classList.add("hidden");
+      statusEl.className = "ai-exam-name-status hidden";
+      return;
+    }
+
+    try {
+      const exams = await this.libraryController.getExams();
+      const safeId = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const duplicate = exams.find(
+        (e) => e.data.exam_id === safeId || e.data.exam_id === name,
+      );
+      if (duplicate) {
+        statusEl.textContent = T.aiPromptExamNameDuplicate || "An exam with this name already exists. It will be overwritten if you import.";
+        statusEl.className = "ai-exam-name-status warning";
+      } else {
+        statusEl.classList.add("hidden");
+        statusEl.className = "ai-exam-name-status hidden";
+      }
+    } catch {
+      // Silently ignore check failures
+    }
+  }
+
+  // ============================================================================
+  // JSON Paste, Validate & Import
+  // ============================================================================
+
+  toggleJsonPasteSection(): void {
+    const section = document.getElementById("aiJsonPasteSection");
+    if (section) {
+      section.classList.toggle("hidden");
+    }
+  }
+
+  async pasteFromClipboard(): Promise<void> {
+    try {
+      const text = await navigator.clipboard.readText();
+      const input = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+      if (input) {
+        input.value = text;
+        input.focus();
+      }
+    } catch {
+      // Clipboard access denied or unavailable — ignore silently
+    }
+  }
+
+  private lastValidatedExamJson: unknown = null;
+
+  validatePastedJson(): void {
+    const T = this.translations;
+    const input = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+    const statusEl = document.getElementById("aiJsonPasteStatus");
+    const previewEl = document.getElementById("aiJsonPreview");
+    const importBtn = document.getElementById("aiJsonImportBtn");
+
+    if (!input || !statusEl || !previewEl || !importBtn) return;
+
+    const raw = input.value.trim();
+    if (!raw) return;
+
+    // Step 1: Parse JSON
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      statusEl.textContent = T.aiJsonInvalidJson || "Invalid JSON: could not parse the text.";
+      statusEl.className = "ai-json-paste-status error";
+      previewEl.classList.add("hidden");
+      importBtn.classList.add("hidden");
+      this.lastValidatedExamJson = null;
+      return;
+    }
+
+    // Step 2: Validate exam schema via library controller
+    try {
+      const validated = this.libraryController.validateExamJson(parsed);
+
+      // Success - show preview
+      this.lastValidatedExamJson = parsed;
+      statusEl.textContent = `✅ ${T.aiJsonValid || "Valid exam JSON!"}`;
+      statusEl.className = "ai-json-paste-status success";
+
+      // Fill preview
+      const titleVal = document.getElementById("aiPreviewTitleValue");
+      const questionsVal = document.getElementById("aiPreviewQuestionsValue");
+      const categoriesVal = document.getElementById("aiPreviewCategoriesValue");
+      if (titleVal) titleVal.textContent = validated.title;
+      if (questionsVal) questionsVal.textContent = String(validated.questions.length);
+      if (categoriesVal) categoriesVal.textContent = validated.categorias.join(", ");
+
+      previewEl.classList.remove("hidden");
+      importBtn.classList.remove("hidden");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unknown validation error";
+      statusEl.textContent = `${T.aiJsonInvalidSchema || "Invalid exam format"}: ${message}`;
+      statusEl.className = "ai-json-paste-status error";
+      previewEl.classList.add("hidden");
+      importBtn.classList.add("hidden");
+      this.lastValidatedExamJson = null;
+    }
+  }
+
+  async importPastedJson(): Promise<void> {
+    const T = this.translations;
+    if (!this.lastValidatedExamJson) return;
+
+    try {
+      const examId = await this.libraryController.importExam(this.lastValidatedExamJson);
+      await this.refreshLibrary();
+
+      const imported = this.libraryState?.exams.find((e) => e.id === examId);
+      const title = imported?.title ?? "Exam";
+      alert(`${T.aiImportSuccess || "Exam imported successfully!"}: ${title}`);
+
+      // Close the AI prompt modal
+      this.closeAIPromptGenerator();
+      this.lastValidatedExamJson = null;
+    } catch (e) {
+      if (e instanceof DuplicateExamError) {
+        const msg = (T.confirmOverwriteExam || 'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?')
+          .replace("{examId}", e.examId)
+          .replace("{title}", e.existingTitle);
+        if (confirm(msg)) {
+          try {
+            const examId = await this.libraryController.importExam(this.lastValidatedExamJson!, "uncategorized", true);
+            await this.refreshLibrary();
+            const imported = this.libraryState?.exams.find((ex) => ex.id === examId);
+            const title = imported?.title ?? "Exam";
+            alert(`${T.aiImportSuccess || "Exam imported successfully!"}: ${title}`);
+            this.closeAIPromptGenerator();
+            this.lastValidatedExamJson = null;
+          } catch (e2) {
+            console.error("Import failed:", e2);
+            const message = e2 instanceof Error ? e2.message : "Unknown error";
+            alert(`${T.importFailed || "Import failed"}: ${message}`);
+          }
+        }
+        return;
+      }
+      console.error("Import failed:", e);
+      const message = e instanceof Error ? e.message : "Unknown error";
+      alert(`${T.importFailed || "Import failed"}: ${message}`);
+    }
+  }
+
+  // ============================================================================
+  // Click-outside-to-close for modals
+  // ============================================================================
+
+  private bindOverlayClose(): void {
+    const overlays: Array<{ id: string; closeFn: () => void }> = [
+      { id: "aiPromptModal", closeFn: () => this.closeAIPromptGenerator() },
+      { id: "templateModal", closeFn: () => this.closeTemplateModal() },
+      { id: "choiceModal", closeFn: () => this.closeChoiceModal() },
+      { id: "externalLinkModal", closeFn: () => this.closeExternalLinkModal() },
+    ];
+
+    for (const { id, closeFn } of overlays) {
+      const overlay = document.getElementById(id);
+      overlay?.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+          closeFn();
+        }
+      });
+    }
+
+    // Also close help menu when clicking outside
+    document.addEventListener("click", (e) => {
+      const helpMenu = document.getElementById("helpMenuPopup");
+      const helpBtn = document.getElementById("helpToggleBtn");
+      if (helpMenu && !helpMenu.classList.contains("hidden") &&
+          !helpMenu.contains(e.target as Node) &&
+          !helpBtn?.contains(e.target as Node)) {
+        helpMenu.classList.add("hidden");
+      }
+    });
   }
 
   // ============================================================================

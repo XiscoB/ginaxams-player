@@ -156,7 +156,7 @@ export const LANG_ES = {
   onboardingStorageTitle: "Tus Datos Son Privados",
   onboardingStorageText:
     "Todos tus exámenes, progreso y puntuaciones se almacenan solo en tu dispositivo para total privacidad. Usa ⬇ Copia de Seguridad para exportar tus datos y ⬆ Restaurar para importarlos en otro dispositivo.",
-  onboardingCreateTitle: "Crea tu Primer Examen",
+  onboardingCreateTitle: "Crea tu Examen",
   onboardingCreateText:
     "¿Listo para crear tu propio examen? Elige cómo quieres hacerlo:",
   onboardingEasyTitle: "Modo Fácil",
@@ -235,6 +235,30 @@ export const LANG_ES = {
 
   // AI Destinations
   nowPaste: "Ahora pégalo en tu IA favorita:",
+
+  // Exam Name & JSON Paste
+  aiPromptExamName: "Nombre del examen",
+  aiPromptExamNamePlaceholder: "ej. Derecho Constitucional 2026",
+  aiPromptExamNameRequired: "Por favor introduce un nombre para el examen.",
+  aiPromptExamNameDuplicate:
+    "Ya existe un examen con este nombre. Se sobrescribirá si lo importas.",
+  confirmOverwriteExam:
+    'Ya existe un examen con ID "{examId}" ("{title}"). ¿Quieres sobrescribirlo?',
+  aiPromptAttachSources:
+    "Adjunta tus archivos fuente o materiales de estudio directamente en el chat de la IA junto con este prompt.",
+  aiHaveResponse: "Tengo la respuesta de la IA",
+  aiPastePlaceholder: "Pega el JSON que generó la IA aquí...",
+  aiValidateBtn: "Validar Examen",
+  aiOrDivider: "o",
+  aiImportBtn: "Importar Examen",
+  aiJsonValid: "¡JSON de examen válido!",
+  aiJsonInvalidJson: "JSON inválido: no se pudo analizar el texto.",
+  aiJsonInvalidSchema: "Formato de examen inválido",
+  aiImportSuccess: "¡Examen importado exitosamente!",
+  aiPreviewTitle: "Título",
+  aiPreviewQuestions: "Preguntas",
+  aiPreviewCategories: "Categorías",
+  createExamBtn: "Crear Examen",
 
   // Tarjeta Roja (Wrong Answer Feedback)
   referenceArticle: "Referencia",

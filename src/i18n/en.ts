@@ -155,7 +155,7 @@ export const LANG_EN = {
   onboardingStorageTitle: "Your Data Stays Private",
   onboardingStorageText:
     "All your exams, progress and scores are stored only on your device for complete privacy. Use ⬇ Backup to export your data and ⬆ Restore to import it on another device.",
-  onboardingCreateTitle: "Create Your First Exam",
+  onboardingCreateTitle: "Create Your Exam",
   onboardingCreateText:
     "Ready to create your own exam? Choose how you want to do it:",
   onboardingEasyTitle: "Easy Way",
@@ -232,6 +232,30 @@ export const LANG_EN = {
 
   // AI Destinations
   nowPaste: "Now paste it into your favorite AI:",
+
+  // Exam Name & JSON Paste
+  aiPromptExamName: "Exam name",
+  aiPromptExamNamePlaceholder: "e.g. Constitutional Law 2026",
+  aiPromptExamNameRequired: "Please enter an exam name.",
+  aiPromptExamNameDuplicate:
+    "An exam with this name already exists. It will be overwritten if you import.",
+  confirmOverwriteExam:
+    'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?',
+  aiPromptAttachSources:
+    "Attach your source files or study materials directly in the AI chat alongside this prompt.",
+  aiHaveResponse: "I have the AI's response",
+  aiPastePlaceholder: "Paste the JSON that the AI generated here...",
+  aiValidateBtn: "Validate Exam",
+  aiOrDivider: "or",
+  aiImportBtn: "Import Exam",
+  aiJsonValid: "Valid exam JSON!",
+  aiJsonInvalidJson: "Invalid JSON: could not parse the text.",
+  aiJsonInvalidSchema: "Invalid exam format",
+  aiImportSuccess: "Exam imported successfully!",
+  aiPreviewTitle: "Title",
+  aiPreviewQuestions: "Questions",
+  aiPreviewCategories: "Categories",
+  createExamBtn: "Create Exam",
 
   // Tarjeta Roja (Wrong Answer Feedback)
   referenceArticle: "Reference",
