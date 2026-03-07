@@ -115,7 +115,10 @@ function buildCategoryRow(
   name.style.color = "var(--text-primary)";
   name.style.flex = "1";
 
-  const badge = createBadge(translateMastery(cat.level, T), masteryBadgeVariant(cat.level));
+  const badge = createBadge(
+    translateMastery(cat.level, T),
+    masteryBadgeVariant(cat.level),
+  );
 
   header.appendChild(name);
   header.appendChild(badge);
@@ -220,7 +223,9 @@ function buildDrillDown(
     row.appendChild(diffBadge);
 
     if (q.trapLevel !== "none") {
-      row.appendChild(createBadge(`${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`, "danger"));
+      row.appendChild(
+        createBadge(`${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`, "danger"),
+      );
     }
 
     row.appendChild(preview);

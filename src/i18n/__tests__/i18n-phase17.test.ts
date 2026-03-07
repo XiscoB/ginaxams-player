@@ -34,8 +34,14 @@ describe("Phase 17 — Translation Keys", () => {
 
   it("all Phase 17 keys have non-empty values", () => {
     for (const key of PHASE_17_KEYS) {
-      expect((LANG_EN as Record<string, string>)[key]?.length, `en.${key} is empty`).toBeGreaterThan(0);
-      expect((LANG_ES as Record<string, string>)[key]?.length, `es.${key} is empty`).toBeGreaterThan(0);
+      expect(
+        (LANG_EN as Record<string, string>)[key]?.length,
+        `en.${key} is empty`,
+      ).toBeGreaterThan(0);
+      expect(
+        (LANG_ES as Record<string, string>)[key]?.length,
+        `es.${key} is empty`,
+      ).toBeGreaterThan(0);
     }
   });
 

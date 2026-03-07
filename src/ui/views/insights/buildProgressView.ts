@@ -197,7 +197,10 @@ function buildAttemptRow(
   dateEl.style.fontSize = "0.8rem";
   dateEl.style.minWidth = "8ch";
 
-  const modeBadge = createBadge(translateMode(attempt.type, T), modeBadgeVariant(attempt.type));
+  const modeBadge = createBadge(
+    translateMode(attempt.type, T),
+    modeBadgeVariant(attempt.type),
+  );
 
   left.appendChild(dateEl);
   left.appendChild(modeBadge);
@@ -232,7 +235,10 @@ function buildAttemptRow(
 // Helpers
 // ============================================================================
 
-function translateMode(mode: "free" | "simulacro" | "review", T?: Translations): string {
+function translateMode(
+  mode: "free" | "simulacro" | "review",
+  T?: Translations,
+): string {
   switch (mode) {
     case "free":
       return T?.modeFree ?? "Free";

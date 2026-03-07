@@ -145,7 +145,9 @@ function buildWeakQuestionRow(
   header.appendChild(diffBadge);
 
   if (q.trapLevel !== "none") {
-    header.appendChild(createBadge(`${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`, "danger"));
+    header.appendChild(
+      createBadge(`${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`, "danger"),
+    );
   }
 
   // Toggle arrow

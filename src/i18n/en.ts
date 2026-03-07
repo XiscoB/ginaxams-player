@@ -389,6 +389,7 @@ export const LANG_EN = {
   masteryMastered: "mastered",
   weaknessPrefix: "W",
   trapPrefix: "trap",
-  locale: "en",};
+  locale: "en",
+};
 
 export type TranslationKey = keyof typeof LANG_EN;

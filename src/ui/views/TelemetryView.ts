@@ -411,7 +411,10 @@ function buildPerformanceTable(
     stabilityTd.style.borderBottom = "1px solid var(--color-border, #eee)";
     const stability = computeStability(q);
     stabilityTd.appendChild(
-      createBadge(translateStability(stability, T), stabilityBadgeVariant(stability)),
+      createBadge(
+        translateStability(stability, T),
+        stabilityBadgeVariant(stability),
+      ),
     );
     row.appendChild(stabilityTd);
 
@@ -471,7 +474,10 @@ function buildMostFailedCard(
 
       const stability = computeStability(q);
       right.appendChild(
-        createBadge(translateStability(stability, T), stabilityBadgeVariant(stability)),
+        createBadge(
+          translateStability(stability, T),
+          stabilityBadgeVariant(stability),
+        ),
       );
 
       item.appendChild(left);

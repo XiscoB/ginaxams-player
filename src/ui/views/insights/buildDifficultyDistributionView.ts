@@ -204,10 +204,14 @@ function renderDifficultyDrillDown(
 
   const levelLabel = (() => {
     switch (level) {
-      case "easy": return T?.insightsDifficultyEasy ?? "Easy";
-      case "medium": return T?.insightsDifficultyMedium ?? "Medium";
-      case "hard": return T?.insightsDifficultyHard ?? "Hard";
-      default: return level.charAt(0).toUpperCase() + level.slice(1);
+      case "easy":
+        return T?.insightsDifficultyEasy ?? "Easy";
+      case "medium":
+        return T?.insightsDifficultyMedium ?? "Medium";
+      case "hard":
+        return T?.insightsDifficultyHard ?? "Hard";
+      default:
+        return level.charAt(0).toUpperCase() + level.slice(1);
     }
   })();
   const title = document.createElement("div");
