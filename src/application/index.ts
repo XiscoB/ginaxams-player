@@ -34,5 +34,7 @@ export type {
   LibraryViewState,
   StartAttemptParams,
   BackupSnapshot,
+  HomeViewData,
+  ReadinessBreakdown,
 } from "./viewState.js";
 export { SNAPSHOT_VERSION } from "./viewState.js";

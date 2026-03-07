@@ -52,6 +52,9 @@ import {
 } from "../domain/trapDetection.js";
 import {
   computeExamReadiness,
+  computeAvgCategoryMastery,
+  computeRecentSimulacroAccuracy,
+  computeWeaknessRecoveryRate,
   type ExamReadiness,
   type ReadinessConfig,
 } from "../domain/examReadiness.js";
@@ -64,6 +67,7 @@ import type {
   FolderView,
   LibraryViewState,
   BackupSnapshot,
+  HomeViewData,
 } from "./viewState.js";
 import { SNAPSHOT_VERSION } from "./viewState.js";
 import { validateBackupSnapshot } from "./backupValidation.js";
@@ -574,6 +578,77 @@ export class ExamLibraryController {
     };
 
     return computeExamReadiness(categoryMastery, attempts, telemetry, config);
+  }
+
+  // ==========================================================================
+  // Home Dashboard Data (Phase 11)
+  // ==========================================================================
+
+  /**
+   * Produce all data needed by the Home Dashboard in a single call.
+   *
+   * Loads exams, attempts, and telemetry once, then computes:
+   * - Readiness score, level, and breakdown components
+   * - Category mastery across all exams
+   * - Raw attempts (for quick stats)
+   *
+   * @returns HomeViewData for the dashboard
+   */
+  async getHomeViewData(): Promise<HomeViewData> {
+    const [storedExams, attempts, telemetry] = await Promise.all([
+      this.storage.getExams(),
+      this.storage.getAllAttempts(),
+      this.storage.getAllQuestionTelemetry(),
+    ]);
+
+    const allQuestions = storedExams.flatMap((e) => e.data.questions);
+
+    const effectiveWeights: WeaknessWeights = {
+      wrongWeight: DEFAULTS.wrongWeight,
+      blankWeight: DEFAULTS.blankWeight,
+      recoveryWeight: DEFAULTS.recoveryWeight,
+      weakTimeThresholdMs: DEFAULTS.weakTimeThresholdMs,
+    };
+
+    const categoryMastery = computeCategoryMastery(
+      allQuestions,
+      telemetry,
+      effectiveWeights,
+      DEFAULT_MASTERY_THRESHOLDS,
+    );
+
+    const config: ReadinessConfig = {
+      simulacroWindow: DEFAULTS.readinessSimulacroWindow,
+    };
+
+    const readiness = computeExamReadiness(
+      categoryMastery,
+      attempts,
+      telemetry,
+      config,
+    );
+
+    // Compute breakdown components individually
+    const avgMastery = computeAvgCategoryMastery(categoryMastery);
+    const simulacroAccuracy = computeRecentSimulacroAccuracy(
+      attempts,
+      config.simulacroWindow,
+    );
+    const recoveryRate = computeWeaknessRecoveryRate(telemetry);
+
+    return {
+      readiness: {
+        score: readiness.readinessScore,
+        level: readiness.readinessLevel,
+        breakdown: {
+          categoryMastery: avgMastery,
+          simulacroAccuracy,
+          recoveryRate,
+        },
+      },
+      categoryMastery,
+      attempts,
+    };
   }
 
   // ==========================================================================

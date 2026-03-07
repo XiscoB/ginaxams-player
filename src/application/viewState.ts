@@ -257,6 +257,34 @@ export interface LibraryViewState {
 }
 
 // ============================================================================
+// Home Dashboard View Data
+// ============================================================================
+
+/**
+ * Readiness breakdown components for the home dashboard.
+ * Each value is a ratio in [0, 1].
+ */
+export interface ReadinessBreakdown {
+  categoryMastery: number;
+  simulacroAccuracy: number;
+  recoveryRate: number;
+}
+
+/**
+ * Complete data payload for the Home Dashboard view.
+ * Produced by ExamLibraryController.getHomeViewData().
+ */
+export interface HomeViewData {
+  readiness: {
+    score: number;
+    level: string;
+    breakdown: ReadinessBreakdown;
+  };
+  categoryMastery: import("../domain/types.js").CategoryMastery[];
+  attempts: import("../domain/types.js").Attempt[];
+}
+
+// ============================================================================
 // Application-level Action Types
 // ============================================================================
 
