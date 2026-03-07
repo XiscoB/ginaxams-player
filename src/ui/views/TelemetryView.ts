@@ -19,6 +19,7 @@ import type {
   TelemetryQuestionData,
   TelemetryViewData,
 } from "../../application/viewState.js";
+import type { Translations } from "../../i18n/index.js";
 
 import { createSection } from "../components/Section.js";
 import { createStack } from "../components/Stack.js";
@@ -42,6 +43,22 @@ import {
 } from "./telemetry/telemetryHelpers.js";
 
 // ============================================================================
+// Shared Select Styles
+// ============================================================================
+
+function applySelectStyles(select: HTMLSelectElement): void {
+  select.style.padding = "6px 10px";
+  select.style.fontSize = "0.85rem";
+  select.style.fontFamily = "inherit";
+  select.style.fontWeight = "500";
+  select.style.color = "var(--text-primary)";
+  select.style.backgroundColor = "var(--bg-secondary, #1e1e1e)";
+  select.style.border = "1px solid var(--border-color, rgba(255,255,255,0.2))";
+  select.style.borderRadius = "var(--radius-sm, 6px)";
+  select.style.cursor = "pointer";
+}
+
+// ============================================================================
 // Constants
 // ============================================================================
 
@@ -58,21 +75,54 @@ const TOP_LIMIT = 10;
  * Returns a fully composed HTMLElement ready for mounting.
  *
  * @param controller - The ExamLibraryController instance
+ * @param T - Optional translations for i18n
  * @returns The telemetry dashboard HTMLElement
  */
 export async function renderTelemetryView(
   controller: ExamLibraryController,
+  T?: Translations,
 ): Promise<HTMLElement> {
   const data = await controller.getTelemetryData();
 
-  const performanceCard = buildQuestionPerformanceCard(data);
-  const failedCard = buildMostFailedCard(data);
-  const slowestCard = buildSlowestCard(data);
-  const unseenCard = buildUnseenCard(data);
+  // Empty state: no telemetry data at all
+  if (data.questions.length === 0) {
+    const emptyContainer = document.createElement("div");
+    emptyContainer.style.textAlign = "center";
+    emptyContainer.style.padding = "48px 16px";
+
+    const emptyTitle = document.createElement("h3");
+    emptyTitle.textContent =
+      T?.telemetryEmptyTitle ?? "No telemetry data available yet.";
+    emptyTitle.style.color = "var(--text-primary)";
+    emptyTitle.style.marginBottom = "8px";
+    emptyContainer.appendChild(emptyTitle);
+
+    const emptyMsg = document.createElement("p");
+    emptyMsg.textContent =
+      T?.telemetryEmptyMessage ?? "Practice questions to generate statistics.";
+    emptyMsg.style.color = "var(--text-secondary)";
+    emptyMsg.style.fontSize = "0.9rem";
+    emptyContainer.appendChild(emptyMsg);
+
+    return createSection({
+      title: T?.telemetryTitle ?? "Telemetry",
+      description:
+        T?.telemetryDescription ??
+        "Per-question performance and learning behavior analytics.",
+      content: emptyContainer,
+    });
+  }
+
+  const performanceCard = buildQuestionPerformanceCard(data, T);
+  const failedCard = buildMostFailedCard(data, T);
+  const slowestCard = buildSlowestCard(data, T);
+  const unseenCard = buildUnseenCard(data, T);
 
   return createSection({
-    title: "Telemetry",
-    description: "Per-question performance and learning behavior analytics.",
+    title: T?.telemetryTitle ?? "Telemetry",
+    description:
+      T?.telemetryDescription ??
+      "Per-question performance and learning behavior analytics.",
     content: createStack({
       direction: "column",
       gap: 16,
@@ -85,7 +135,10 @@ export async function renderTelemetryView(
 // Card 1 — Question Performance Table
 // ============================================================================
 
-function buildQuestionPerformanceCard(data: TelemetryViewData): HTMLElement {
+function buildQuestionPerformanceCard(
+  data: TelemetryViewData,
+  T?: Translations,
+): HTMLElement {
   let currentSort: TelemetrySortKey = "mostWrong";
   let currentFilter: "all" | "seen" | "unseen" = "all";
   let currentCategory: string | null = null;
@@ -131,18 +184,19 @@ function buildQuestionPerformanceCard(data: TelemetryViewData): HTMLElement {
         currentCategory = cat;
         render();
       },
+      T,
     );
     container.appendChild(controls);
 
     const filtered = applyFilters();
-    const table = buildPerformanceTable(filtered);
+    const table = buildPerformanceTable(filtered, T);
     container.appendChild(table);
   }
 
   render();
 
   return createCard({
-    title: "Question Performance",
+    title: T?.telemetryQuestionPerformance ?? "Question Performance",
     content: container,
   });
 }
@@ -155,27 +209,39 @@ function buildControls(
   onSortChange: (sort: TelemetrySortKey) => void,
   onFilterChange: (filter: "all" | "seen" | "unseen") => void,
   onCategoryChange: (cat: string | null) => void,
+  T?: Translations,
 ): HTMLElement {
   const row = document.createElement("div");
   row.style.display = "flex";
   row.style.flexWrap = "wrap";
-  row.style.gap = "8px";
+  row.style.gap = "12px";
   row.style.marginBottom = "12px";
   row.style.alignItems = "center";
 
   // Sort dropdown
-  const sortLabel = document.createElement("label");
-  sortLabel.textContent = "Sort: ";
-  sortLabel.style.fontSize = "0.85em";
+  const sortGroup = document.createElement("div");
+  sortGroup.style.display = "flex";
+  sortGroup.style.alignItems = "center";
+  sortGroup.style.gap = "6px";
+
+  const sortLabel = document.createElement("span");
+  sortLabel.textContent = T?.telemetrySortLabel ?? "Sort:";
+  sortLabel.style.fontSize = "0.8rem";
+  sortLabel.style.fontWeight = "500";
+  sortLabel.style.color = "var(--text-secondary)";
+  sortLabel.style.whiteSpace = "nowrap";
 
   const sortSelect = document.createElement("select");
-  sortSelect.className = "gx-select";
+  applySelectStyles(sortSelect);
   const sortOptions: Array<{ value: TelemetrySortKey; label: string }> = [
-    { value: "mostWrong", label: "Most wrong" },
-    { value: "mostSeen", label: "Most seen" },
-    { value: "leastSeen", label: "Least seen" },
-    { value: "slowestResponse", label: "Slowest response" },
-    { value: "recentlySeen", label: "Recently seen" },
+    { value: "mostWrong", label: T?.telemetrySortMostWrong ?? "Most wrong" },
+    { value: "mostSeen", label: T?.telemetrySortMostSeen ?? "Most seen" },
+    { value: "leastSeen", label: T?.telemetrySortLeastSeen ?? "Least seen" },
+    {
+      value: "slowestResponse",
+      label: T?.telemetrySortSlowest ?? "Slowest response",
+    },
+    { value: "recentlySeen", label: T?.telemetrySortRecent ?? "Recently seen" },
   ];
   for (const opt of sortOptions) {
     const option = document.createElement("option");
@@ -188,20 +254,29 @@ function buildControls(
     onSortChange(sortSelect.value as TelemetrySortKey);
   });
 
-  sortLabel.appendChild(sortSelect);
-  row.appendChild(sortLabel);
+  sortGroup.appendChild(sortLabel);
+  sortGroup.appendChild(sortSelect);
+  row.appendChild(sortGroup);
 
   // Filter dropdown (seen/unseen/all)
-  const filterLabel = document.createElement("label");
-  filterLabel.textContent = "Filter: ";
-  filterLabel.style.fontSize = "0.85em";
+  const filterGroup = document.createElement("div");
+  filterGroup.style.display = "flex";
+  filterGroup.style.alignItems = "center";
+  filterGroup.style.gap = "6px";
+
+  const filterLabel = document.createElement("span");
+  filterLabel.textContent = T?.telemetryFilterLabel ?? "Filter:";
+  filterLabel.style.fontSize = "0.8rem";
+  filterLabel.style.fontWeight = "500";
+  filterLabel.style.color = "var(--text-secondary)";
+  filterLabel.style.whiteSpace = "nowrap";
 
   const filterSelect = document.createElement("select");
-  filterSelect.className = "gx-select";
+  applySelectStyles(filterSelect);
   const filterOptions: Array<{ value: string; label: string }> = [
-    { value: "all", label: "All" },
-    { value: "seen", label: "Seen" },
-    { value: "unseen", label: "Unseen" },
+    { value: "all", label: T?.telemetryFilterAll ?? "All" },
+    { value: "seen", label: T?.telemetryFilterSeen ?? "Seen" },
+    { value: "unseen", label: T?.telemetryFilterUnseen ?? "Unseen" },
   ];
   for (const opt of filterOptions) {
     const option = document.createElement("option");
@@ -214,21 +289,30 @@ function buildControls(
     onFilterChange(filterSelect.value as "all" | "seen" | "unseen");
   });
 
-  filterLabel.appendChild(filterSelect);
-  row.appendChild(filterLabel);
+  filterGroup.appendChild(filterLabel);
+  filterGroup.appendChild(filterSelect);
+  row.appendChild(filterGroup);
 
   // Category dropdown
   if (categories.length > 0) {
-    const catLabel = document.createElement("label");
-    catLabel.textContent = "Category: ";
-    catLabel.style.fontSize = "0.85em";
+    const catGroup = document.createElement("div");
+    catGroup.style.display = "flex";
+    catGroup.style.alignItems = "center";
+    catGroup.style.gap = "6px";
+
+    const catLabel = document.createElement("span");
+    catLabel.textContent = T?.telemetryCategoryLabel ?? "Category:";
+    catLabel.style.fontSize = "0.8rem";
+    catLabel.style.fontWeight = "500";
+    catLabel.style.color = "var(--text-secondary)";
+    catLabel.style.whiteSpace = "nowrap";
 
     const catSelect = document.createElement("select");
-    catSelect.className = "gx-select";
+    applySelectStyles(catSelect);
 
     const allOpt = document.createElement("option");
     allOpt.value = "";
-    allOpt.textContent = "All categories";
+    allOpt.textContent = T?.telemetryCategoryAll ?? "All categories";
     if (!currentCategory) allOpt.selected = true;
     catSelect.appendChild(allOpt);
 
@@ -243,8 +327,9 @@ function buildControls(
       onCategoryChange(catSelect.value || null);
     });
 
-    catLabel.appendChild(catSelect);
-    row.appendChild(catLabel);
+    catGroup.appendChild(catLabel);
+    catGroup.appendChild(catSelect);
+    row.appendChild(catGroup);
   }
 
   return row;
@@ -252,11 +337,14 @@ function buildControls(
 
 function buildPerformanceTable(
   questions: readonly TelemetryQuestionData[],
+  T?: Translations,
 ): HTMLElement {
   if (questions.length === 0) {
     const empty = document.createElement("div");
     empty.className = "gx-list__empty";
-    empty.textContent = "No questions match the current filters.";
+    empty.textContent =
+      T?.telemetryNoMatchingQuestions ??
+      "No questions match the current filters.";
     return empty;
   }
 
@@ -269,15 +357,15 @@ function buildPerformanceTable(
   const thead = document.createElement("thead");
   const headerRow = document.createElement("tr");
   const headers = [
-    "#",
-    "Category",
-    "Seen",
-    "Correct",
-    "Wrong",
-    "Blank",
-    "Avg Time",
-    "Last Seen",
-    "Stability",
+    T?.telemetryColQuestion ?? "#",
+    T?.telemetryColCategory ?? "Category",
+    T?.telemetryColSeen ?? "Seen",
+    T?.telemetryColCorrect ?? "Correct",
+    T?.telemetryColWrong ?? "Wrong",
+    T?.telemetryColBlank ?? "Blank",
+    T?.telemetryColAvgTime ?? "Avg Time",
+    T?.telemetryColLastSeen ?? "Last Seen",
+    T?.telemetryColStability ?? "Stability",
   ];
   for (const text of headers) {
     const th = document.createElement("th");
@@ -297,14 +385,16 @@ function buildPerformanceTable(
     const row = document.createElement("tr");
 
     const cells = [
-      `Q${q.questionNumber}`,
+      `${T?.questionPrefix ?? "Q"}${q.questionNumber}`,
       q.categories.join(", "),
       String(q.totalSeen),
       String(q.timesCorrect),
       String(q.timesWrong),
       String(q.timesBlank),
       formatResponseTime(q.avgResponseTimeMs),
-      q.lastSeenAt ? new Date(q.lastSeenAt).toLocaleDateString() : "Never",
+      q.lastSeenAt
+        ? new Date(q.lastSeenAt).toLocaleDateString(T?.locale ?? undefined)
+        : (T?.telemetryNever ?? "Never"),
     ];
 
     for (const cellText of cells) {
@@ -321,7 +411,7 @@ function buildPerformanceTable(
     stabilityTd.style.borderBottom = "1px solid var(--color-border, #eee)";
     const stability = computeStability(q);
     stabilityTd.appendChild(
-      createBadge(stability, stabilityBadgeVariant(stability)),
+      createBadge(translateStability(stability, T), stabilityBadgeVariant(stability)),
     );
     row.appendChild(stabilityTd);
 
@@ -341,7 +431,10 @@ function buildPerformanceTable(
 // Card 2 — Most Failed Questions
 // ============================================================================
 
-function buildMostFailedCard(data: TelemetryViewData): HTMLElement {
+function buildMostFailedCard(
+  data: TelemetryViewData,
+  T?: Translations,
+): HTMLElement {
   const topFailed = getTopFailedQuestions(data.questions, TOP_LIMIT);
 
   const content = createList({
@@ -355,7 +448,7 @@ function buildMostFailedCard(data: TelemetryViewData): HTMLElement {
 
       const left = document.createElement("div");
       const title = document.createElement("strong");
-      title.textContent = `Q${q.questionNumber}`;
+      title.textContent = `${T?.questionPrefix ?? "Q"}${q.questionNumber}`;
       left.appendChild(title);
 
       const cat = document.createElement("span");
@@ -369,25 +462,27 @@ function buildMostFailedCard(data: TelemetryViewData): HTMLElement {
       right.style.gap = "8px";
       right.style.alignItems = "center";
 
+      const wrongLabel = T?.telemetryWrongCount ?? "Wrong";
+      const seenLabel = T?.telemetrySeenCount ?? "Seen";
       const stats = document.createElement("span");
-      stats.textContent = `Wrong: ${q.timesWrong} / Seen: ${q.totalSeen}`;
+      stats.textContent = `${wrongLabel}: ${q.timesWrong} / ${seenLabel}: ${q.totalSeen}`;
       stats.style.fontSize = "0.85em";
       right.appendChild(stats);
 
       const stability = computeStability(q);
       right.appendChild(
-        createBadge(stability, stabilityBadgeVariant(stability)),
+        createBadge(translateStability(stability, T), stabilityBadgeVariant(stability)),
       );
 
       item.appendChild(left);
       item.appendChild(right);
       return item;
     },
-    emptyMessage: "No failed questions yet.",
+    emptyMessage: T?.telemetryNoFailedQuestions ?? "No failed questions yet.",
   });
 
   return createCard({
-    title: "Most Failed Questions",
+    title: T?.telemetryMostFailed ?? "Most Failed Questions",
     content,
   });
 }
@@ -396,7 +491,10 @@ function buildMostFailedCard(data: TelemetryViewData): HTMLElement {
 // Card 3 — Slowest Questions
 // ============================================================================
 
-function buildSlowestCard(data: TelemetryViewData): HTMLElement {
+function buildSlowestCard(
+  data: TelemetryViewData,
+  T?: Translations,
+): HTMLElement {
   const topSlowest = getTopSlowestQuestions(data.questions, TOP_LIMIT);
 
   const content = createList({
@@ -410,7 +508,7 @@ function buildSlowestCard(data: TelemetryViewData): HTMLElement {
 
       const left = document.createElement("div");
       const title = document.createElement("strong");
-      title.textContent = `Q${q.questionNumber}`;
+      title.textContent = `${T?.questionPrefix ?? "Q"}${q.questionNumber}`;
       left.appendChild(title);
 
       const cat = document.createElement("span");
@@ -421,7 +519,7 @@ function buildSlowestCard(data: TelemetryViewData): HTMLElement {
 
       const right = document.createElement("div");
       const time = document.createElement("span");
-      time.textContent = `Avg Time: ${formatResponseTime(q.avgResponseTimeMs)}`;
+      time.textContent = `${T?.telemetryAvgTimeLabel ?? "Avg Time"}: ${formatResponseTime(q.avgResponseTimeMs)}`;
       time.style.fontSize = "0.85em";
       right.appendChild(time);
 
@@ -429,11 +527,13 @@ function buildSlowestCard(data: TelemetryViewData): HTMLElement {
       item.appendChild(right);
       return item;
     },
-    emptyMessage: "No questions have been attempted yet.",
+    emptyMessage:
+      T?.telemetryNoAttemptedQuestions ??
+      "No questions have been attempted yet.",
   });
 
   return createCard({
-    title: "Slowest Questions",
+    title: T?.telemetrySlowest ?? "Slowest Questions",
     content,
   });
 }
@@ -442,7 +542,10 @@ function buildSlowestCard(data: TelemetryViewData): HTMLElement {
 // Card 4 — Unseen Questions
 // ============================================================================
 
-function buildUnseenCard(data: TelemetryViewData): HTMLElement {
+function buildUnseenCard(
+  data: TelemetryViewData,
+  T?: Translations,
+): HTMLElement {
   const unseen = filterUnseenQuestions(data.questions);
   const unseenByCategory = computeUnseenByCategory(data.questions);
 
@@ -451,13 +554,14 @@ function buildUnseenCard(data: TelemetryViewData): HTMLElement {
   // Summary count
   const summary = document.createElement("p");
   summary.style.marginTop = "0";
-  summary.innerHTML = `<strong>Questions never practiced:</strong> ${unseen.length}`;
+  summary.innerHTML = `<strong>${T?.telemetryNeverPracticed ?? "Questions never practiced"}:</strong> ${unseen.length}`;
   container.appendChild(summary);
 
   // Category distribution
   if (unseenByCategory.size > 0) {
     const catHeader = document.createElement("p");
-    catHeader.textContent = "Unseen by category:";
+    catHeader.textContent =
+      T?.telemetryUnseenByCategory ?? "Unseen by category:";
     catHeader.style.fontWeight = "600";
     catHeader.style.fontSize = "0.9em";
     catHeader.style.marginBottom = "4px";
@@ -483,13 +587,14 @@ function buildUnseenCard(data: TelemetryViewData): HTMLElement {
 
         return item;
       },
-      emptyMessage: "All questions have been attempted!",
+      emptyMessage:
+        T?.telemetryAllAttempted ?? "All questions have been attempted!",
     });
     container.appendChild(catList);
   }
 
   return createCard({
-    title: "Unseen Questions",
+    title: T?.telemetryUnseen ?? "Unseen Questions",
     content: container,
   });
 }
@@ -497,6 +602,19 @@ function buildUnseenCard(data: TelemetryViewData): HTMLElement {
 // ============================================================================
 // Helpers
 // ============================================================================
+
+function translateStability(level: StabilityLevel, T?: Translations): string {
+  switch (level) {
+    case "stable":
+      return T?.stabilityStable ?? "stable";
+    case "unstable":
+      return T?.stabilityUnstable ?? "unstable";
+    case "unlearned":
+      return T?.stabilityUnlearned ?? "unlearned";
+    case "unseen":
+      return T?.stabilityUnseen ?? "unseen";
+  }
+}
 
 function stabilityBadgeVariant(level: StabilityLevel): BadgeVariant {
   switch (level) {

@@ -15,7 +15,7 @@ import type {
 
 const DB_NAME = "ginax_db";
 /** Current IndexedDB schema version */
-export const DB_VERSION = 4; // Phase 7: Removed legacy progress store
+export const DB_VERSION = 5; // Phase 16: Added settings store
 
 // Store names
 const STORES = {
@@ -23,7 +23,19 @@ const STORES = {
   FOLDERS: "folders",
   ATTEMPTS: "attempts",
   QUESTION_TELEMETRY: "questionTelemetry",
+  SETTINGS: "settings",
 } as const;
+
+/**
+ * Application settings persisted in IndexedDB.
+ * UI preferences only — no domain state.
+ */
+export interface AppSettings {
+  /** Which tab was last open: library, insights, or telemetry */
+  lastOpenedTab: "library" | "insights" | "telemetry";
+  /** User's preferred language */
+  language: "en" | "es";
+}
 
 /**
  * IndexedDB Storage Manager
@@ -116,6 +128,13 @@ export class ExamStorage {
             telemetryStore.createIndex("lastSeenAt", "lastSeenAt", {
               unique: false,
             });
+          }
+        }
+
+        // Phase 16: v4 to v5 migration — add settings store
+        if (oldVersion < 5) {
+          if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+            db.createObjectStore(STORES.SETTINGS, { keyPath: "key" });
           }
         }
       };
@@ -637,6 +656,98 @@ export class ExamStorage {
   }
 
   // ============================================================================
+  // Settings Operations (Phase 16)
+  // ============================================================================
+
+  /** Default settings used when no persisted settings exist */
+  private static readonly DEFAULT_SETTINGS: AppSettings = {
+    lastOpenedTab: "library",
+    language: "en",
+  };
+
+  /**
+   * Load all application settings.
+   * Returns defaults merged with any persisted values.
+   */
+  async loadSettings(): Promise<AppSettings> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.SETTINGS], "readonly")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.SETTINGS);
+          const request = store.getAll();
+
+          request.onsuccess = () => {
+            const rows = request.result as Array<{
+              key: string;
+              value: unknown;
+            }>;
+            const persisted: Record<string, unknown> = {};
+            for (const row of rows) {
+              persisted[row.key] = row.value;
+            }
+            resolve({
+              ...ExamStorage.DEFAULT_SETTINGS,
+              ...persisted,
+            } as AppSettings);
+          };
+          request.onerror = () => reject(request.error);
+        })
+        .catch(() => {
+          // If the store doesn't exist yet, return defaults
+          resolve({ ...ExamStorage.DEFAULT_SETTINGS });
+        });
+    });
+  }
+
+  /**
+   * Save a single setting key-value pair.
+   */
+  async saveSetting<K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K],
+  ): Promise<void> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.SETTINGS], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.SETTINGS);
+          const request = store.put({ key, value });
+
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Save multiple settings at once.
+   */
+  async saveSettings(settings: Partial<AppSettings>): Promise<void> {
+    await this.ready();
+
+    return new Promise((resolve, reject) => {
+      this.transaction([STORES.SETTINGS], "readwrite")
+        .then((tx) => {
+          const store = tx.objectStore(STORES.SETTINGS);
+          for (const [key, value] of Object.entries(settings)) {
+            store.put({ key, value });
+          }
+
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => {
+            const target = e.target as IDBTransaction;
+            reject(target.error);
+          };
+        })
+        .catch(reject);
+    });
+  }
+
+  // ============================================================================
   // Import/Export
   // ============================================================================
 
@@ -718,7 +829,7 @@ export class ExamStorage {
   }
 
   /**
-   * Clear all data
+   * Clear all data (exams, folders, attempts, telemetry, and settings)
    */
   async clearAll(): Promise<void> {
     await this.ready();
@@ -730,6 +841,7 @@ export class ExamStorage {
           STORES.FOLDERS,
           STORES.ATTEMPTS,
           STORES.QUESTION_TELEMETRY,
+          STORES.SETTINGS,
         ],
         "readwrite",
       )
@@ -738,6 +850,7 @@ export class ExamStorage {
           tx.objectStore(STORES.FOLDERS).clear();
           tx.objectStore(STORES.ATTEMPTS).clear();
           tx.objectStore(STORES.QUESTION_TELEMETRY).clear();
+          tx.objectStore(STORES.SETTINGS).clear();
 
           tx.oncomplete = () => resolve();
           tx.onerror = (e) => {

@@ -12,6 +12,7 @@
 import type { InsightsViewData } from "../../../application/viewState.js";
 import type { Attempt } from "../../../domain/types.js";
 import type { BadgeVariant } from "../../components/Badge.js";
+import type { Translations } from "../../../i18n/index.js";
 
 import { createCard } from "../../components/Card.js";
 import { createStack } from "../../components/Stack.js";
@@ -32,6 +33,7 @@ import { createBadge } from "../../components/Badge.js";
 export function buildProgressView(
   data: InsightsViewData,
   onAttemptClick?: (attemptId: string) => void,
+  T?: Translations,
 ): HTMLElement {
   // Filter to attempts with results and sort newest first
   const completedAttempts = data.attempts
@@ -41,13 +43,16 @@ export function buildProgressView(
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
+  const title = T?.insightsProgressTimeline ?? "Progress";
+
   if (completedAttempts.length === 0) {
     const empty = document.createElement("p");
     empty.textContent =
+      T?.insightsProgressEmpty ??
       "No attempt history yet. Complete simulacros or reviews to track progress.";
     empty.style.color = "var(--text-secondary)";
     empty.style.fontSize = "0.875rem";
-    return createCard({ title: "Progress", content: empty });
+    return createCard({ title, content: empty });
   }
 
   const children: HTMLElement[] = [];
@@ -60,7 +65,7 @@ export function buildProgressView(
 
   // Attempt history list
   const list = createList(completedAttempts.slice(0, 20), (attempt) =>
-    buildAttemptRow(attempt, onAttemptClick),
+    buildAttemptRow(attempt, onAttemptClick, T),
   );
   children.push(list);
 
@@ -70,7 +75,7 @@ export function buildProgressView(
     children,
   });
 
-  return createCard({ title: "Progress", content });
+  return createCard({ title, content });
 }
 
 // ============================================================================
@@ -165,6 +170,7 @@ function buildSparkline(attempts: Attempt[]): HTMLElement {
 function buildAttemptRow(
   attempt: Attempt,
   onAttemptClick?: (attemptId: string) => void,
+  T?: Translations,
 ): HTMLElement {
   const row = document.createElement("div");
   row.style.display = "flex";
@@ -186,12 +192,12 @@ function buildAttemptRow(
   left.style.gap = "8px";
 
   const dateEl = document.createElement("span");
-  dateEl.textContent = formatDate(attempt.createdAt);
+  dateEl.textContent = formatDate(attempt.createdAt, T?.locale);
   dateEl.style.color = "var(--text-secondary)";
   dateEl.style.fontSize = "0.8rem";
   dateEl.style.minWidth = "8ch";
 
-  const modeBadge = createBadge(attempt.type, modeBadgeVariant(attempt.type));
+  const modeBadge = createBadge(translateMode(attempt.type, T), modeBadgeVariant(attempt.type));
 
   left.appendChild(dateEl);
   left.appendChild(modeBadge);
@@ -226,10 +232,21 @@ function buildAttemptRow(
 // Helpers
 // ============================================================================
 
-function formatDate(isoString: string): string {
+function translateMode(mode: "free" | "simulacro" | "review", T?: Translations): string {
+  switch (mode) {
+    case "free":
+      return T?.modeFree ?? "Free";
+    case "simulacro":
+      return T?.modeSimulacro ?? "Simulacro";
+    case "review":
+      return T?.modeReview ?? "Review";
+  }
+}
+
+function formatDate(isoString: string, locale?: string): string {
   try {
     const d = new Date(isoString);
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(locale ?? undefined, {
       month: "short",
       day: "numeric",
     });

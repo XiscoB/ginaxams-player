@@ -24,6 +24,8 @@ import {
 } from "../application/viewState.js";
 import { AttemptController } from "../application/attemptController.js";
 import { ExamLibraryController } from "../application/examLibraryController.js";
+import { SettingsService } from "../application/settingsService.js";
+import type { TabId } from "../application/settingsService.js";
 import { PracticeManager } from "../modes/practice.js";
 import {
   computeNavigatorItems,
@@ -47,6 +49,8 @@ import {
 } from "../i18n/index.js";
 import { renderInsightsView } from "../ui/views/InsightsView.js";
 import { renderTelemetryView } from "../ui/views/TelemetryView.js";
+import { createViewLoading, createViewError } from "../ui/components/ViewStatus.js";
+import { APP_VERSION } from "../application/version.js";
 
 /**
  * View state for UI routing
@@ -71,6 +75,7 @@ interface PendingAttempt {
 export interface AppDeps {
   attemptController: AttemptController;
   libraryController: ExamLibraryController;
+  settingsService: SettingsService;
   onStorageReady: () => Promise<void>;
 }
 
@@ -85,6 +90,7 @@ export class App {
   practiceManager: PracticeManager;
   private attemptController: AttemptController;
   private libraryController: ExamLibraryController;
+  private settingsService: SettingsService;
   private onStorageReady: () => Promise<void>;
 
   // State
@@ -119,6 +125,7 @@ export class App {
   constructor(deps: AppDeps) {
     this.attemptController = deps.attemptController;
     this.libraryController = deps.libraryController;
+    this.settingsService = deps.settingsService;
     this.onStorageReady = deps.onStorageReady;
 
     // Initialize PracticeManager as dumb renderer
@@ -145,12 +152,19 @@ export class App {
     try {
       await this.onStorageReady();
 
-      // Load Language Preference
-      const savedLang = localStorage.getItem(
-        "ginaxams_lang",
-      ) as LanguageCode | null;
+      // Load persisted settings (Phase 16)
+      const settings = await this.settingsService.load();
+
+      // Load Language Preference — prefer persisted IndexedDB setting,
+      // fall back to localStorage (legacy), then browser detection
+      const savedLang = (settings.language ||
+        localStorage.getItem("ginaxams_lang") ||
+        null) as LanguageCode | null;
       const detectedLang = detectBrowserLanguage();
       this.setLanguage(savedLang || detectedLang);
+
+      // Restore last opened tab (Phase 16)
+      this.activeLibraryTab = settings.lastOpenedTab || "library";
 
       // Load template JSON for display
       await this.loadTemplateJSON();
@@ -166,6 +180,9 @@ export class App {
 
       // Show onboarding for first-time users
       this.checkOnboarding();
+
+      // Render version footer (Phase 17)
+      this.renderVersionFooter();
     } catch (e) {
       console.error("App Init Error:", e);
     }
@@ -1102,6 +1119,11 @@ export class App {
     this.activeLibraryTab = tab;
     this.updateTabButtons();
 
+    // Persist selected tab (Phase 16)
+    this.settingsService.setLastOpenedTab(tab as TabId).catch((e) =>
+      console.warn("Failed to persist tab setting:", e),
+    );
+
     const examListEl = document.getElementById("examList");
     const fileInputArea = document.querySelector(".file-input-area") as HTMLElement | null;
     const libraryHeader = document.getElementById("libraryHeaderBar");
@@ -1117,19 +1139,30 @@ export class App {
       if (libraryHeader) libraryHeader.style.display = "none";
 
       if (examListEl) {
-        examListEl.innerHTML = `<div class="no-exams">${this.translations.loading || "Loading..."}</div>`;
+        // Show loading indicator (Phase 17)
+        const loadingKey = tab === "insights" ? "loadingInsights" as const : "loadingTelemetry" as const;
+        examListEl.innerHTML = "";
+        examListEl.appendChild(createViewLoading(loadingKey, this.translations));
+
         try {
           let view: HTMLElement;
           if (tab === "insights") {
-            view = await renderInsightsView(this.libraryController);
+            view = await renderInsightsView(this.libraryController, undefined, this.translations);
           } else {
-            view = await renderTelemetryView(this.libraryController);
+            view = await renderTelemetryView(this.libraryController, this.translations);
           }
           examListEl.innerHTML = "";
           examListEl.appendChild(view);
         } catch (e) {
           console.error(`Failed to load ${tab} view:`, e);
-          examListEl.innerHTML = `<div class="no-exams">Failed to load ${tab} view.</div>`;
+          // Show error state with Reload button (Phase 17)
+          examListEl.innerHTML = "";
+          examListEl.appendChild(
+            createViewError(
+              () => this.showLibraryTab(tab),
+              this.translations,
+            ),
+          );
         }
       }
     }
@@ -1268,6 +1301,11 @@ export class App {
     this.translations = getTranslations(lang);
     localStorage.setItem("ginaxams_lang", lang);
 
+    // Persist to IndexedDB settings (Phase 16)
+    this.settingsService.setLanguage(lang).catch((e) =>
+      console.warn("Failed to persist language setting:", e),
+    );
+
     // Update active button states
     const langEn = document.getElementById("langEn");
     const langEs = document.getElementById("langEs");
@@ -1300,6 +1338,15 @@ export class App {
 
     // Header
     setText("appTitle", T.appTitle);
+
+    // Version footer (Phase 17)
+    setText(
+      "versionFooter",
+      (T.appVersionLabel ?? "GinaXams Player v{version}").replace(
+        "{version}",
+        APP_VERSION,
+      ),
+    );
 
     // Library screen
     setText("txtLoadExamFile", T.loadExamFile);
@@ -1425,6 +1472,63 @@ export class App {
     // Re-render the library to pick up new translations
     if (this.libraryState) {
       this.renderLibrary();
+    }
+  }
+
+  // ============================================================================
+  // Version Footer (Phase 17)
+  // ============================================================================
+
+  /**
+   * Render a small version footer at the bottom of the page.
+   * Creates the element once; subsequent calls are no-ops (text updated via updatePageText).
+   */
+  private renderVersionFooter(): void {
+    if (document.getElementById("versionFooter")) return;
+
+    const footer = document.createElement("footer");
+    footer.id = "versionFooter";
+    footer.style.textAlign = "center";
+    footer.style.padding = "12px 0";
+    footer.style.fontSize = "0.75rem";
+    footer.style.color = "var(--text-secondary, #666)";
+    footer.style.opacity = "0.6";
+
+    const versionText = document.createElement("span");
+    versionText.textContent = (
+      this.translations.appVersionLabel ?? "GinaXams Player v{version}"
+    ).replace("{version}", APP_VERSION);
+
+    const separator = document.createTextNode(" · ");
+
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = this.translations.clearData ?? "Clear All Data";
+    clearBtn.style.cssText =
+      "background:none; border:none; color:inherit; font-size:inherit; cursor:pointer; text-decoration:underline; opacity:0.8; padding:0;";
+    clearBtn.addEventListener("click", () => this.clearAllData());
+
+    footer.appendChild(versionText);
+    footer.appendChild(separator);
+    footer.appendChild(clearBtn);
+
+    const container = document.querySelector(".container");
+    if (container) {
+      container.appendChild(footer);
+    }
+  }
+
+  private async clearAllData(): Promise<void> {
+    const msg =
+      this.translations.confirmClearData ??
+      "This will delete ALL exams, folders and progress. This cannot be undone. Are you sure?";
+    if (!confirm(msg)) return;
+
+    try {
+      await this.libraryController.clearAllData();
+      window.location.reload();
+    } catch (e) {
+      console.error("Failed to clear data:", e);
+      alert("Failed to clear data. Please try again.");
     }
   }
 

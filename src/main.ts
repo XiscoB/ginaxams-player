@@ -11,6 +11,7 @@
 import { storage } from "./storage/db.js";
 import { AttemptController } from "./application/attemptController.js";
 import { ExamLibraryController } from "./application/examLibraryController.js";
+import { SettingsService } from "./application/settingsService.js";
 import { App } from "./core/app.js";
 
 // Create app instance on DOM ready
@@ -20,10 +21,12 @@ window.addEventListener("DOMContentLoaded", () => {
   // Wire up controllers with the shared storage instance
   const attemptController = new AttemptController(storage);
   const libraryController = new ExamLibraryController(storage);
+  const settingsService = new SettingsService(storage);
 
   app = new App({
     attemptController,
     libraryController,
+    settingsService,
     onStorageReady: () => storage.ready().then(() => {}),
   });
 

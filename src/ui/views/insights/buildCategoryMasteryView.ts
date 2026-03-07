@@ -16,6 +16,7 @@ import type {
 } from "../../../application/viewState.js";
 import type { CategoryMastery, MasteryLevel } from "../../../domain/types.js";
 import type { BadgeVariant } from "../../components/Badge.js";
+import type { Translations } from "../../../i18n/index.js";
 
 import { createCard } from "../../components/Card.js";
 import { createList } from "../../components/List.js";
@@ -36,24 +37,30 @@ import {
  * Build the Category Mastery card with drill-down support.
  *
  * @param data - Full insights data
+ * @param T - Optional translations for i18n
  * @returns Card HTMLElement with interactive category list
  */
-export function buildCategoryMasteryView(data: InsightsViewData): HTMLElement {
+export function buildCategoryMasteryView(
+  data: InsightsViewData,
+  T?: Translations,
+): HTMLElement {
   const questionCounts = countQuestionsPerCategory(data.questions);
+  const title = T?.insightsCategoryMastery ?? "Category Mastery";
 
   if (data.categoryMastery.length === 0) {
     const empty = document.createElement("p");
     empty.textContent =
+      T?.insightsCategoryMasteryEmpty ??
       "No category data available. Import exams to see mastery levels.";
     empty.style.color = "var(--text-secondary)";
     empty.style.fontSize = "0.875rem";
-    return createCard({ title: "Category Mastery", content: empty });
+    return createCard({ title, content: empty });
   }
 
   const container = document.createElement("div");
 
   const list = createList(data.categoryMastery, (cat) => {
-    const row = buildCategoryRow(cat, questionCounts.get(cat.category) ?? 0);
+    const row = buildCategoryRow(cat, questionCounts.get(cat.category) ?? 0, T);
 
     // Drill-down: click to toggle question list
     row.style.cursor = "pointer";
@@ -66,6 +73,7 @@ export function buildCategoryMasteryView(data: InsightsViewData): HTMLElement {
 
       const drillDown = buildDrillDown(
         filterByCategory(data.questions, cat.category),
+        T,
       );
 
       row.after(drillDown);
@@ -76,7 +84,7 @@ export function buildCategoryMasteryView(data: InsightsViewData): HTMLElement {
 
   container.appendChild(list);
 
-  return createCard({ title: "Category Mastery", content: container });
+  return createCard({ title, content: container });
 }
 
 // ============================================================================
@@ -86,6 +94,7 @@ export function buildCategoryMasteryView(data: InsightsViewData): HTMLElement {
 function buildCategoryRow(
   cat: CategoryMastery,
   questionCount: number,
+  T?: Translations,
 ): HTMLElement {
   const row = document.createElement("div");
   row.style.display = "flex";
@@ -106,7 +115,7 @@ function buildCategoryRow(
   name.style.color = "var(--text-primary)";
   name.style.flex = "1";
 
-  const badge = createBadge(cat.level, masteryBadgeVariant(cat.level));
+  const badge = createBadge(translateMastery(cat.level, T), masteryBadgeVariant(cat.level));
 
   header.appendChild(name);
   header.appendChild(badge);
@@ -119,10 +128,10 @@ function buildCategoryRow(
   statsRow.style.color = "var(--text-secondary)";
 
   const accuracyLabel = document.createElement("span");
-  accuracyLabel.textContent = `Accuracy: ${Math.round(cat.accuracy * 100)}%`;
+  accuracyLabel.textContent = `${T?.insightsAccuracy ?? "Accuracy"}: ${Math.round(cat.accuracy * 100)}%`;
 
   const countLabel = document.createElement("span");
-  countLabel.textContent = `Questions: ${questionCount}`;
+  countLabel.textContent = `${T?.insightsQuestions ?? "Questions"}: ${questionCount}`;
 
   const barContainer = document.createElement("div");
   barContainer.style.flex = "1";
@@ -149,7 +158,10 @@ function buildCategoryRow(
 // Drill-Down Panel
 // ============================================================================
 
-function buildDrillDown(questions: InsightsQuestionData[]): HTMLElement {
+function buildDrillDown(
+  questions: InsightsQuestionData[],
+  T?: Translations,
+): HTMLElement {
   const panel = document.createElement("div");
   panel.className = "gx-insights-drilldown";
   panel.style.paddingLeft = "16px";
@@ -159,7 +171,8 @@ function buildDrillDown(questions: InsightsQuestionData[]): HTMLElement {
 
   if (questions.length === 0) {
     const empty = document.createElement("p");
-    empty.textContent = "No questions in this category.";
+    empty.textContent =
+      T?.insightsNoCategoryQuestions ?? "No questions in this category.";
     empty.style.color = "var(--text-secondary)";
     empty.style.fontSize = "0.8rem";
     panel.appendChild(empty);
@@ -180,17 +193,17 @@ function buildDrillDown(questions: InsightsQuestionData[]): HTMLElement {
     row.style.fontSize = "0.8rem";
 
     const num = document.createElement("span");
-    num.textContent = `Q${q.questionNumber}`;
+    num.textContent = `${T?.questionPrefix ?? "Q"}${q.questionNumber}`;
     num.style.fontWeight = "600";
     num.style.color = "var(--text-primary)";
     num.style.minWidth = "3ch";
 
     const weakLabel = document.createElement("span");
-    weakLabel.textContent = `W: ${q.weaknessScore.toFixed(1)}`;
+    weakLabel.textContent = `${T?.weaknessPrefix ?? "W"}: ${q.weaknessScore.toFixed(1)}`;
     weakLabel.style.color = "var(--text-secondary)";
 
     const diffBadge = createBadge(
-      q.difficultyLevel,
+      translateDifficulty(q.difficultyLevel, T),
       difficultyBadgeVariant(q.difficultyLevel),
     );
 
@@ -207,7 +220,7 @@ function buildDrillDown(questions: InsightsQuestionData[]): HTMLElement {
     row.appendChild(diffBadge);
 
     if (q.trapLevel !== "none") {
-      row.appendChild(createBadge(`trap: ${q.trapLevel}`, "danger"));
+      row.appendChild(createBadge(`${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`, "danger"));
     }
 
     row.appendChild(preview);
@@ -221,6 +234,31 @@ function buildDrillDown(questions: InsightsQuestionData[]): HTMLElement {
 // ============================================================================
 // Helpers
 // ============================================================================
+
+function translateMastery(level: MasteryLevel, T?: Translations): string {
+  switch (level) {
+    case "weak":
+      return T?.masteryWeak ?? "weak";
+    case "learning":
+      return T?.masteryLearning ?? "learning";
+    case "mastered":
+      return T?.masteryMastered ?? "mastered";
+  }
+}
+
+function translateDifficulty(
+  level: "easy" | "medium" | "hard",
+  T?: Translations,
+): string {
+  switch (level) {
+    case "easy":
+      return T?.insightsDifficultyEasy ?? "Easy";
+    case "medium":
+      return T?.insightsDifficultyMedium ?? "Medium";
+    case "hard":
+      return T?.insightsDifficultyHard ?? "Hard";
+  }
+}
 
 function masteryBadgeVariant(level: MasteryLevel): BadgeVariant {
   switch (level) {

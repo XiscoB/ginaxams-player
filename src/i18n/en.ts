@@ -290,6 +290,105 @@ export const LANG_EN = {
   tabLibrary: "Library",
   tabInsights: "Insights",
   tabTelemetry: "Telemetry",
-};
+
+  // Insights Dashboard (Phase 16)
+  insightsTitle: "Insights",
+  insightsDescription: "Training analytics and diagnostic views.",
+  insightsCategoryMastery: "Category Mastery",
+  insightsCategoryMasteryEmpty:
+    "No category data available. Import exams to see mastery levels.",
+  insightsAccuracy: "Accuracy",
+  insightsQuestions: "Questions",
+  insightsNoCategoryQuestions: "No questions in this category.",
+  insightsWeakQuestions: "Weak Questions",
+  insightsWeakQuestionsEmpty: "No weak questions found. Great work!",
+  insightsAnswers: "Answers:",
+  insightsExplanation: "Explanation:",
+  insightsReference: "Reference",
+  insightsAllCategories: "All categories",
+  insightsTrapQuestions: "Trap Questions",
+  insightsTrapQuestionsEmpty:
+    "No trap questions detected yet. Keep practicing!",
+  insightsCategory: "Category",
+  insightsFeedback: "Feedback:",
+  insightsCitation: "Citation:",
+  insightsProgressTimeline: "Progress",
+  insightsProgressEmpty:
+    "No attempt history yet. Complete simulacros or reviews to track progress.",
+  insightsDifficultyDistribution: "Difficulty Distribution",
+  insightsDifficultyEasy: "Easy",
+  insightsDifficultyMedium: "Medium",
+  insightsDifficultyHard: "Hard",
+  insightsTotalQuestions: "Total questions",
+  insightsNoDifficultyQuestions: "No questions at this level.",
+
+  // Telemetry Dashboard (Phase 16)
+  telemetryTitle: "Telemetry",
+  telemetryDescription:
+    "Per-question performance and learning behavior analytics.",
+  telemetryQuestionPerformance: "Question Performance",
+  telemetryMostFailed: "Most Failed Questions",
+  telemetrySlowest: "Slowest Questions",
+  telemetryUnseen: "Unseen Questions",
+  telemetryNoMatchingQuestions: "No questions match the current filters.",
+  telemetryNoFailedQuestions: "No failed questions yet.",
+  telemetryNoAttemptedQuestions: "No questions have been attempted yet.",
+  telemetryAllAttempted: "All questions have been attempted!",
+  telemetryUnseenByCategory: "Unseen by category:",
+  telemetryNeverPracticed: "Questions never practiced",
+  telemetryNever: "Never",
+
+  // Telemetry Table Headers (Phase 16)
+  telemetryColQuestion: "#",
+  telemetryColCategory: "Category",
+  telemetryColSeen: "Seen",
+  telemetryColCorrect: "Correct",
+  telemetryColWrong: "Wrong",
+  telemetryColBlank: "Blank",
+  telemetryColAvgTime: "Avg Time",
+  telemetryColLastSeen: "Last Seen",
+  telemetryColStability: "Stability",
+
+  // Telemetry Sort/Filter Labels (Phase 16)
+  telemetrySortLabel: "Sort:",
+  telemetrySortMostWrong: "Most wrong",
+  telemetrySortMostSeen: "Most seen",
+  telemetrySortLeastSeen: "Least seen",
+  telemetrySortSlowest: "Slowest response",
+  telemetrySortRecent: "Recently seen",
+  telemetryFilterLabel: "Filter:",
+  telemetryFilterAll: "All",
+  telemetryFilterSeen: "Seen",
+  telemetryFilterUnseen: "Unseen",
+  telemetryCategoryLabel: "Category:",
+  telemetryCategoryAll: "All categories",
+
+  // Telemetry Empty State (Phase 16)
+  telemetryEmptyTitle: "No telemetry data available yet.",
+  telemetryEmptyMessage: "Practice questions to generate statistics.",
+
+  // Telemetry Detail Labels (Phase 16)
+  telemetryWrongCount: "Wrong",
+  telemetrySeenCount: "Seen",
+  telemetryAvgTimeLabel: "Avg Time",
+
+  // Loading & Error States (Phase 17)
+  loadingInsights: "Loading insights…",
+  loadingTelemetry: "Loading telemetry…",
+  errorGenericTitle: "Something went wrong.",
+  errorReload: "Reload",
+  appVersionLabel: "GinaXams Player v{version}",
+  // Shared Badge Labels (Phase 18)
+  questionPrefix: "Q",
+  stabilityStable: "stable",
+  stabilityUnstable: "unstable",
+  stabilityUnlearned: "unlearned",
+  stabilityUnseen: "unseen",
+  masteryWeak: "weak",
+  masteryLearning: "learning",
+  masteryMastered: "mastered",
+  weaknessPrefix: "W",
+  trapPrefix: "trap",
+  locale: "en",};
 
 export type TranslationKey = keyof typeof LANG_EN;

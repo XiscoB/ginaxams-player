@@ -292,4 +292,107 @@ export const LANG_ES = {
   tabLibrary: "Biblioteca",
   tabInsights: "Análisis",
   tabTelemetry: "Telemetría",
+
+  // Insights Dashboard (Phase 16)
+  insightsTitle: "Análisis",
+  insightsDescription: "Analíticas de entrenamiento y vistas diagnósticas.",
+  insightsCategoryMastery: "Dominio por Categoría",
+  insightsCategoryMasteryEmpty:
+    "No hay datos de categorías. Importa exámenes para ver niveles de dominio.",
+  insightsAccuracy: "Precisión",
+  insightsQuestions: "Preguntas",
+  insightsNoCategoryQuestions: "No hay preguntas en esta categoría.",
+  insightsWeakQuestions: "Preguntas Débiles",
+  insightsWeakQuestionsEmpty:
+    "¡No se encontraron preguntas débiles. ¡Buen trabajo!",
+  insightsAnswers: "Respuestas:",
+  insightsExplanation: "Explicación:",
+  insightsReference: "Referencia",
+  insightsAllCategories: "Todas las categorías",
+  insightsTrapQuestions: "Preguntas Trampa",
+  insightsTrapQuestionsEmpty:
+    "Aún no se han detectado preguntas trampa. ¡Sigue practicando!",
+  insightsCategory: "Categoría",
+  insightsFeedback: "Retroalimentación:",
+  insightsCitation: "Cita:",
+  insightsProgressTimeline: "Progreso",
+  insightsProgressEmpty:
+    "Aún no hay historial de intentos. Completa simulacros o repasos para seguir tu progreso.",
+  insightsDifficultyDistribution: "Distribución de Dificultad",
+  insightsDifficultyEasy: "Fácil",
+  insightsDifficultyMedium: "Medio",
+  insightsDifficultyHard: "Difícil",
+  insightsTotalQuestions: "Total de preguntas",
+  insightsNoDifficultyQuestions: "No hay preguntas en este nivel.",
+
+  // Telemetry Dashboard (Phase 16)
+  telemetryTitle: "Telemetría",
+  telemetryDescription:
+    "Analíticas de rendimiento por pregunta y comportamiento de aprendizaje.",
+  telemetryQuestionPerformance: "Rendimiento por Pregunta",
+  telemetryMostFailed: "Preguntas Más Falladas",
+  telemetrySlowest: "Preguntas Más Lentas",
+  telemetryUnseen: "Preguntas No Vistas",
+  telemetryNoMatchingQuestions:
+    "Ninguna pregunta coincide con los filtros actuales.",
+  telemetryNoFailedQuestions: "Aún no hay preguntas falladas.",
+  telemetryNoAttemptedQuestions: "Aún no se ha intentado ninguna pregunta.",
+  telemetryAllAttempted: "¡Todas las preguntas han sido intentadas!",
+  telemetryUnseenByCategory: "No vistas por categoría:",
+  telemetryNeverPracticed: "Preguntas nunca practicadas",
+  telemetryNever: "Nunca",
+
+  // Telemetry Table Headers (Phase 16)
+  telemetryColQuestion: "#",
+  telemetryColCategory: "Categoría",
+  telemetryColSeen: "Vistas",
+  telemetryColCorrect: "Correctas",
+  telemetryColWrong: "Incorrectas",
+  telemetryColBlank: "En blanco",
+  telemetryColAvgTime: "Tiempo med.",
+  telemetryColLastSeen: "Última vez",
+  telemetryColStability: "Estabilidad",
+
+  // Telemetry Sort/Filter Labels (Phase 16)
+  telemetrySortLabel: "Ordenar:",
+  telemetrySortMostWrong: "Más falladas",
+  telemetrySortMostSeen: "Más vistas",
+  telemetrySortLeastSeen: "Menos vistas",
+  telemetrySortSlowest: "Más lentas",
+  telemetrySortRecent: "Vistas recientemente",
+  telemetryFilterLabel: "Filtro:",
+  telemetryFilterAll: "Todas",
+  telemetryFilterSeen: "Vistas",
+  telemetryFilterUnseen: "No vistas",
+  telemetryCategoryLabel: "Categoría:",
+  telemetryCategoryAll: "Todas las categorías",
+
+  // Telemetry Empty State (Phase 16)
+  telemetryEmptyTitle: "Aún no hay datos de telemetría.",
+  telemetryEmptyMessage: "Practica preguntas para generar estadísticas.",
+
+  // Telemetry Detail Labels (Phase 16)
+  telemetryWrongCount: "Incorrectas",
+  telemetrySeenCount: "Vistas",
+  telemetryAvgTimeLabel: "Tiempo med.",
+
+  // Loading & Error States (Phase 17)
+  loadingInsights: "Cargando análisis…",
+  loadingTelemetry: "Cargando telemetría…",
+  errorGenericTitle: "Algo salió mal.",
+  errorReload: "Recargar",
+  appVersionLabel: "GinaXams Player v{version}",
+
+  // Shared Badge Labels (Phase 18)
+  questionPrefix: "P",
+  stabilityStable: "estable",
+  stabilityUnstable: "inestable",
+  stabilityUnlearned: "no aprendida",
+  stabilityUnseen: "no vista",
+  masteryWeak: "débil",
+  masteryLearning: "aprendiendo",
+  masteryMastered: "dominada",
+  weaknessPrefix: "D",
+  trapPrefix: "trampa",
+  locale: "es",
 } as const;

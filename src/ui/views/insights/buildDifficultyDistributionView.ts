@@ -13,6 +13,7 @@ import type {
   InsightsViewData,
   InsightsQuestionData,
 } from "../../../application/viewState.js";
+import type { Translations } from "../../../i18n/index.js";
 
 import { createCard } from "../../components/Card.js";
 import { createStack } from "../../components/Stack.js";
@@ -37,6 +38,7 @@ import {
  */
 export function buildDifficultyDistributionView(
   data: InsightsViewData,
+  T?: Translations,
 ): HTMLElement {
   const dist = data.difficultyDistribution;
   const pct = computeDifficultyPercentages(dist);
@@ -44,7 +46,7 @@ export function buildDifficultyDistributionView(
   const container = document.createElement("div");
 
   // Distribution bars
-  const bars = buildDistributionBars(dist, pct);
+  const bars = buildDistributionBars(dist, pct, T);
   container.appendChild(bars);
 
   // Drill-down container for filtered questions
@@ -73,11 +75,14 @@ export function buildDifficultyDistributionView(
       const filtered = data.questions.filter(
         (q) => q.difficultyLevel === level,
       );
-      renderDifficultyDrillDown(drillDown, filtered, level);
+      renderDifficultyDrillDown(drillDown, filtered, level, T);
     });
   });
 
-  return createCard({ title: "Difficulty Distribution", content: container });
+  return createCard({
+    title: T?.insightsDifficultyDistribution ?? "Difficulty Distribution",
+    content: container,
+  });
 }
 
 // ============================================================================
@@ -87,6 +92,7 @@ export function buildDifficultyDistributionView(
 function buildDistributionBars(
   dist: { easy: number; medium: number; hard: number; total: number },
   pct: { easy: number; medium: number; hard: number },
+  T?: Translations,
 ): HTMLElement {
   const levels: Array<{
     key: "easy" | "medium" | "hard";
@@ -97,21 +103,21 @@ function buildDistributionBars(
   }> = [
     {
       key: "easy",
-      label: "Easy",
+      label: T?.insightsDifficultyEasy ?? "Easy",
       count: dist.easy,
       percent: pct.easy,
       variant: "success",
     },
     {
       key: "medium",
-      label: "Medium",
+      label: T?.insightsDifficultyMedium ?? "Medium",
       count: dist.medium,
       percent: pct.medium,
       variant: "warning",
     },
     {
       key: "hard",
-      label: "Hard",
+      label: T?.insightsDifficultyHard ?? "Hard",
       count: dist.hard,
       percent: pct.hard,
       variant: "danger",
@@ -165,7 +171,7 @@ function buildDistributionBars(
   totalRow.style.fontSize = "0.8rem";
   totalRow.style.color = "var(--text-secondary)";
   totalRow.style.marginTop = "4px";
-  totalRow.textContent = `Total questions: ${dist.total}`;
+  totalRow.textContent = `${T?.insightsTotalQuestions ?? "Total questions"}: ${dist.total}`;
 
   return createStack({
     direction: "column",
@@ -182,20 +188,30 @@ function renderDifficultyDrillDown(
   container: HTMLElement,
   questions: InsightsQuestionData[],
   level: string,
+  T?: Translations,
 ): void {
   container.innerHTML = "";
 
   if (questions.length === 0) {
     const empty = document.createElement("p");
-    empty.textContent = `No ${level} questions.`;
+    empty.textContent =
+      T?.insightsNoDifficultyQuestions ?? `No ${level} questions.`;
     empty.style.color = "var(--text-secondary)";
     empty.style.fontSize = "0.875rem";
     container.appendChild(empty);
     return;
   }
 
+  const levelLabel = (() => {
+    switch (level) {
+      case "easy": return T?.insightsDifficultyEasy ?? "Easy";
+      case "medium": return T?.insightsDifficultyMedium ?? "Medium";
+      case "hard": return T?.insightsDifficultyHard ?? "Hard";
+      default: return level.charAt(0).toUpperCase() + level.slice(1);
+    }
+  })();
   const title = document.createElement("div");
-  title.textContent = `${level.charAt(0).toUpperCase() + level.slice(1)} Questions (${questions.length})`;
+  title.textContent = `${levelLabel} (${T?.insightsQuestions ?? "Questions"}: ${questions.length})`;
   title.style.fontWeight = "600";
   title.style.fontSize = "0.875rem";
   title.style.color = "var(--text-primary)";
@@ -214,7 +230,7 @@ function renderDifficultyDrillDown(
     row.style.fontSize = "0.8rem";
 
     const num = document.createElement("span");
-    num.textContent = `Q${q.questionNumber}`;
+    num.textContent = `${T?.questionPrefix ?? "Q"}${q.questionNumber}`;
     num.style.fontWeight = "600";
     num.style.color = "var(--text-primary)";
 
@@ -227,7 +243,7 @@ function renderDifficultyDrillDown(
     preview.style.whiteSpace = "nowrap";
 
     const weakLabel = document.createElement("span");
-    weakLabel.textContent = `W: ${q.weaknessScore.toFixed(1)}`;
+    weakLabel.textContent = `${T?.weaknessPrefix ?? "W"}: ${q.weaknessScore.toFixed(1)}`;
     weakLabel.style.color = "var(--text-secondary)";
 
     row.appendChild(num);
@@ -235,7 +251,7 @@ function renderDifficultyDrillDown(
     row.appendChild(weakLabel);
 
     if (q.trapLevel !== "none") {
-      row.appendChild(createBadge("trap", "danger"));
+      row.appendChild(createBadge(`${T?.trapPrefix ?? "trap"}`, "danger"));
     }
 
     return row;

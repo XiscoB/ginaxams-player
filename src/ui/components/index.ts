@@ -30,3 +30,14 @@ export type { StackOptions } from "./Stack.js";
 
 export { createSection } from "./Section.js";
 export type { SectionOptions } from "./Section.js";
+
+export {
+  createLoadingIndicator,
+  createErrorState,
+  createViewLoading,
+  createViewError,
+} from "./ViewStatus.js";
+export type {
+  LoadingIndicatorOptions,
+  ErrorStateOptions,
+} from "./ViewStatus.js";

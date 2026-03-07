@@ -16,6 +16,7 @@
  */
 
 import type { ExamLibraryController } from "../../application/examLibraryController.js";
+import type { Translations } from "../../i18n/index.js";
 
 import { createSection } from "../components/Section.js";
 import { createStack } from "../components/Stack.js";
@@ -38,6 +39,7 @@ import { buildDifficultyDistributionView } from "./insights/buildDifficultyDistr
  *
  * @param controller - The ExamLibraryController instance
  * @param callbacks - Optional navigation callbacks
+ * @param T - Translations object for i18n
  * @returns The insights dashboard HTMLElement
  */
 export async function renderInsightsView(
@@ -45,18 +47,20 @@ export async function renderInsightsView(
   callbacks?: {
     onAttemptClick?: (attemptId: string) => void;
   },
+  T?: Translations,
 ): Promise<HTMLElement> {
   const data = await controller.getInsightsData();
 
-  const categoryMasteryCard = buildCategoryMasteryView(data);
-  const weakQuestionsCard = buildWeakQuestionsView(data);
-  const trapQuestionsCard = buildTrapQuestionsView(data);
-  const progressCard = buildProgressView(data, callbacks?.onAttemptClick);
-  const difficultyCard = buildDifficultyDistributionView(data);
+  const categoryMasteryCard = buildCategoryMasteryView(data, T);
+  const weakQuestionsCard = buildWeakQuestionsView(data, T);
+  const trapQuestionsCard = buildTrapQuestionsView(data, T);
+  const progressCard = buildProgressView(data, callbacks?.onAttemptClick, T);
+  const difficultyCard = buildDifficultyDistributionView(data, T);
 
   return createSection({
-    title: "Insights",
-    description: "Training analytics and diagnostic views.",
+    title: T?.insightsTitle ?? "Insights",
+    description:
+      T?.insightsDescription ?? "Training analytics and diagnostic views.",
     content: createStack({
       direction: "column",
       gap: 16,

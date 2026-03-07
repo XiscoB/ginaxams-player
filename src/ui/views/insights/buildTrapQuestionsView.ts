@@ -14,6 +14,7 @@ import type {
   InsightsViewData,
   InsightsQuestionData,
 } from "../../../application/viewState.js";
+import type { Translations } from "../../../i18n/index.js";
 import { createCard } from "../../components/Card.js";
 import { createList } from "../../components/List.js";
 import { createBadge } from "../../components/Badge.js";
@@ -30,27 +31,33 @@ import { getTrapQuestions, truncateText } from "./insightsHelpers.js";
  * @param data - Full insights data
  * @returns Card HTMLElement
  */
-export function buildTrapQuestionsView(data: InsightsViewData): HTMLElement {
+export function buildTrapQuestionsView(
+  data: InsightsViewData,
+  T?: Translations,
+): HTMLElement {
   const traps = getTrapQuestions(data.questions);
+  const title = T?.insightsTrapQuestions ?? "Trap Questions";
 
   if (traps.length === 0) {
     const empty = document.createElement("p");
-    empty.textContent = "No trap questions detected yet. Keep practicing!";
+    empty.textContent =
+      T?.insightsTrapQuestionsEmpty ??
+      "No trap questions detected yet. Keep practicing!";
     empty.style.color = "var(--text-secondary)";
     empty.style.fontSize = "0.875rem";
-    return createCard({ title: "Trap Questions", content: empty });
+    return createCard({ title, content: empty });
   }
 
-  const list = createList(traps, (q) => buildTrapRow(q));
+  const list = createList(traps, (q) => buildTrapRow(q, T));
 
-  return createCard({ title: "Trap Questions", content: list });
+  return createCard({ title, content: list });
 }
 
 // ============================================================================
 // Row Builder
 // ============================================================================
 
-function buildTrapRow(q: InsightsQuestionData): HTMLElement {
+function buildTrapRow(q: InsightsQuestionData, T?: Translations): HTMLElement {
   const row = document.createElement("div");
   row.style.display = "flex";
   row.style.flexDirection = "column";
@@ -74,7 +81,7 @@ function buildTrapRow(q: InsightsQuestionData): HTMLElement {
   preview.style.whiteSpace = "nowrap";
 
   const trapBadge = createBadge(
-    `trap: ${q.trapLevel}`,
+    `${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`,
     q.trapLevel === "confirmed" ? "danger" : "warning",
   );
 
@@ -91,7 +98,7 @@ function buildTrapRow(q: InsightsQuestionData): HTMLElement {
 
   // Category context
   const categoryLine = document.createElement("div");
-  categoryLine.textContent = `Category: ${q.categories.join(", ")}`;
+  categoryLine.textContent = `${T?.insightsCategory ?? "Category"}: ${q.categories.join(", ")}`;
   categoryLine.style.fontSize = "0.8rem";
   categoryLine.style.color = "var(--text-secondary)";
 
@@ -106,7 +113,7 @@ function buildTrapRow(q: InsightsQuestionData): HTMLElement {
 
   if (q.feedback.explanation) {
     const explTitle = document.createElement("div");
-    explTitle.textContent = "Feedback:";
+    explTitle.textContent = T?.insightsFeedback ?? "Feedback:";
     explTitle.style.fontWeight = "600";
     explTitle.style.color = "var(--text-primary)";
     feedbackPanel.appendChild(explTitle);
@@ -121,7 +128,7 @@ function buildTrapRow(q: InsightsQuestionData): HTMLElement {
 
   if (q.feedback.literalCitation) {
     const citeTitle = document.createElement("div");
-    citeTitle.textContent = "Citation:";
+    citeTitle.textContent = T?.insightsCitation ?? "Citation:";
     citeTitle.style.fontWeight = "600";
     citeTitle.style.color = "var(--text-primary)";
     citeTitle.style.marginTop = "4px";
@@ -137,7 +144,7 @@ function buildTrapRow(q: InsightsQuestionData): HTMLElement {
   }
 
   const ref = document.createElement("div");
-  ref.textContent = `Reference: ${q.referenceArticle}`;
+  ref.textContent = `${T?.insightsReference ?? "Reference"}: ${q.referenceArticle}`;
   ref.style.color = "var(--text-secondary)";
   ref.style.marginTop = "4px";
   ref.style.fontStyle = "italic";
