@@ -281,6 +281,10 @@ export const LANG_EN = {
   jumpToUnanswered: "Jump to Unanswered",
   jumpToFlagged: "Jump to Flagged",
   navigator: "Navigator",
+
+  // Review UX (Phase 14)
+  nextWrongQuestion: "Next Wrong",
+  nextBlankQuestion: "Next Blank",
 };
 
 export type TranslationKey = keyof typeof LANG_EN;

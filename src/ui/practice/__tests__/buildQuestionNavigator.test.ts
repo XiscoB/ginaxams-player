@@ -6,6 +6,10 @@ import { describe, it, expect } from "vitest";
 import {
   computeNavigatorItems,
   computeSummaryFromCounts,
+  computeReviewNavigatorItems,
+  findNextWrongIndex,
+  findNextBlankIndex,
+  type QuestionResultState,
 } from "../buildQuestionNavigator.js";
 
 describe("computeNavigatorItems", () => {
@@ -106,5 +110,143 @@ describe("computeSummaryFromCounts", () => {
     const summary = computeSummaryFromCounts(0, 0, 0);
     expect(summary.total).toBe(0);
     expect(summary.unanswered).toBe(0);
+  });
+});
+
+// ============================================================================
+// Review Navigator Tests (Phase 14)
+// ============================================================================
+
+describe("computeReviewNavigatorItems", () => {
+  const makeResults = (
+    ...states: Array<"correct" | "wrong" | "blank">
+  ): QuestionResultState[] =>
+    states.map((s) => ({
+      isCorrect: s === "correct",
+      isBlank: s === "blank",
+      isFlagged: false,
+    }));
+
+  it("creates correct number of items", () => {
+    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 0);
+    expect(items).toHaveLength(3);
+  });
+
+  it("labels are 1-based", () => {
+    const items = computeReviewNavigatorItems(makeResults("correct", "wrong"), 0);
+    expect(items.map((i) => i.label)).toEqual(["1", "2"]);
+  });
+
+  it("maps correct questions to 'correct' state", () => {
+    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 1);
+    expect(items[0].state).toBe("correct");
+    expect(items[0].resultState).toBe("correct");
+  });
+
+  it("maps wrong questions to 'wrong' state", () => {
+    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 0);
+    expect(items[1].state).toBe("wrong");
+    expect(items[1].resultState).toBe("wrong");
+  });
+
+  it("maps blank questions to 'blank' state", () => {
+    const items = computeReviewNavigatorItems(makeResults("correct", "wrong", "blank"), 0);
+    expect(items[2].state).toBe("blank");
+    expect(items[2].resultState).toBe("blank");
+  });
+
+  it("current question gets 'current' state but preserves resultState", () => {
+    const items = computeReviewNavigatorItems(makeResults("wrong", "correct"), 0);
+    expect(items[0].state).toBe("current");
+    expect(items[0].resultState).toBe("wrong");
+    expect(items[0].isCurrent).toBe(true);
+  });
+
+  it("marks flagged questions", () => {
+    const results: QuestionResultState[] = [
+      { isCorrect: true, isBlank: false, isFlagged: true },
+      { isCorrect: false, isBlank: false, isFlagged: false },
+    ];
+    const items = computeReviewNavigatorItems(results, 1);
+    expect(items[0].isFlagged).toBe(true);
+    expect(items[1].isFlagged).toBe(false);
+  });
+
+  it("handles empty results", () => {
+    const items = computeReviewNavigatorItems([], 0);
+    expect(items).toHaveLength(0);
+  });
+});
+
+describe("findNextWrongIndex", () => {
+  const makeItems = (...states: Array<"correct" | "wrong" | "blank">) =>
+    computeReviewNavigatorItems(
+      states.map((s) => ({
+        isCorrect: s === "correct",
+        isBlank: s === "blank",
+        isFlagged: false,
+      })),
+      -1, // no current
+    );
+
+  it("finds next wrong question after current index", () => {
+    const items = makeItems("correct", "wrong", "correct", "wrong");
+    expect(findNextWrongIndex(items, 0)).toBe(1);
+  });
+
+  it("wraps around to find wrong question", () => {
+    const items = makeItems("wrong", "correct", "correct");
+    expect(findNextWrongIndex(items, 1)).toBe(0);
+  });
+
+  it("returns -1 when no wrong questions exist", () => {
+    const items = makeItems("correct", "correct", "blank");
+    expect(findNextWrongIndex(items, 0)).toBe(-1);
+  });
+
+  it("returns -1 for empty items", () => {
+    expect(findNextWrongIndex([], 0)).toBe(-1);
+  });
+
+  it("skips current index", () => {
+    const items = makeItems("wrong", "correct", "wrong");
+    // Starting at 0 (which is wrong), should find the next wrong at 2
+    expect(findNextWrongIndex(items, 0)).toBe(2);
+  });
+});
+
+describe("findNextBlankIndex", () => {
+  const makeItems = (...states: Array<"correct" | "wrong" | "blank">) =>
+    computeReviewNavigatorItems(
+      states.map((s) => ({
+        isCorrect: s === "correct",
+        isBlank: s === "blank",
+        isFlagged: false,
+      })),
+      -1,
+    );
+
+  it("finds next blank question after current index", () => {
+    const items = makeItems("correct", "blank", "correct");
+    expect(findNextBlankIndex(items, 0)).toBe(1);
+  });
+
+  it("wraps around to find blank question", () => {
+    const items = makeItems("blank", "correct", "correct");
+    expect(findNextBlankIndex(items, 1)).toBe(0);
+  });
+
+  it("returns -1 when no blank questions exist", () => {
+    const items = makeItems("correct", "wrong");
+    expect(findNextBlankIndex(items, 0)).toBe(-1);
+  });
+
+  it("returns -1 for empty items", () => {
+    expect(findNextBlankIndex([], 0)).toBe(-1);
+  });
+
+  it("skips current index", () => {
+    const items = makeItems("blank", "correct", "blank");
+    expect(findNextBlankIndex(items, 0)).toBe(2);
   });
 });

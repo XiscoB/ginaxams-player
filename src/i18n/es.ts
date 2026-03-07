@@ -283,4 +283,8 @@ export const LANG_ES = {
   jumpToUnanswered: "Ir a Sin Responder",
   jumpToFlagged: "Ir a Marcadas",
   navigator: "Navegador",
+
+  // Review UX (Phase 14)
+  nextWrongQuestion: "Siguiente Incorrecta",
+  nextBlankQuestion: "Siguiente Sin Responder",
 } as const;

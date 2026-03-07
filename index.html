@@ -4035,7 +4035,7 @@
                 "
               >
                 <span>📋</span>
-                <span id="txtExamFormat">Exam Format</span>
+                <span id="txtExamFormatBtn">Exam Format</span>
               </button>
             </div>
             <input type="file" id="fileInput" accept=".json" class="hidden" />
@@ -4341,6 +4341,16 @@
               <span id="txtFilterWrong">Wrong</span>
             </button>
           </div>
+        </div>
+
+        <!-- Review Jump Buttons -->
+        <div id="reviewJumpButtons" class="review-jump-buttons" style="display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;">
+          <button class="btn btn--secondary btn--sm" onclick="window.app.reviewNextWrong()">
+            <span id="txtNextWrong">❌ Next Wrong</span>
+          </button>
+          <button class="btn btn--secondary btn--sm" onclick="window.app.reviewNextBlank()">
+            <span id="txtNextBlank">⬜ Next Blank</span>
+          </button>
         </div>
 
         <div class="progress-container">

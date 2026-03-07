@@ -27,6 +27,12 @@ import { ExamLibraryController } from "../application/examLibraryController.js";
 import { PracticeManager } from "../modes/practice.js";
 import {
   computeNavigatorItems,
+  computeReviewNavigatorItems,
+  renderReviewNavigator,
+  findNextWrongIndex,
+  findNextBlankIndex,
+  type ReviewNavigatorItem,
+  type QuestionResultState,
 } from "../ui/practice/buildQuestionNavigator.js";
 import {
   computeSummaryData,
@@ -459,6 +465,13 @@ export class App {
     const txtReviewNext = document.getElementById("txtReviewNext");
     if (txtReviewNext) txtReviewNext.textContent = T.reviewNext || "Next →";
 
+    // Update jump button labels
+    const txtNextWrong = document.getElementById("txtNextWrong");
+    if (txtNextWrong) txtNextWrong.textContent = `❌ ${T.nextWrongQuestion || "Next Wrong"}`;
+    const txtNextBlank = document.getElementById("txtNextBlank");
+    if (txtNextBlank) txtNextBlank.textContent = `⬜ ${T.nextBlankQuestion || "Next Blank"}`;
+
+    this.buildReviewNavItems();
     this.renderReviewScreenContent("all");
 
     // Bind filter buttons
@@ -486,6 +499,66 @@ export class App {
   private reviewFilteredQuestions: typeof this.currentResultView extends null
     ? never
     : NonNullable<typeof this.currentResultView>["questionSummary"] = [];
+  /** Cached review navigator items for the current result view */
+  private reviewNavItems: ReviewNavigatorItem[] = [];
+
+  /**
+   * Build review navigator items from the current result view's question summary.
+   * Uses flagged questions from the practice UI state.
+   */
+  private buildReviewNavItems(): void {
+    if (!this.currentResultView) {
+      this.reviewNavItems = [];
+      return;
+    }
+
+    const results: QuestionResultState[] =
+      this.currentResultView.questionSummary.map((q) => ({
+        isCorrect: q.isCorrect,
+        isBlank: q.isBlank,
+        isFlagged: this.practiceUiState.flaggedQuestions.has(
+          this.currentResultView!.questionSummary.indexOf(q),
+        ),
+      }));
+
+    this.reviewNavItems = computeReviewNavigatorItems(results, this.reviewCurrentIndex);
+  }
+
+  /**
+   * Render (or re-render) the review navigator grid.
+   */
+  private renderReviewNavigator(): void {
+    const container = document.getElementById("reviewMinimapContainer");
+    if (!container || this.reviewNavItems.length === 0) return;
+
+    // Recompute items with current index to update the "current" state
+    if (this.currentResultView) {
+      const results: QuestionResultState[] =
+        this.currentResultView.questionSummary.map((q, i) => ({
+          isCorrect: q.isCorrect,
+          isBlank: q.isBlank,
+          isFlagged: this.practiceUiState.flaggedQuestions.has(i),
+        }));
+      this.reviewNavItems = computeReviewNavigatorItems(results, this.reviewCurrentIndex);
+    }
+
+    renderReviewNavigator(container, this.reviewNavItems, (index) => {
+      this.reviewCurrentIndex = index;
+      this.renderReviewQuestion();
+      this.renderReviewNavigator();
+      this.scrollReviewQuestionIntoView();
+    });
+  }
+
+  /**
+   * Scroll the review question card into view.
+   */
+  private scrollReviewQuestionIntoView(): void {
+    const questionCard = document.querySelector("#reviewScreen .question-card");
+    if (questionCard) {
+      questionCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 
   private renderReviewScreenContent(filter: "all" | "wrong"): void {
     if (!this.currentResultView) return;
@@ -500,6 +573,7 @@ export class App {
     this.reviewFilteredQuestions = filtered;
     this.reviewCurrentIndex = 0;
     this.renderReviewQuestion();
+    this.renderReviewNavigator();
 
     if (filtered.length === 0) {
       const questionText = document.getElementById("reviewQuestionText");
@@ -577,6 +651,8 @@ export class App {
     if (this.reviewCurrentIndex > 0) {
       this.reviewCurrentIndex--;
       this.renderReviewQuestion();
+      this.renderReviewNavigator();
+      this.scrollReviewQuestionIntoView();
     }
   }
 
@@ -587,6 +663,36 @@ export class App {
     if (this.reviewCurrentIndex < this.reviewFilteredQuestions.length - 1) {
       this.reviewCurrentIndex++;
       this.renderReviewQuestion();
+      this.renderReviewNavigator();
+      this.scrollReviewQuestionIntoView();
+    }
+  }
+
+  /**
+   * Jump to the next wrong question in the review screen.
+   */
+  reviewNextWrong(): void {
+    if (!this.currentResultView) return;
+    const idx = findNextWrongIndex(this.reviewNavItems, this.reviewCurrentIndex);
+    if (idx >= 0) {
+      this.reviewCurrentIndex = idx;
+      this.renderReviewQuestion();
+      this.renderReviewNavigator();
+      this.scrollReviewQuestionIntoView();
+    }
+  }
+
+  /**
+   * Jump to the next blank question in the review screen.
+   */
+  reviewNextBlank(): void {
+    if (!this.currentResultView) return;
+    const idx = findNextBlankIndex(this.reviewNavItems, this.reviewCurrentIndex);
+    if (idx >= 0) {
+      this.reviewCurrentIndex = idx;
+      this.renderReviewQuestion();
+      this.renderReviewNavigator();
+      this.scrollReviewQuestionIntoView();
     }
   }
 
@@ -1199,6 +1305,7 @@ export class App {
     // Help
     setText("txtShowOnboarding", T.showOnboarding);
     setText("txtExamFormat", T.examFormat);
+    setText("txtExamFormatBtn", T.examFormat);
 
     // Template modal
     setText("txtExamFormatDesc", T.examFormatDesc);

@@ -4,8 +4,12 @@
  * Computes the visual state of each question in the navigator grid
  * and renders the grid to a DOM container.
  *
- * Pure logic (computeNavigatorItems, computeNavigatorSummary) is testable
- * without DOM. Rendering (renderNavigator) is a thin DOM layer.
+ * Supports two modes:
+ * - "attempt": During an active exam (answered/unanswered/current)
+ * - "review": Post-submission review (correct/wrong/blank/current)
+ *
+ * Pure logic (computeNavigatorItems, computeReviewNavigatorItems) is testable
+ * without DOM. Rendering (renderNavigator, renderReviewNavigator) is a thin DOM layer.
  */
 
 // ============================================================================
@@ -13,12 +17,17 @@
 // ============================================================================
 
 /**
- * Visual state of a question in the navigator grid.
+ * Visual state of a question in the navigator grid (attempt mode).
  */
 export type QuestionNavState = "current" | "answered" | "unanswered";
 
 /**
- * A single item in the navigator grid.
+ * Visual state of a question in the navigator grid (review mode).
+ */
+export type ReviewNavState = "correct" | "wrong" | "blank" | "current";
+
+/**
+ * A single item in the navigator grid (attempt mode).
  */
 export interface NavigatorItem {
   /** 0-based index in the attempt question list */
@@ -31,6 +40,36 @@ export interface NavigatorItem {
   isFlagged: boolean;
   /** Whether this is the current question */
   isCurrent: boolean;
+}
+
+/**
+ * Result state for a single question used to compute review navigator items.
+ */
+export interface QuestionResultState {
+  /** Whether the user answered correctly */
+  isCorrect: boolean;
+  /** Whether the user left it blank */
+  isBlank: boolean;
+  /** Whether the question was flagged during the attempt */
+  isFlagged: boolean;
+}
+
+/**
+ * A single item in the review navigator grid.
+ */
+export interface ReviewNavigatorItem {
+  /** 0-based index in the question list */
+  index: number;
+  /** Display label (1-based question position) */
+  label: string;
+  /** Visual state based on exam result */
+  state: ReviewNavState;
+  /** Whether this is the currently viewed question */
+  isCurrent: boolean;
+  /** Whether the question was flagged during the attempt */
+  isFlagged: boolean;
+  /** Underlying result state (correct/wrong/blank) — not overridden by "current" */
+  resultState: "correct" | "wrong" | "blank";
 }
 
 /**
@@ -200,6 +239,162 @@ export function renderNavigator(
         if (!el.classList.contains("user-correct")) {
           el.classList.add("unanswered");
         }
+        break;
+    }
+
+    // Flagged indicator
+    if (item.isFlagged) {
+      el.classList.add("flagged");
+      const flag = document.createElement("span");
+      flag.className = "minimap-flag";
+      flag.textContent = "⚑";
+      el.appendChild(flag);
+    }
+
+    container.appendChild(el);
+  }
+
+  // Event delegation for clicks
+  container.onclick = (e: MouseEvent) => {
+    const target = (e.target as HTMLElement).closest<HTMLElement>(
+      ".minimap-item",
+    );
+    if (target?.dataset.index != null) {
+      onJump(parseInt(target.dataset.index, 10));
+    }
+  };
+}
+
+// ============================================================================
+// Review Mode — Pure Computation
+// ============================================================================
+
+/**
+ * Compute review navigator items from exam result state.
+ *
+ * @param results - Per-question result states (ordered by question index)
+ * @param currentIndex - 0-based index of the currently viewed question
+ * @returns Array of ReviewNavigatorItem for rendering
+ */
+export function computeReviewNavigatorItems(
+  results: readonly QuestionResultState[],
+  currentIndex: number,
+): ReviewNavigatorItem[] {
+  return results.map((r, i) => {
+    const isCurrent = i === currentIndex;
+    const resultState: "correct" | "wrong" | "blank" = r.isBlank
+      ? "blank"
+      : r.isCorrect
+        ? "correct"
+        : "wrong";
+
+    const state: ReviewNavState = isCurrent ? "current" : resultState;
+
+    return {
+      index: i,
+      label: String(i + 1),
+      state,
+      isCurrent,
+      isFlagged: r.isFlagged,
+      resultState,
+    };
+  });
+}
+
+/**
+ * Find the index of the next wrong question starting from (but not including) startIndex.
+ * Wraps around if needed. Returns -1 if no wrong questions exist.
+ *
+ * @param items - Review navigator items
+ * @param startIndex - 0-based index to start searching from (exclusive)
+ * @returns 0-based index of the next wrong question, or -1
+ */
+export function findNextWrongIndex(
+  items: readonly ReviewNavigatorItem[],
+  startIndex: number,
+): number {
+  const len = items.length;
+  if (len === 0) return -1;
+
+  for (let offset = 1; offset <= len; offset++) {
+    const idx = (startIndex + offset) % len;
+    if (items[idx].resultState === "wrong") {
+      return idx;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Find the index of the next blank question starting from (but not including) startIndex.
+ * Wraps around if needed. Returns -1 if no blank questions exist.
+ *
+ * @param items - Review navigator items
+ * @param startIndex - 0-based index to start searching from (exclusive)
+ * @returns 0-based index of the next blank question, or -1
+ */
+export function findNextBlankIndex(
+  items: readonly ReviewNavigatorItem[],
+  startIndex: number,
+): number {
+  const len = items.length;
+  if (len === 0) return -1;
+
+  for (let offset = 1; offset <= len; offset++) {
+    const idx = (startIndex + offset) % len;
+    if (items[idx].resultState === "blank") {
+      return idx;
+    }
+  }
+  return -1;
+}
+
+// ============================================================================
+// Review Mode — DOM Rendering
+// ============================================================================
+
+/**
+ * Render the review navigator grid into a container element.
+ *
+ * Uses review-specific CSS classes:
+ * - .was-correct (green) for correct answers
+ * - .was-incorrect (red) for wrong answers
+ * - .unanswered (grey) for blank answers
+ * - .current (accent border) for the currently viewed question
+ * - .flagged + flag indicator for flagged questions
+ *
+ * @param container - The DOM element to render into
+ * @param items - Review navigator items to display
+ * @param onJump - Callback when a question is clicked (receives 0-based index)
+ */
+export function renderReviewNavigator(
+  container: HTMLElement,
+  items: readonly ReviewNavigatorItem[],
+  onJump: (index: number) => void,
+): void {
+  container.innerHTML = "";
+
+  for (const item of items) {
+    const el = document.createElement("div");
+    el.className = "minimap-item";
+    el.textContent = item.label;
+    el.dataset.index = String(item.index);
+
+    // Apply current highlight
+    if (item.isCurrent) {
+      el.classList.add("current");
+    }
+
+    // Apply result-based class (even when current, for background color)
+    switch (item.resultState) {
+      case "correct":
+        el.classList.add("was-correct");
+        break;
+      case "wrong":
+        el.classList.add("was-incorrect");
+        break;
+      case "blank":
+        el.classList.add("unanswered");
         break;
     }
 
