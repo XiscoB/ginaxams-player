@@ -790,7 +790,10 @@ export class ExamLibraryController {
     ]);
 
     // Build a lookup map: "examId::questionNumber" → QuestionTelemetry
-    const telemetryMap = new Map<string, import("../domain/types.js").QuestionTelemetry>();
+    const telemetryMap = new Map<
+      string,
+      import("../domain/types.js").QuestionTelemetry
+    >();
     for (const t of allTelemetry) {
       telemetryMap.set(`${t.examId}::${t.questionNumber}`, t);
     }

@@ -15,7 +15,10 @@
  */
 
 import type { ExamLibraryController } from "../../application/examLibraryController.js";
-import type { TelemetryQuestionData, TelemetryViewData } from "../../application/viewState.js";
+import type {
+  TelemetryQuestionData,
+  TelemetryViewData,
+} from "../../application/viewState.js";
 
 import { createSection } from "../components/Section.js";
 import { createStack } from "../components/Stack.js";
@@ -116,9 +119,18 @@ function buildQuestionPerformanceCard(data: TelemetryViewData): HTMLElement {
       currentSort,
       currentFilter,
       currentCategory,
-      (sort) => { currentSort = sort; render(); },
-      (filter) => { currentFilter = filter; render(); },
-      (cat) => { currentCategory = cat; render(); },
+      (sort) => {
+        currentSort = sort;
+        render();
+      },
+      (filter) => {
+        currentFilter = filter;
+        render();
+      },
+      (cat) => {
+        currentCategory = cat;
+        render();
+      },
     );
     container.appendChild(controls);
 
@@ -238,7 +250,9 @@ function buildControls(
   return row;
 }
 
-function buildPerformanceTable(questions: readonly TelemetryQuestionData[]): HTMLElement {
+function buildPerformanceTable(
+  questions: readonly TelemetryQuestionData[],
+): HTMLElement {
   if (questions.length === 0) {
     const empty = document.createElement("div");
     empty.className = "gx-list__empty";
@@ -254,7 +268,17 @@ function buildPerformanceTable(questions: readonly TelemetryQuestionData[]): HTM
   // Header
   const thead = document.createElement("thead");
   const headerRow = document.createElement("tr");
-  const headers = ["#", "Category", "Seen", "Correct", "Wrong", "Blank", "Avg Time", "Last Seen", "Stability"];
+  const headers = [
+    "#",
+    "Category",
+    "Seen",
+    "Correct",
+    "Wrong",
+    "Blank",
+    "Avg Time",
+    "Last Seen",
+    "Stability",
+  ];
   for (const text of headers) {
     const th = document.createElement("th");
     th.textContent = text;
@@ -296,7 +320,9 @@ function buildPerformanceTable(questions: readonly TelemetryQuestionData[]): HTM
     stabilityTd.style.padding = "4px 8px";
     stabilityTd.style.borderBottom = "1px solid var(--color-border, #eee)";
     const stability = computeStability(q);
-    stabilityTd.appendChild(createBadge(stability, stabilityBadgeVariant(stability)));
+    stabilityTd.appendChild(
+      createBadge(stability, stabilityBadgeVariant(stability)),
+    );
     row.appendChild(stabilityTd);
 
     tbody.appendChild(row);
@@ -349,7 +375,9 @@ function buildMostFailedCard(data: TelemetryViewData): HTMLElement {
       right.appendChild(stats);
 
       const stability = computeStability(q);
-      right.appendChild(createBadge(stability, stabilityBadgeVariant(stability)));
+      right.appendChild(
+        createBadge(stability, stabilityBadgeVariant(stability)),
+      );
 
       item.appendChild(left);
       item.appendChild(right);

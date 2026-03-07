@@ -66,7 +66,10 @@ export function computeStability(
     return "stable";
   }
 
-  if (question.timesCorrect > 0 && question.timesWrong >= question.timesCorrect) {
+  if (
+    question.timesCorrect > 0 &&
+    question.timesWrong >= question.timesCorrect
+  ) {
     return "unstable";
   }
 

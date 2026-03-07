@@ -97,9 +97,21 @@ describe("sortByWrongCount", () => {
 describe("sortByResponseTime", () => {
   it("sorts by avgResponseTimeMs descending", () => {
     const questions = [
-      makeQuestion({ questionNumber: 1, avgResponseTimeMs: 5000, totalSeen: 1 }),
-      makeQuestion({ questionNumber: 2, avgResponseTimeMs: 18000, totalSeen: 3 }),
-      makeQuestion({ questionNumber: 3, avgResponseTimeMs: 9200, totalSeen: 2 }),
+      makeQuestion({
+        questionNumber: 1,
+        avgResponseTimeMs: 5000,
+        totalSeen: 1,
+      }),
+      makeQuestion({
+        questionNumber: 2,
+        avgResponseTimeMs: 18000,
+        totalSeen: 3,
+      }),
+      makeQuestion({
+        questionNumber: 3,
+        avgResponseTimeMs: 9200,
+        totalSeen: 2,
+      }),
     ];
 
     const sorted = sortByResponseTime(questions);
@@ -108,7 +120,11 @@ describe("sortByResponseTime", () => {
 
   it("excludes unseen questions", () => {
     const questions = [
-      makeQuestion({ questionNumber: 1, avgResponseTimeMs: 5000, totalSeen: 1 }),
+      makeQuestion({
+        questionNumber: 1,
+        avgResponseTimeMs: 5000,
+        totalSeen: 1,
+      }),
       makeQuestion({ questionNumber: 2, avgResponseTimeMs: 0, totalSeen: 0 }),
     ];
 
@@ -119,8 +135,18 @@ describe("sortByResponseTime", () => {
 
   it("breaks ties by timesWrong descending", () => {
     const questions = [
-      makeQuestion({ questionNumber: 1, avgResponseTimeMs: 10000, totalSeen: 5, timesWrong: 1 }),
-      makeQuestion({ questionNumber: 2, avgResponseTimeMs: 10000, totalSeen: 5, timesWrong: 4 }),
+      makeQuestion({
+        questionNumber: 1,
+        avgResponseTimeMs: 10000,
+        totalSeen: 5,
+        timesWrong: 1,
+      }),
+      makeQuestion({
+        questionNumber: 2,
+        avgResponseTimeMs: 10000,
+        totalSeen: 5,
+        timesWrong: 4,
+      }),
     ];
 
     const sorted = sortByResponseTime(questions);
@@ -195,9 +221,27 @@ describe("sortByRecentlySeen", () => {
 
 describe("sortQuestions", () => {
   const questions = [
-    makeQuestion({ questionNumber: 1, timesWrong: 5, totalSeen: 10, avgResponseTimeMs: 3000, lastSeenAt: "2025-01-01T00:00:00Z" }),
-    makeQuestion({ questionNumber: 2, timesWrong: 1, totalSeen: 2, avgResponseTimeMs: 15000, lastSeenAt: "2025-06-01T00:00:00Z" }),
-    makeQuestion({ questionNumber: 3, timesWrong: 0, totalSeen: 0, avgResponseTimeMs: 0, lastSeenAt: "" }),
+    makeQuestion({
+      questionNumber: 1,
+      timesWrong: 5,
+      totalSeen: 10,
+      avgResponseTimeMs: 3000,
+      lastSeenAt: "2025-01-01T00:00:00Z",
+    }),
+    makeQuestion({
+      questionNumber: 2,
+      timesWrong: 1,
+      totalSeen: 2,
+      avgResponseTimeMs: 15000,
+      lastSeenAt: "2025-06-01T00:00:00Z",
+    }),
+    makeQuestion({
+      questionNumber: 3,
+      timesWrong: 0,
+      totalSeen: 0,
+      avgResponseTimeMs: 0,
+      lastSeenAt: "",
+    }),
   ];
 
   it("dispatches mostWrong", () => {
@@ -245,9 +289,7 @@ describe("filterUnseenQuestions", () => {
   });
 
   it("returns empty array when all are seen", () => {
-    const questions = [
-      makeQuestion({ questionNumber: 1, totalSeen: 1 }),
-    ];
+    const questions = [makeQuestion({ questionNumber: 1, totalSeen: 1 })];
     expect(filterUnseenQuestions(questions)).toEqual([]);
   });
 });
@@ -323,11 +365,15 @@ describe("computeUnseenByCategory", () => {
       makeQuestion({ questionNumber: 1, categories: ["Law"], totalSeen: 0 }),
       makeQuestion({ questionNumber: 2, categories: ["Law"], totalSeen: 5 }),
       makeQuestion({ questionNumber: 3, categories: ["Budget"], totalSeen: 0 }),
-      makeQuestion({ questionNumber: 4, categories: ["Law", "Budget"], totalSeen: 0 }),
+      makeQuestion({
+        questionNumber: 4,
+        categories: ["Law", "Budget"],
+        totalSeen: 0,
+      }),
     ];
 
     const counts = computeUnseenByCategory(questions);
-    expect(counts.get("Law")).toBe(2);   // Q1, Q4
+    expect(counts.get("Law")).toBe(2); // Q1, Q4
     expect(counts.get("Budget")).toBe(2); // Q3, Q4
   });
 
@@ -461,9 +507,21 @@ describe("getTopFailedQuestions", () => {
 describe("getTopSlowestQuestions", () => {
   it("returns top N slowest questions", () => {
     const questions = [
-      makeQuestion({ questionNumber: 1, avgResponseTimeMs: 5000, totalSeen: 1 }),
-      makeQuestion({ questionNumber: 2, avgResponseTimeMs: 18000, totalSeen: 3 }),
-      makeQuestion({ questionNumber: 3, avgResponseTimeMs: 12000, totalSeen: 2 }),
+      makeQuestion({
+        questionNumber: 1,
+        avgResponseTimeMs: 5000,
+        totalSeen: 1,
+      }),
+      makeQuestion({
+        questionNumber: 2,
+        avgResponseTimeMs: 18000,
+        totalSeen: 3,
+      }),
+      makeQuestion({
+        questionNumber: 3,
+        avgResponseTimeMs: 12000,
+        totalSeen: 2,
+      }),
     ];
 
     const top2 = getTopSlowestQuestions(questions, 2);
@@ -475,7 +533,11 @@ describe("getTopSlowestQuestions", () => {
   it("excludes unseen questions", () => {
     const questions = [
       makeQuestion({ questionNumber: 1, avgResponseTimeMs: 0, totalSeen: 0 }),
-      makeQuestion({ questionNumber: 2, avgResponseTimeMs: 5000, totalSeen: 1 }),
+      makeQuestion({
+        questionNumber: 2,
+        avgResponseTimeMs: 5000,
+        totalSeen: 1,
+      }),
     ];
 
     const result = getTopSlowestQuestions(questions);

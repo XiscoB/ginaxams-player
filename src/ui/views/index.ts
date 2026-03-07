@@ -41,4 +41,7 @@ export {
   getTopFailedQuestions,
   getTopSlowestQuestions,
 } from "./telemetry/telemetryHelpers.js";
-export type { TelemetrySortKey, StabilityLevel } from "./telemetry/telemetryHelpers.js";
+export type {
+  TelemetrySortKey,
+  StabilityLevel,
+} from "./telemetry/telemetryHelpers.js";
