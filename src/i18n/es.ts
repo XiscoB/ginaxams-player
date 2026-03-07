@@ -394,5 +394,7 @@ export const LANG_ES = {
   masteryMastered: "dominada",
   weaknessPrefix: "D",
   trapPrefix: "trampa",
+  trapPossible: "posible",
+  trapConfirmed: "confirmada",
   locale: "es",
 } as const;

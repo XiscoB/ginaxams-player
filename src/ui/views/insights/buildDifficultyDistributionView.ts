@@ -24,6 +24,7 @@ import { createBadge } from "../../components/Badge.js";
 import {
   computeDifficultyPercentages,
   truncateText,
+  translateTrapLevel,
 } from "./insightsHelpers.js";
 
 // ============================================================================
@@ -255,7 +256,12 @@ function renderDifficultyDrillDown(
     row.appendChild(weakLabel);
 
     if (q.trapLevel !== "none") {
-      row.appendChild(createBadge(`${T?.trapPrefix ?? "trap"}`, "danger"));
+      row.appendChild(
+        createBadge(
+          `${T?.trapPrefix ?? "trap"}: ${translateTrapLevel(q.trapLevel, T)}`,
+          "danger",
+        ),
+      );
     }
 
     return row;

@@ -27,6 +27,7 @@ import {
   countQuestionsPerCategory,
   filterByCategory,
   truncateText,
+  translateTrapLevel,
 } from "./insightsHelpers.js";
 
 // ============================================================================
@@ -224,7 +225,10 @@ function buildDrillDown(
 
     if (q.trapLevel !== "none") {
       row.appendChild(
-        createBadge(`${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`, "danger"),
+        createBadge(
+          `${T?.trapPrefix ?? "trap"}: ${translateTrapLevel(q.trapLevel, T)}`,
+          "danger",
+        ),
       );
     }
 

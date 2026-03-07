@@ -1353,6 +1353,7 @@ export class App {
     setText("txtClickToSelect", T.clickToSelect);
     setText("txtAvailableExams", T.availableExams);
     setText("txtRefresh", T.refresh);
+    setText("txtNewFolder", T.newFolder);
 
     // Navigation Tabs
     setText("txtTabLibrary", T.tabLibrary);

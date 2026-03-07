@@ -4125,12 +4125,21 @@
             "
           >
             <h3 id="txtAvailableExams" style="color: #888">Library</h3>
-            <span
-              class="main-menu-link"
-              id="txtRefresh"
-              style="margin: 0; font-size: 0.9em"
-              >Refresh</span
-            >
+            <div style="display: flex; gap: 12px; align-items: center">
+              <span
+                class="main-menu-link"
+                id="btnCreateFolder"
+                style="margin: 0; font-size: 0.9em; cursor: pointer"
+                onclick="window.app.promptCreateFolder()"
+                >📁 <span id="txtNewFolder">New Folder</span></span
+              >
+              <span
+                class="main-menu-link"
+                id="txtRefresh"
+                style="margin: 0; font-size: 0.9em"
+                >Refresh</span
+              >
+            </div>
           </div>
 
           <div id="examList" class="exam-list-container">

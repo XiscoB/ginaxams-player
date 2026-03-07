@@ -10,6 +10,7 @@ import type {
   InsightsDifficultyDistribution,
 } from "../../../application/viewState.js";
 import type { CategoryMastery } from "../../../domain/types.js";
+import type { Translations } from "../../../i18n/index.js";
 
 // ============================================================================
 // Category Mastery Sorting
@@ -140,4 +141,18 @@ export function computeDifficultyPercentages(
 export function truncateText(text: string, maxLength: number = 80): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength).trimEnd() + "…";
+}
+
+// ============================================================================
+// Trap Level Translation
+// ============================================================================
+
+/**
+ * Translate a trap level string ("possible" | "confirmed") using i18n.
+ * Falls back to the raw English value if no translations available.
+ */
+export function translateTrapLevel(level: string, T?: Translations): string {
+  if (level === "possible") return T?.trapPossible ?? "possible";
+  if (level === "confirmed") return T?.trapConfirmed ?? "confirmed";
+  return level;
 }

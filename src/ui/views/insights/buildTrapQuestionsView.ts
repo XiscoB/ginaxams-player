@@ -19,7 +19,11 @@ import { createCard } from "../../components/Card.js";
 import { createList } from "../../components/List.js";
 import { createBadge } from "../../components/Badge.js";
 
-import { getTrapQuestions, truncateText } from "./insightsHelpers.js";
+import {
+  getTrapQuestions,
+  truncateText,
+  translateTrapLevel,
+} from "./insightsHelpers.js";
 
 // ============================================================================
 // Main Builder
@@ -81,7 +85,7 @@ function buildTrapRow(q: InsightsQuestionData, T?: Translations): HTMLElement {
   preview.style.whiteSpace = "nowrap";
 
   const trapBadge = createBadge(
-    `${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`,
+    `${T?.trapPrefix ?? "trap"}: ${translateTrapLevel(q.trapLevel, T)}`,
     q.trapLevel === "confirmed" ? "danger" : "warning",
   );
 

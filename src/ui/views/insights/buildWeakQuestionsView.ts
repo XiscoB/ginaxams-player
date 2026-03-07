@@ -25,6 +25,7 @@ import {
   getWeakQuestionsSorted,
   filterByCategory,
   truncateText,
+  translateTrapLevel,
 } from "./insightsHelpers.js";
 
 // ============================================================================
@@ -146,7 +147,10 @@ function buildWeakQuestionRow(
 
   if (q.trapLevel !== "none") {
     header.appendChild(
-      createBadge(`${T?.trapPrefix ?? "trap"}: ${q.trapLevel}`, "danger"),
+      createBadge(
+        `${T?.trapPrefix ?? "trap"}: ${translateTrapLevel(q.trapLevel, T)}`,
+        "danger",
+      ),
     );
   }
 

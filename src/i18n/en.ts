@@ -389,6 +389,8 @@ export const LANG_EN = {
   masteryMastered: "mastered",
   weaknessPrefix: "W",
   trapPrefix: "trap",
+  trapPossible: "possible",
+  trapConfirmed: "confirmed",
   locale: "en",
 };
 
