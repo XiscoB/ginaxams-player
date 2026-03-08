@@ -208,7 +208,8 @@ export const LANG_EN = {
 3. Include a mix of question types (conceptual, application, analysis)
 4. Make sure questions match the difficulty level: {difficulty}
 5. Only ONE answer per question must have "isCorrect": true
-6. Return ONLY valid JSON, no markdown formatting or explanations`,
+6. The exam-level "categorias" field must contain ALL categories used across questions. Each question's "categoria" MUST be a subset of the exam-level "categorias". If a question uses "Execution", then "Execution" MUST appear in the top-level "categorias" array
+7. Return ONLY valid JSON, no markdown formatting or explanations`,
   aiPromptMaterialBelow: "Study material to create questions from:",
   aiPromptMaterialNext: "[I will paste my study material in the next message]",
   aiPromptLanguage: "English",

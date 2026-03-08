@@ -210,7 +210,8 @@ export const LANG_ES = {
 3. Incluye una mezcla de tipos de preguntas (conceptuales, aplicación, análisis)
 4. Asegúrate de que las preguntas correspondan al nivel de dificultad: {difficulty}
 5. Solo UNA respuesta por pregunta debe tener "isCorrect": true
-6. Devuelve SOLO el JSON, sin formato markdown ni explicaciones`,
+6. El campo "categorias" del examen debe contener TODAS las categorías que uses. Cada pregunta tiene un campo "categoria" que DEBE ser un subconjunto de "categorias" del examen. Si una pregunta usa "Ejecución", entonces "Ejecución" DEBE estar en la lista "categorias" del nivel del examen
+7. Devuelve SOLO el JSON, sin formato markdown ni explicaciones`,
   aiPromptMaterialBelow: "Material de estudio del que crear preguntas:",
   aiPromptMaterialNext:
     "[Pegaré el material de estudio en el siguiente mensaje]",

@@ -2422,6 +2422,7 @@ ${exampleAnswers}
 }
 
 IMPORTANT: Use "${safeExamId}" as the "exam_id" and "${examName}" as the "title". Do NOT change these values.
+IMPORTANT: The "categorias" array at the exam level MUST list EVERY category that appears in any question's "categoria" field. Every question "categoria" value MUST exist in the top-level "categorias" array.
 
 ${rules}`;
 
