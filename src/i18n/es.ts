@@ -422,6 +422,25 @@ export const LANG_ES = {
   errorReload: "Recargar",
   appVersionLabel: "GinaXams Player v{version}",
 
+  // Export / Backup / Restore
+  exportExam: "Exportar Examen",
+  downloadJson: "Descargar JSON",
+  copyJson: "Copiar JSON",
+  shareExam: "Compartir",
+  copiedToClipboard: "¡Copiado al portapapeles!",
+  shareNotSupported: "Compartir no está disponible en este dispositivo",
+  backupDescription:
+    "Descarga una copia completa de todos tus exámenes, carpetas, telemetría e historial de intentos. Úsala para transferir tus datos a otro dispositivo o navegador.",
+  restoreDescription:
+    "Restaura una copia de seguridad previamente exportada. Esto reemplazará TODOS los datos actuales (exámenes, carpetas, telemetría, intentos) con el contenido de la copia.",
+  restoreWarning:
+    "Esto reemplazará TODOS tus datos (exámenes, carpetas, telemetría, intentos) con el contenido de la copia de seguridad. No se puede deshacer. ¿Continuar?",
+  restoreSuccess: "¡Copia de seguridad restaurada exitosamente!",
+  restoreFailed: "Error al restaurar",
+  backupCreated: "¡Copia de seguridad descargada!",
+  exportExamSuccess: "¡Examen exportado!",
+  invalidBackupFile: "Archivo de copia de seguridad inválido",
+
   // Shared Badge Labels (Phase 18)
   questionPrefix: "P",
   stabilityStable: "estable",

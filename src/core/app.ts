@@ -52,6 +52,12 @@ import { renderInsightsView } from "../ui/views/InsightsView.js";
 import { renderTelemetryView } from "../ui/views/TelemetryView.js";
 import { createViewLoading, createViewError } from "../ui/components/ViewStatus.js";
 import { APP_VERSION } from "../application/version.js";
+import {
+  downloadAsJson,
+  copyJsonToClipboard,
+  shareJson,
+  canShareFiles,
+} from "../application/exportUtils.js";
 
 /**
  * View state for UI routing
@@ -1355,6 +1361,14 @@ export class App {
     setText("txtAvailableExams", T.availableExams);
     setText("txtRefresh", T.refresh);
     setText("txtNewFolder", T.newFolder);
+    setText("txtBackup", T.export);
+    setText("txtRestore", T.import);
+
+    // Set backup/restore button tooltips
+    const btnBackup = document.getElementById("btnBackup");
+    if (btnBackup) btnBackup.title = T.backupDescription ?? "";
+    const btnRestore = document.getElementById("btnRestore");
+    if (btnRestore) btnRestore.title = T.restoreDescription ?? "";
 
     // Navigation Tabs
     setText("txtTabLibrary", T.tabLibrary);
@@ -1654,6 +1668,7 @@ export class App {
             <div class="exam-item-stats">${statsHtml}</div>
           </div>
           <div class="exam-actions">
+            <button class="icon-btn" onclick="event.stopPropagation(); window.app.showExamExportMenu('${exam.id}', event)" title="${T.exportExam}">📤</button>
             <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameExam('${exam.id}')" title="${T.rename}">✏️</button>
             <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptMoveExam('${exam.id}')" title="${T.move}">📁</button>
             <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteExam('${exam.id}')" title="${T.delete}">🗑️</button>
@@ -1791,21 +1806,133 @@ export class App {
   async exportLibrary(): Promise<void> {
     try {
       const snapshot = await this.libraryController.createBackup();
-      const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `ginaxams_backup_${new Date().toISOString().split("T")[0]}.json`;
-      a.click();
-
-      URL.revokeObjectURL(url);
+      const filename = `ginaxams_backup_${new Date().toISOString().split("T")[0]}.json`;
+      downloadAsJson(snapshot, filename);
+      alert(this.translations.backupCreated ?? "Backup downloaded!");
     } catch (e) {
       console.error("Export failed:", e);
       alert(this.translations.exportFailed);
     }
+  }
+
+  async restoreLibrary(): Promise<void> {
+    const T = this.translations;
+
+    // Confirm destructive action
+    if (!confirm(T.restoreWarning ?? "This will replace ALL your data. Continue?")) {
+      return;
+    }
+
+    // Open file picker
+    const restoreInput = document.getElementById("restoreFileInput") as HTMLInputElement | null;
+    if (!restoreInput) return;
+
+    // Reset value so the same file can be selected again
+    restoreInput.value = "";
+
+    // Use a one-shot change handler
+    const handleFile = async (e: Event): Promise<void> => {
+      restoreInput.removeEventListener("change", handleFile);
+      const files = (e.target as HTMLInputElement).files;
+      if (!files || files.length === 0) return;
+
+      try {
+        const text = await files[0].text();
+        const data = JSON.parse(text);
+        await this.libraryController.restoreBackup(data);
+        await this.refreshLibrary();
+        alert(T.restoreSuccess ?? "Backup restored successfully!");
+      } catch (err) {
+        console.error("Restore failed:", err);
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        alert(`${T.restoreFailed ?? "Restore failed"}: ${msg}`);
+      }
+    };
+
+    restoreInput.addEventListener("change", handleFile);
+    restoreInput.click();
+  }
+
+  // ============================================================================
+  // Per-Exam Export
+  // ============================================================================
+
+  async showExamExportMenu(examId: string, event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    const T = this.translations;
+
+    // Remove any existing menu
+    document.getElementById("examExportMenu")?.remove();
+
+    // Get exam data
+    let examData;
+    let examTitle: string;
+    try {
+      examData = await this.libraryController.exportExamJson(examId);
+      examTitle = examData.title;
+    } catch {
+      alert(T.exportFailed ?? "Export failed");
+      return;
+    }
+
+    // Create popup menu
+    const menu = document.createElement("div");
+    menu.id = "examExportMenu";
+    menu.className = "exam-export-menu";
+    menu.innerHTML = `
+      <button class="exam-export-option" data-action="download">
+        <span>⬇️</span> ${T.downloadJson ?? "Download JSON"}
+      </button>
+      <button class="exam-export-option" data-action="copy">
+        <span>📋</span> ${T.copyJson ?? "Copy JSON"}
+      </button>
+      ${canShareFiles() ? `
+        <button class="exam-export-option" data-action="share">
+          <span>🔗</span> ${T.shareExam ?? "Share"}
+        </button>
+      ` : ""}
+    `;
+
+    // Position near the button
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    menu.style.position = "fixed";
+    menu.style.top = `${rect.bottom + 4}px`;
+    menu.style.right = `${window.innerWidth - rect.right}px`;
+    menu.style.zIndex = "1000";
+
+    // Handle actions
+    menu.addEventListener("click", async (e) => {
+      const btn = (e.target as HTMLElement).closest("[data-action]") as HTMLElement | null;
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      menu.remove();
+
+      if (action === "download") {
+        const filename = `${examTitle.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
+        downloadAsJson(examData, filename);
+        alert(T.exportExamSuccess ?? "Exam exported!");
+      } else if (action === "copy") {
+        const ok = await copyJsonToClipboard(examData);
+        alert(ok ? (T.copiedToClipboard ?? "Copied to clipboard!") : (T.exportFailed ?? "Export failed"));
+      } else if (action === "share") {
+        const filename = `${examTitle.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
+        const ok = await shareJson(examData, examTitle, filename);
+        if (!ok) alert(T.shareNotSupported ?? "Sharing not supported on this device");
+      }
+    });
+
+    document.body.appendChild(menu);
+
+    // Close menu on click outside
+    const closeMenu = (e: MouseEvent): void => {
+      if (!menu.contains(e.target as Node)) {
+        menu.remove();
+        document.removeEventListener("click", closeMenu);
+      }
+    };
+    // Delay to avoid immediate close from the current click
+    setTimeout(() => document.addEventListener("click", closeMenu), 0);
   }
 
   // ============================================================================
@@ -2133,15 +2260,19 @@ export class App {
     const code = document.getElementById("templateCode");
     if (!code) return;
 
-    const blob = new Blob([code.textContent || ""], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "exam_template.json";
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const templateData = JSON.parse(code.textContent || "{}");
+      downloadAsJson(templateData, "exam_template.json");
+    } catch {
+      // Fallback for non-JSON content
+      const blob = new Blob([code.textContent || ""], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "exam_template.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
     alert(this.translations.templateDownloaded || "Template downloaded!");
   }
 

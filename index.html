@@ -2949,6 +2949,39 @@
         font-size: 1.3em;
       }
 
+      /* Exam Export Popup Menu */
+      .exam-export-menu {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 6px;
+        min-width: 180px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(20px);
+        animation: menuFadeIn 0.15s ease;
+      }
+
+      .exam-export-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 10px 14px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.9em;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        text-align: left;
+      }
+
+      .exam-export-option:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateX(3px);
+      }
+
       @media (max-width: 600px) {
         h1 {
           font-size: 1.5em;
@@ -4416,6 +4449,12 @@
                 Click or drag & drop JSON here
               </div>
             </label>
+            <input
+              type="file"
+              id="restoreFileInput"
+              accept=".json"
+              class="hidden"
+            />
           </div>
 
           <!-- Library Tab Bar -->
@@ -4454,6 +4493,22 @@
           >
             <h3 id="txtAvailableExams" style="color: #888">Library</h3>
             <div style="display: flex; gap: 12px; align-items: center">
+              <span
+                class="main-menu-link"
+                id="btnBackup"
+                style="margin: 0; font-size: 0.9em; cursor: pointer"
+                onclick="window.app.exportLibrary()"
+                title=""
+                >💾 <span id="txtBackup">Backup</span></span
+              >
+              <span
+                class="main-menu-link"
+                id="btnRestore"
+                style="margin: 0; font-size: 0.9em; cursor: pointer"
+                onclick="window.app.restoreLibrary()"
+                title=""
+                >📥 <span id="txtRestore">Restore</span></span
+              >
               <span
                 class="main-menu-link"
                 id="btnCreateFolder"

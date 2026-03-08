@@ -212,6 +212,24 @@ export class ExamLibraryController {
   }
 
   /**
+   * Get the raw Exam JSON for a single exam (schema v2.0 data only).
+   *
+   * Returns the validated `Exam` object — no StoredExam wrapper,
+   * no telemetry, no attempt history. Suitable for sharing or re-import.
+   *
+   * @param examId - The storage ID of the exam
+   * @returns The raw Exam object
+   * @throws Error if exam not found
+   */
+  async exportExamJson(examId: string): Promise<Exam> {
+    const exam = await this.storage.getExam(examId);
+    if (!exam) {
+      throw new Error(`Exam not found: ${examId}`);
+    }
+    return exam.data;
+  }
+
+  /**
    * Delete an exam by ID (cascades to telemetry + attempts via storage).
    */
   async deleteExam(examId: string): Promise<void> {

@@ -416,6 +416,25 @@ export const LANG_EN = {
   errorGenericTitle: "Something went wrong.",
   errorReload: "Reload",
   appVersionLabel: "GinaXams Player v{version}",
+  // Export / Backup / Restore
+  exportExam: "Export Exam",
+  downloadJson: "Download JSON",
+  copyJson: "Copy JSON",
+  shareExam: "Share",
+  copiedToClipboard: "Copied to clipboard!",
+  shareNotSupported: "Sharing not supported on this device",
+  backupDescription:
+    "Download a full backup of all your exams, folders, telemetry and attempt history. Use it to transfer your data to another device or browser.",
+  restoreDescription:
+    "Restore a previously exported backup. This will replace ALL current data (exams, folders, telemetry, attempts) with the backup contents.",
+  restoreWarning:
+    "This will replace ALL your data (exams, folders, telemetry, attempts) with the backup contents. This cannot be undone. Continue?",
+  restoreSuccess: "Backup restored successfully!",
+  restoreFailed: "Restore failed",
+  backupCreated: "Backup downloaded!",
+  exportExamSuccess: "Exam exported!",
+  invalidBackupFile: "Invalid backup file",
+
   // Shared Badge Labels (Phase 18)
   questionPrefix: "Q",
   stabilityStable: "stable",
