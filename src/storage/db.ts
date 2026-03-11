@@ -13,7 +13,7 @@ import type {
   QuestionTelemetry,
 } from "../domain/types.js";
 
-const DB_NAME = "ginax_db";
+const DB_NAME = "ginaxams_v2_db";
 /** Current IndexedDB schema version */
 export const DB_VERSION = 5; // Phase 16: Added settings store
 
@@ -170,17 +170,6 @@ export class ExamStorage {
     }
   }
 
-  /**
-   * Create a new transaction
-   */
-  private async transaction(
-    storeNames: string | string[],
-    mode: IDBTransactionMode,
-  ): Promise<IDBTransaction> {
-    const db = await this.ready();
-    return db.transaction(storeNames, mode);
-  }
-
   // ============================================================================
   // Exam Operations
   // ============================================================================
@@ -189,7 +178,7 @@ export class ExamStorage {
    * Save or update an exam
    */
   async saveExam(exam: StoredExam): Promise<string> {
-    await this.ready();
+    const db = await this.ready();
 
     // Ensure exam has an ID and timestamp
     if (!exam.id) {
@@ -203,15 +192,13 @@ export class ExamStorage {
     }
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.EXAMS], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.EXAMS);
-          const request = store.put(exam);
+      const tx = db.transaction([STORES.EXAMS], "readwrite");
+      const store = tx.objectStore(STORES.EXAMS);
+      const request = store.put(exam);
 
-          request.onsuccess = () => resolve(exam.id);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve(exam.id);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -219,18 +206,17 @@ export class ExamStorage {
    * Get all exams
    */
   async getExams(): Promise<StoredExam[]> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.EXAMS], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.EXAMS);
-          const request = store.getAll();
+      // Create transaction and request immediately to avoid Firefox auto-commit
+      const tx = db.transaction([STORES.EXAMS], "readonly");
+      const store = tx.objectStore(STORES.EXAMS);
+      const request = store.getAll();
 
-          request.onsuccess = () => resolve(request.result as StoredExam[]);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve(request.result as StoredExam[]);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -238,19 +224,18 @@ export class ExamStorage {
    * Get a single exam by ID
    */
   async getExam(id: string): Promise<StoredExam | undefined> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.EXAMS], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.EXAMS);
-          const request = store.get(id);
+      // Create transaction and request immediately to avoid Firefox auto-commit
+      const tx = db.transaction([STORES.EXAMS], "readonly");
+      const store = tx.objectStore(STORES.EXAMS);
+      const request = store.get(id);
 
-          request.onsuccess = () =>
-            resolve(request.result as StoredExam | undefined);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () =>
+        resolve(request.result as StoredExam | undefined);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -259,47 +244,43 @@ export class ExamStorage {
    * Phase 7: Cascade deletion for telemetry and attempts (progress removed)
    */
   async deleteExam(id: string): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction(
+      // Create transaction immediately to avoid Firefox auto-commit
+      const tx = db.transaction(
         [STORES.EXAMS, STORES.QUESTION_TELEMETRY, STORES.ATTEMPTS],
         "readwrite",
-      )
-        .then((tx) => {
-          // Delete exam
-          tx.objectStore(STORES.EXAMS).delete(id);
+      );
 
-          // Delete telemetry for this exam
-          const telemetryStore = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const telemetryIndex = telemetryStore.index("examId");
-          const telemetryRequest = telemetryIndex.getAllKeys(id);
-          telemetryRequest.onsuccess = () => {
-            const keys = telemetryRequest.result as string[];
-            for (const key of keys) {
-              telemetryStore.delete(key);
-            }
-          };
+      // Delete exam
+      tx.objectStore(STORES.EXAMS).delete(id);
 
-          // M2: Delete attempts that reference this exam
-          const attemptsStore = tx.objectStore(STORES.ATTEMPTS);
-          const allAttemptsRequest = attemptsStore.getAll();
-          allAttemptsRequest.onsuccess = () => {
-            const attempts = allAttemptsRequest.result as Attempt[];
-            for (const attempt of attempts) {
-              if (attempt.sourceExamIds.includes(id)) {
-                attemptsStore.delete(attempt.id);
-              }
-            }
-          };
+      // Delete telemetry for this exam
+      const telemetryStore = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const telemetryIndex = telemetryStore.index("examId");
+      const telemetryRequest = telemetryIndex.getAllKeys(id);
+      telemetryRequest.onsuccess = () => {
+        const keys = telemetryRequest.result as string[];
+        for (const key of keys) {
+          telemetryStore.delete(key);
+        }
+      };
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => {
-            const target = e.target as IDBTransaction;
-            reject(target.error);
-          };
-        })
-        .catch(reject);
+      // M2: Delete attempts that reference this exam
+      const attemptsStore = tx.objectStore(STORES.ATTEMPTS);
+      const allAttemptsRequest = attemptsStore.getAll();
+      allAttemptsRequest.onsuccess = () => {
+        const attempts = allAttemptsRequest.result as Attempt[];
+        for (const attempt of attempts) {
+          if (attempt.sourceExamIds.includes(id)) {
+            attemptsStore.delete(attempt.id);
+          }
+        }
+      };
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -311,21 +292,19 @@ export class ExamStorage {
    * Save or update a folder
    */
   async saveFolder(folder: Folder): Promise<string> {
-    await this.ready();
+    const db = await this.ready();
 
     if (!folder.id) {
       folder.id = crypto.randomUUID();
     }
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.FOLDERS], "readwrite")
-        .then((tx) => {
-          const request = tx.objectStore(STORES.FOLDERS).put(folder);
+      const tx = db.transaction([STORES.FOLDERS], "readwrite");
+      const request = tx.objectStore(STORES.FOLDERS).put(folder);
 
-          request.onsuccess = () => resolve(folder.id);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve(folder.id);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -333,17 +312,15 @@ export class ExamStorage {
    * Get all folders
    */
   async getFolders(): Promise<Folder[]> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.FOLDERS], "readonly")
-        .then((tx) => {
-          const request = tx.objectStore(STORES.FOLDERS).getAll();
+      const tx = db.transaction([STORES.FOLDERS], "readonly");
+      const request = tx.objectStore(STORES.FOLDERS).getAll();
 
-          request.onsuccess = () => resolve(request.result as Folder[]);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve(request.result as Folder[]);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -351,34 +328,29 @@ export class ExamStorage {
    * Delete a folder and move its exams to uncategorized
    */
   async deleteFolder(id: string): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     // Get exams in this folder first
     const allExams = await this.getExams();
     const examsInFolder = allExams.filter((e) => e.folderId === id);
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.EXAMS, STORES.FOLDERS], "readwrite")
-        .then((tx) => {
-          // Move exams to uncategorized
-          if (examsInFolder.length > 0) {
-            const examStore = tx.objectStore(STORES.EXAMS);
-            examsInFolder.forEach((exam) => {
-              exam.folderId = "uncategorized";
-              examStore.put(exam);
-            });
-          }
+      const tx = db.transaction([STORES.EXAMS, STORES.FOLDERS], "readwrite");
 
-          // Delete folder
-          tx.objectStore(STORES.FOLDERS).delete(id);
+      // Move exams to uncategorized
+      if (examsInFolder.length > 0) {
+        const examStore = tx.objectStore(STORES.EXAMS);
+        examsInFolder.forEach((exam) => {
+          exam.folderId = "uncategorized";
+          examStore.put(exam);
+        });
+      }
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => {
-            const target = e.target as IDBTransaction;
-            reject(target.error);
-          };
-        })
-        .catch(reject);
+      // Delete folder
+      tx.objectStore(STORES.FOLDERS).delete(id);
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -390,18 +362,16 @@ export class ExamStorage {
    * Save an attempt
    */
   async saveAttempt(attempt: Attempt): Promise<string> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.ATTEMPTS], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.ATTEMPTS);
-          const request = store.put(attempt);
+      const tx = db.transaction([STORES.ATTEMPTS], "readwrite");
+      const store = tx.objectStore(STORES.ATTEMPTS);
+      const request = store.put(attempt);
 
-          request.onsuccess = () => resolve(attempt.id);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve(attempt.id);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -409,19 +379,17 @@ export class ExamStorage {
    * Get an attempt by ID
    */
   async getAttempt(id: string): Promise<Attempt | undefined> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.ATTEMPTS], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.ATTEMPTS);
-          const request = store.get(id);
+      const tx = db.transaction([STORES.ATTEMPTS], "readonly");
+      const store = tx.objectStore(STORES.ATTEMPTS);
+      const request = store.get(id);
 
-          request.onsuccess = () =>
-            resolve(request.result as Attempt | undefined);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () =>
+        resolve(request.result as Attempt | undefined);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -429,18 +397,16 @@ export class ExamStorage {
    * Get all attempts
    */
   async getAllAttempts(): Promise<Attempt[]> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.ATTEMPTS], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.ATTEMPTS);
-          const request = store.getAll();
+      const tx = db.transaction([STORES.ATTEMPTS], "readonly");
+      const store = tx.objectStore(STORES.ATTEMPTS);
+      const request = store.getAll();
 
-          request.onsuccess = () => resolve(request.result as Attempt[]);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve(request.result as Attempt[]);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -448,19 +414,17 @@ export class ExamStorage {
    * Get attempts by type
    */
   async getAttemptsByType(type: Attempt["type"]): Promise<Attempt[]> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.ATTEMPTS], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.ATTEMPTS);
-          const index = store.index("type");
-          const request = index.getAll(type);
+      const tx = db.transaction([STORES.ATTEMPTS], "readonly");
+      const store = tx.objectStore(STORES.ATTEMPTS);
+      const index = store.index("type");
+      const request = index.getAll(type);
 
-          request.onsuccess = () => resolve(request.result as Attempt[]);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve(request.result as Attempt[]);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -468,18 +432,16 @@ export class ExamStorage {
    * Delete an attempt
    */
   async deleteAttempt(id: string): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.ATTEMPTS], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.ATTEMPTS);
-          const request = store.delete(id);
+      const tx = db.transaction([STORES.ATTEMPTS], "readwrite");
+      const store = tx.objectStore(STORES.ATTEMPTS);
+      const request = store.delete(id);
 
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -487,30 +449,24 @@ export class ExamStorage {
    * Delete attempts that reference a specific exam (cascade helper)
    */
   async deleteAttemptsForExam(examId: string): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.ATTEMPTS], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.ATTEMPTS);
-          const request = store.getAll();
+      const tx = db.transaction([STORES.ATTEMPTS], "readwrite");
+      const store = tx.objectStore(STORES.ATTEMPTS);
+      const request = store.getAll();
 
-          request.onsuccess = () => {
-            const attempts = request.result as Attempt[];
-            for (const attempt of attempts) {
-              if (attempt.sourceExamIds.includes(examId)) {
-                store.delete(attempt.id);
-              }
-            }
-          };
+      request.onsuccess = () => {
+        const attempts = request.result as Attempt[];
+        for (const attempt of attempts) {
+          if (attempt.sourceExamIds.includes(examId)) {
+            store.delete(attempt.id);
+          }
+        }
+      };
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => {
-            const target = e.target as IDBTransaction;
-            reject(target.error);
-          };
-        })
-        .catch(reject);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -522,18 +478,16 @@ export class ExamStorage {
    * Save or update question telemetry
    */
   async saveQuestionTelemetry(telemetry: QuestionTelemetry): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const request = store.put(telemetry);
+      const tx = db.transaction([STORES.QUESTION_TELEMETRY], "readwrite");
+      const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const request = store.put(telemetry);
 
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -544,21 +498,19 @@ export class ExamStorage {
     examId: string,
     questionNumber: number,
   ): Promise<QuestionTelemetry | undefined> {
-    await this.ready();
+    const db = await this.ready();
 
     const id = `${examId}::${questionNumber}`;
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.QUESTION_TELEMETRY], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const request = store.get(id);
+      const tx = db.transaction([STORES.QUESTION_TELEMETRY], "readonly");
+      const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const request = store.get(id);
 
-          request.onsuccess = () =>
-            resolve(request.result as QuestionTelemetry | undefined);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () =>
+        resolve(request.result as QuestionTelemetry | undefined);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -566,20 +518,18 @@ export class ExamStorage {
    * Get all telemetry for an exam
    */
   async getTelemetryByExam(examId: string): Promise<QuestionTelemetry[]> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.QUESTION_TELEMETRY], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const index = store.index("examId");
-          const request = index.getAll(examId);
+      const tx = db.transaction([STORES.QUESTION_TELEMETRY], "readonly");
+      const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const index = store.index("examId");
+      const request = index.getAll(examId);
 
-          request.onsuccess = () =>
-            resolve(request.result as QuestionTelemetry[]);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () =>
+        resolve(request.result as QuestionTelemetry[]);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -587,19 +537,17 @@ export class ExamStorage {
    * Get all question telemetry
    */
   async getAllQuestionTelemetry(): Promise<QuestionTelemetry[]> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.QUESTION_TELEMETRY], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const request = store.getAll();
+      const tx = db.transaction([STORES.QUESTION_TELEMETRY], "readonly");
+      const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const request = store.getAll();
 
-          request.onsuccess = () =>
-            resolve(request.result as QuestionTelemetry[]);
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () =>
+        resolve(request.result as QuestionTelemetry[]);
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -610,20 +558,18 @@ export class ExamStorage {
     examId: string,
     questionNumber: number,
   ): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     const id = `${examId}::${questionNumber}`;
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const request = store.delete(id);
+      const tx = db.transaction([STORES.QUESTION_TELEMETRY], "readwrite");
+      const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const request = store.delete(id);
 
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -631,29 +577,23 @@ export class ExamStorage {
    * Delete all telemetry for an exam
    */
   async deleteTelemetryForExam(examId: string): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const index = store.index("examId");
-          const request = index.getAllKeys(examId);
+      const tx = db.transaction([STORES.QUESTION_TELEMETRY], "readwrite");
+      const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const index = store.index("examId");
+      const request = index.getAllKeys(examId);
 
-          request.onsuccess = () => {
-            const keys = request.result as string[];
-            for (const key of keys) {
-              store.delete(key);
-            }
-          };
+      request.onsuccess = () => {
+        const keys = request.result as string[];
+        for (const key of keys) {
+          store.delete(key);
+        }
+      };
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => {
-            const target = e.target as IDBTransaction;
-            reject(target.error);
-          };
-        })
-        .catch(reject);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -662,18 +602,16 @@ export class ExamStorage {
    * M2: Global reset clears ONLY telemetry, not exams or attempts
    */
   async clearAllQuestionTelemetry(): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.QUESTION_TELEMETRY], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
-          const request = store.clear();
+      const tx = db.transaction([STORES.QUESTION_TELEMETRY], "readwrite");
+      const store = tx.objectStore(STORES.QUESTION_TELEMETRY);
+      const request = store.clear();
 
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -692,34 +630,32 @@ export class ExamStorage {
    * Returns defaults merged with any persisted values.
    */
   async loadSettings(): Promise<AppSettings> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.SETTINGS], "readonly")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.SETTINGS);
-          const request = store.getAll();
+      const tx = db.transaction([STORES.SETTINGS], "readonly");
+      const store = tx.objectStore(STORES.SETTINGS);
+      const request = store.getAll();
 
-          request.onsuccess = () => {
-            const rows = request.result as Array<{
-              key: string;
-              value: unknown;
-            }>;
-            const persisted: Record<string, unknown> = {};
-            for (const row of rows) {
-              persisted[row.key] = row.value;
-            }
-            resolve({
-              ...ExamStorage.DEFAULT_SETTINGS,
-              ...persisted,
-            } as AppSettings);
-          };
-          request.onerror = () => reject(request.error);
-        })
-        .catch(() => {
-          // If the store doesn't exist yet, return defaults
-          resolve({ ...ExamStorage.DEFAULT_SETTINGS });
-        });
+      request.onsuccess = () => {
+        const rows = request.result as Array<{
+          key: string;
+          value: unknown;
+        }>;
+        const persisted: Record<string, unknown> = {};
+        for (const row of rows) {
+          persisted[row.key] = row.value;
+        }
+        resolve({
+          ...ExamStorage.DEFAULT_SETTINGS,
+          ...persisted,
+        } as AppSettings);
+      };
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => {
+        // If the store doesn't exist yet, return defaults
+        resolve({ ...ExamStorage.DEFAULT_SETTINGS });
+      };
     });
   }
 
@@ -730,18 +666,16 @@ export class ExamStorage {
     key: K,
     value: AppSettings[K],
   ): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.SETTINGS], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.SETTINGS);
-          const request = store.put({ key, value });
+      const tx = db.transaction([STORES.SETTINGS], "readwrite");
+      const store = tx.objectStore(STORES.SETTINGS);
+      const request = store.put({ key, value });
 
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        })
-        .catch(reject);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -749,23 +683,17 @@ export class ExamStorage {
    * Save multiple settings at once.
    */
   async saveSettings(settings: Partial<AppSettings>): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction([STORES.SETTINGS], "readwrite")
-        .then((tx) => {
-          const store = tx.objectStore(STORES.SETTINGS);
-          for (const [key, value] of Object.entries(settings)) {
-            store.put({ key, value });
-          }
+      const tx = db.transaction([STORES.SETTINGS], "readwrite");
+      const store = tx.objectStore(STORES.SETTINGS);
+      for (const [key, value] of Object.entries(settings)) {
+        store.put({ key, value });
+      }
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => {
-            const target = e.target as IDBTransaction;
-            reject(target.error);
-          };
-        })
-        .catch(reject);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -802,10 +730,10 @@ export class ExamStorage {
       throw new Error("Invalid data format: missing 'exams'");
     }
 
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction(
+      const tx = db.transaction(
         [
           STORES.EXAMS,
           STORES.FOLDERS,
@@ -813,40 +741,35 @@ export class ExamStorage {
           STORES.QUESTION_TELEMETRY,
         ],
         "readwrite",
-      )
-        .then((tx) => {
-          // Merge data, overwriting if ID exists
-          data.exams.forEach((item) => {
-            tx.objectStore(STORES.EXAMS).put(item);
-          });
+      );
 
-          if (data.folders) {
-            data.folders.forEach((item) => {
-              tx.objectStore(STORES.FOLDERS).put(item);
-            });
-          }
+      // Merge data, overwriting if ID exists
+      data.exams.forEach((item) => {
+        tx.objectStore(STORES.EXAMS).put(item);
+      });
 
-          // Import attempts if present
-          if (data.attempts) {
-            data.attempts.forEach((item) => {
-              tx.objectStore(STORES.ATTEMPTS).put(item);
-            });
-          }
+      if (data.folders) {
+        data.folders.forEach((item) => {
+          tx.objectStore(STORES.FOLDERS).put(item);
+        });
+      }
 
-          // Import telemetry if present
-          if (data.telemetry) {
-            data.telemetry.forEach((item) => {
-              tx.objectStore(STORES.QUESTION_TELEMETRY).put(item);
-            });
-          }
+      // Import attempts if present
+      if (data.attempts) {
+        data.attempts.forEach((item) => {
+          tx.objectStore(STORES.ATTEMPTS).put(item);
+        });
+      }
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => {
-            const target = e.target as IDBTransaction;
-            reject(target.error);
-          };
-        })
-        .catch(reject);
+      // Import telemetry if present
+      if (data.telemetry) {
+        data.telemetry.forEach((item) => {
+          tx.objectStore(STORES.QUESTION_TELEMETRY).put(item);
+        });
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
@@ -854,10 +777,10 @@ export class ExamStorage {
    * Clear all data (exams, folders, attempts, telemetry, and settings)
    */
   async clearAll(): Promise<void> {
-    await this.ready();
+    const db = await this.ready();
 
     return new Promise((resolve, reject) => {
-      this.transaction(
+      const tx = db.transaction(
         [
           STORES.EXAMS,
           STORES.FOLDERS,
@@ -866,21 +789,16 @@ export class ExamStorage {
           STORES.SETTINGS,
         ],
         "readwrite",
-      )
-        .then((tx) => {
-          tx.objectStore(STORES.EXAMS).clear();
-          tx.objectStore(STORES.FOLDERS).clear();
-          tx.objectStore(STORES.ATTEMPTS).clear();
-          tx.objectStore(STORES.QUESTION_TELEMETRY).clear();
-          tx.objectStore(STORES.SETTINGS).clear();
+      );
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => {
-            const target = e.target as IDBTransaction;
-            reject(target.error);
-          };
-        })
-        .catch(reject);
+      tx.objectStore(STORES.EXAMS).clear();
+      tx.objectStore(STORES.FOLDERS).clear();
+      tx.objectStore(STORES.ATTEMPTS).clear();
+      tx.objectStore(STORES.QUESTION_TELEMETRY).clear();
+      tx.objectStore(STORES.SETTINGS).clear();
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 }
@@ -937,18 +855,31 @@ export function retryPendingDelete(): Promise<void> {
   if (!localStorage.getItem("ginaxams_pendingDelete")) {
     return Promise.resolve();
   }
+
+  // Clear the flag immediately so we don't get stuck in a loop
+  localStorage.removeItem("ginaxams_pendingDelete");
+
   return new Promise((resolve) => {
+    // Safety timeout: if delete hangs, proceed anyway
+    const timeout = setTimeout(() => {
+      console.warn("retryPendingDelete timed out, proceeding");
+      resolve();
+    }, 1000);
+
     const request = indexedDB.deleteDatabase(DB_NAME);
     request.onsuccess = () => {
-      localStorage.removeItem("ginaxams_pendingDelete");
+      clearTimeout(timeout);
+      console.log("retryPendingDelete: database deleted");
       resolve();
     };
     request.onerror = () => {
-      localStorage.removeItem("ginaxams_pendingDelete");
+      clearTimeout(timeout);
+      console.warn("retryPendingDelete: delete failed, proceeding");
       resolve();
     };
     request.onblocked = () => {
-      localStorage.removeItem("ginaxams_pendingDelete");
+      clearTimeout(timeout);
+      console.warn("retryPendingDelete: delete blocked, proceeding");
       resolve();
     };
   });
