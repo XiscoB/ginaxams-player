@@ -290,10 +290,14 @@ export class PracticeManager {
         div.classList.add("selected");
       }
 
-      div.innerHTML = `
-        <span class="answer-letter">${ans.letter}</span>
-        <span class="answer-text">${ans.text}</span>
-      `;
+      const letterSpan = document.createElement("span");
+      letterSpan.className = "answer-letter";
+      letterSpan.textContent = ans.letter;
+      const textSpan = document.createElement("span");
+      textSpan.className = "answer-text";
+      textSpan.textContent = ans.text;
+      div.appendChild(letterSpan);
+      div.appendChild(textSpan);
 
       // Only allow clicking if not yet answered
       if (!state.isAnswered) {
@@ -590,27 +594,64 @@ export class PracticeManager {
       : "feedback-panel--wrong";
     const headerIcon = isCorrect ? "✓" : "✗";
 
-    container.innerHTML = `
-      <div class="feedback-panel ${panelClass}">
-        <div class="feedback-panel__header">
-          <span>${headerIcon}</span>
-          <span>${headerText}</span>
-        </div>
-        <div class="feedback-panel__body">
-          <div class="feedback-panel__field">
-            <span class="feedback-panel__label">${T.referenceArticle || "Reference"}</span>
-            <span class="feedback-panel__value">${referenceArticle}</span>
-          </div>
-          <div class="feedback-panel__field">
-            <span class="feedback-panel__label">${T.literalCitation || "Citation"}</span>
-            <blockquote class="feedback-panel__citation">${literalCitation}</blockquote>
-          </div>
-          <div class="feedback-panel__field">
-            <span class="feedback-panel__label">${T.explanation || "Explanation"}</span>
-            <span class="feedback-panel__value">${explanation}</span>
-          </div>
-        </div>
-      </div>
-    `;
+    container.innerHTML = "";
+
+    const panel = document.createElement("div");
+    panel.className = `feedback-panel ${panelClass}`;
+
+    const header = document.createElement("div");
+    header.className = "feedback-panel__header";
+    const iconSpan = document.createElement("span");
+    iconSpan.textContent = headerIcon;
+    const headerSpan = document.createElement("span");
+    headerSpan.textContent = headerText;
+    header.appendChild(iconSpan);
+    header.appendChild(headerSpan);
+    panel.appendChild(header);
+
+    const body = document.createElement("div");
+    body.className = "feedback-panel__body";
+
+    // Reference field
+    const refField = document.createElement("div");
+    refField.className = "feedback-panel__field";
+    const refLabel = document.createElement("span");
+    refLabel.className = "feedback-panel__label";
+    refLabel.textContent = T.referenceArticle || "Reference";
+    const refValue = document.createElement("span");
+    refValue.className = "feedback-panel__value";
+    refValue.textContent = referenceArticle;
+    refField.appendChild(refLabel);
+    refField.appendChild(refValue);
+    body.appendChild(refField);
+
+    // Citation field
+    const citField = document.createElement("div");
+    citField.className = "feedback-panel__field";
+    const citLabel = document.createElement("span");
+    citLabel.className = "feedback-panel__label";
+    citLabel.textContent = T.literalCitation || "Citation";
+    const citValue = document.createElement("blockquote");
+    citValue.className = "feedback-panel__citation";
+    citValue.textContent = literalCitation;
+    citField.appendChild(citLabel);
+    citField.appendChild(citValue);
+    body.appendChild(citField);
+
+    // Explanation field
+    const explField = document.createElement("div");
+    explField.className = "feedback-panel__field";
+    const explLabel = document.createElement("span");
+    explLabel.className = "feedback-panel__label";
+    explLabel.textContent = T.explanation || "Explanation";
+    const explValue = document.createElement("span");
+    explValue.className = "feedback-panel__value";
+    explValue.textContent = explanation;
+    explField.appendChild(explLabel);
+    explField.appendChild(explValue);
+    body.appendChild(explField);
+
+    panel.appendChild(body);
+    container.appendChild(panel);
   }
 }

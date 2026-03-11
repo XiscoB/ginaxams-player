@@ -1615,7 +1615,7 @@ export class App {
     }
 
     // Render folders and exams
-    let html = "";
+    listEl.innerHTML = "";
     for (const [folderId, folderExams] of Object.entries(map)) {
       if (
         folderId === "uncategorized" &&
@@ -1630,75 +1630,182 @@ export class App {
         folderName = this.translations.uncategorized;
       }
 
-      html += this.renderFolderSection(folderId, folderName, folderExams);
+      listEl.appendChild(this.renderFolderSection(folderId, folderName, folderExams));
     }
-
-    listEl.innerHTML = html;
   }
 
   private renderFolderSection(
     folderId: string,
     folderName: string,
     exams: ExamCardView[],
-  ): string {
+  ): HTMLElement {
     const T = this.translations;
     const icon = folderId === "uncategorized" ? "📂" : "📁";
     const isUncat = folderId === "uncategorized";
 
-    const renderExam = (exam: ExamCardView): string => {
-      const attempts = exam.stats?.attemptCount ?? 0;
-      const bestScore = exam.stats?.bestScore ?? 0;
+    const section = document.createElement("div");
+    section.className = "category-section";
+    section.id = `cat-${folderId}`;
+    section.dataset.folderId = folderId;
 
-      let statsHtml = "";
-      if (attempts > 0) {
-        statsHtml = `
-          <div class="exam-stats">
-            <span>${attempts} ${attempts === 1 ? T.attempt : T.attempts}</span>
-            <span>${T.bestScore}: ${bestScore}%</span>
-          </div>
-        `;
-      } else {
-        statsHtml = `<span class="exam-item-meta">${exam.questionCount ?? "?"} ${T.questions}</span>`;
-      }
+    // Header
+    const header = document.createElement("div");
+    header.className = "category-header";
 
-      return `
-        <div class="exam-item" data-id="${exam.id}" onclick="window.app.selectExam('${exam.id}')">
-          <div class="exam-item-info">
-            <div class="exam-item-title">${exam.title || exam.id}</div>
-            <div class="exam-item-stats">${statsHtml}</div>
-          </div>
-          <div class="exam-actions">
-            <button class="icon-btn" onclick="event.stopPropagation(); window.app.showExamExportMenu('${exam.id}', event)" title="${T.exportExam}">📤</button>
-            <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameExam('${exam.id}')" title="${T.rename}">✏️</button>
-            <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptMoveExam('${exam.id}')" title="${T.move}">📁</button>
-            <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteExam('${exam.id}')" title="${T.delete}">🗑️</button>
-          </div>
-        </div>
-      `;
-    };
+    const headerLeft = document.createElement("div");
+    headerLeft.style.display = "flex";
+    headerLeft.style.alignItems = "center";
+    headerLeft.style.flex = "1";
+    headerLeft.style.cursor = "pointer";
 
-    return `
-      <div class="category-section" id="cat-${folderId}" data-folder-id="${folderId}">
-        <div class="category-header">
-          <div style="display:flex; align-items:center; flex:1; cursor:pointer;">
-            <span class="category-icon">${icon}</span>
-            <span class="category-name">${folderName}</span>
-            <span class="category-count">${exams.length}</span>
-          </div>
-          ${
-            !isUncat
-              ? `
-              <button class="icon-btn" onclick="event.stopPropagation(); window.app.promptRenameFolder('${folderId}')" title="${T.rename}">✏️</button>
-              <button class="icon-btn" onclick="event.stopPropagation(); window.app.deleteFolder('${folderId}')" title="${T.delete}">🗑️</button>
-            `
-              : ""
-          }
-        </div>
-        <div class="category-exams">
-          ${exams.map((e) => renderExam(e)).join("")}
-        </div>
-      </div>
-    `;
+    const iconSpan = document.createElement("span");
+    iconSpan.className = "category-icon";
+    iconSpan.textContent = icon;
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "category-name";
+    nameSpan.textContent = folderName;
+
+    const countSpan = document.createElement("span");
+    countSpan.className = "category-count";
+    countSpan.textContent = String(exams.length);
+
+    headerLeft.appendChild(iconSpan);
+    headerLeft.appendChild(nameSpan);
+    headerLeft.appendChild(countSpan);
+    header.appendChild(headerLeft);
+
+    if (!isUncat) {
+      const renameBtn = document.createElement("button");
+      renameBtn.className = "icon-btn";
+      renameBtn.title = T.rename;
+      renameBtn.textContent = "✏️";
+      renameBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.promptRenameFolder(folderId);
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "icon-btn";
+      deleteBtn.title = T.delete;
+      deleteBtn.textContent = "🗑️";
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.deleteFolder(folderId);
+      });
+
+      header.appendChild(renameBtn);
+      header.appendChild(deleteBtn);
+    }
+
+    section.appendChild(header);
+
+    // Exam list
+    const examsContainer = document.createElement("div");
+    examsContainer.className = "category-exams";
+
+    for (const exam of exams) {
+      examsContainer.appendChild(this.renderExamCard(exam));
+    }
+
+    section.appendChild(examsContainer);
+    return section;
+  }
+
+  private renderExamCard(exam: ExamCardView): HTMLElement {
+    const T = this.translations;
+    const attempts = exam.stats?.attemptCount ?? 0;
+    const bestScore = exam.stats?.bestScore ?? 0;
+
+    const item = document.createElement("div");
+    item.className = "exam-item";
+    item.dataset.id = exam.id;
+    item.addEventListener("click", () => {
+      this.selectExam(exam.id);
+    });
+
+    // Info section
+    const info = document.createElement("div");
+    info.className = "exam-item-info";
+
+    const title = document.createElement("div");
+    title.className = "exam-item-title";
+    title.textContent = exam.title || exam.id;
+
+    const statsDiv = document.createElement("div");
+    statsDiv.className = "exam-item-stats";
+
+    if (attempts > 0) {
+      const statsInner = document.createElement("div");
+      statsInner.className = "exam-stats";
+
+      const attemptsSpan = document.createElement("span");
+      attemptsSpan.textContent = `${attempts} ${attempts === 1 ? T.attempt : T.attempts}`;
+
+      const bestSpan = document.createElement("span");
+      bestSpan.textContent = `${T.bestScore}: ${bestScore}%`;
+
+      statsInner.appendChild(attemptsSpan);
+      statsInner.appendChild(bestSpan);
+      statsDiv.appendChild(statsInner);
+    } else {
+      const meta = document.createElement("span");
+      meta.className = "exam-item-meta";
+      meta.textContent = `${exam.questionCount ?? "?"} ${T.questions}`;
+      statsDiv.appendChild(meta);
+    }
+
+    info.appendChild(title);
+    info.appendChild(statsDiv);
+    item.appendChild(info);
+
+    // Actions
+    const actions = document.createElement("div");
+    actions.className = "exam-actions";
+
+    const exportBtn = document.createElement("button");
+    exportBtn.className = "icon-btn";
+    exportBtn.title = T.exportExam;
+    exportBtn.textContent = "📤";
+    exportBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.showExamExportMenu(exam.id, e);
+    });
+
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "icon-btn";
+    renameBtn.title = T.rename;
+    renameBtn.textContent = "✏️";
+    renameBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.promptRenameExam(exam.id);
+    });
+
+    const moveBtn = document.createElement("button");
+    moveBtn.className = "icon-btn";
+    moveBtn.title = T.move;
+    moveBtn.textContent = "📁";
+    moveBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.promptMoveExam(exam.id);
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "icon-btn";
+    deleteBtn.title = T.delete;
+    deleteBtn.textContent = "🗑️";
+    deleteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.deleteExam(exam.id);
+    });
+
+    actions.appendChild(exportBtn);
+    actions.appendChild(renameBtn);
+    actions.appendChild(moveBtn);
+    actions.appendChild(deleteBtn);
+    item.appendChild(actions);
+
+    return item;
   }
 
   // ============================================================================
