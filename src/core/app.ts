@@ -50,7 +50,10 @@ import {
 } from "../i18n/index.js";
 import { renderInsightsView } from "../ui/views/InsightsView.js";
 import { renderTelemetryView } from "../ui/views/TelemetryView.js";
-import { createViewLoading, createViewError } from "../ui/components/ViewStatus.js";
+import {
+  createViewLoading,
+  createViewError,
+} from "../ui/components/ViewStatus.js";
 import { APP_VERSION } from "../application/version.js";
 import {
   downloadAsJson,
@@ -118,7 +121,8 @@ export class App {
   private timerVisible = true;
 
   // Practice session UI state (Phase 13)
-  private practiceUiState: PracticeSessionUiState = createPracticeSessionUiState();
+  private practiceUiState: PracticeSessionUiState =
+    createPracticeSessionUiState();
   private cleanupKeyboardShortcuts: (() => void) | null = null;
 
   // Onboarding state
@@ -497,9 +501,11 @@ export class App {
 
     // Update jump button labels
     const txtNextWrong = document.getElementById("txtNextWrong");
-    if (txtNextWrong) txtNextWrong.textContent = `❌ ${T.nextWrongQuestion || "Next Wrong"}`;
+    if (txtNextWrong)
+      txtNextWrong.textContent = `❌ ${T.nextWrongQuestion || "Next Wrong"}`;
     const txtNextBlank = document.getElementById("txtNextBlank");
-    if (txtNextBlank) txtNextBlank.textContent = `⬜ ${T.nextBlankQuestion || "Next Blank"}`;
+    if (txtNextBlank)
+      txtNextBlank.textContent = `⬜ ${T.nextBlankQuestion || "Next Blank"}`;
 
     this.buildReviewNavItems();
     this.renderReviewScreenContent("all");
@@ -551,7 +557,10 @@ export class App {
         ),
       }));
 
-    this.reviewNavItems = computeReviewNavigatorItems(results, this.reviewCurrentIndex);
+    this.reviewNavItems = computeReviewNavigatorItems(
+      results,
+      this.reviewCurrentIndex,
+    );
   }
 
   /**
@@ -569,7 +578,10 @@ export class App {
           isBlank: q.isBlank,
           isFlagged: this.practiceUiState.flaggedQuestions.has(i),
         }));
-      this.reviewNavItems = computeReviewNavigatorItems(results, this.reviewCurrentIndex);
+      this.reviewNavItems = computeReviewNavigatorItems(
+        results,
+        this.reviewCurrentIndex,
+      );
     }
 
     renderReviewNavigator(container, this.reviewNavItems, (index) => {
@@ -703,7 +715,10 @@ export class App {
    */
   reviewNextWrong(): void {
     if (!this.currentResultView) return;
-    const idx = findNextWrongIndex(this.reviewNavItems, this.reviewCurrentIndex);
+    const idx = findNextWrongIndex(
+      this.reviewNavItems,
+      this.reviewCurrentIndex,
+    );
     if (idx >= 0) {
       this.reviewCurrentIndex = idx;
       this.renderReviewQuestion();
@@ -717,7 +732,10 @@ export class App {
    */
   reviewNextBlank(): void {
     if (!this.currentResultView) return;
-    const idx = findNextBlankIndex(this.reviewNavItems, this.reviewCurrentIndex);
+    const idx = findNextBlankIndex(
+      this.reviewNavItems,
+      this.reviewCurrentIndex,
+    );
     if (idx >= 0) {
       this.reviewCurrentIndex = idx;
       this.renderReviewQuestion();
@@ -1122,17 +1140,21 @@ export class App {
    * Switch the library screen to show a specific tab.
    * Library = normal exam list, Insights = InsightsView, Telemetry = TelemetryView
    */
-  async showLibraryTab(tab: "library" | "insights" | "telemetry"): Promise<void> {
+  async showLibraryTab(
+    tab: "library" | "insights" | "telemetry",
+  ): Promise<void> {
     this.activeLibraryTab = tab;
     this.updateTabButtons();
 
     // Persist selected tab (Phase 16)
-    this.settingsService.setLastOpenedTab(tab as TabId).catch((e) =>
-      console.warn("Failed to persist tab setting:", e),
-    );
+    this.settingsService
+      .setLastOpenedTab(tab as TabId)
+      .catch((e) => console.warn("Failed to persist tab setting:", e));
 
     const examListEl = document.getElementById("examList");
-    const fileInputArea = document.querySelector(".file-input-area") as HTMLElement | null;
+    const fileInputArea = document.querySelector(
+      ".file-input-area",
+    ) as HTMLElement | null;
     const libraryHeader = document.getElementById("libraryHeaderBar");
 
     if (tab === "library") {
@@ -1147,16 +1169,28 @@ export class App {
 
       if (examListEl) {
         // Show loading indicator (Phase 17)
-        const loadingKey = tab === "insights" ? "loadingInsights" as const : "loadingTelemetry" as const;
+        const loadingKey =
+          tab === "insights"
+            ? ("loadingInsights" as const)
+            : ("loadingTelemetry" as const);
         examListEl.innerHTML = "";
-        examListEl.appendChild(createViewLoading(loadingKey, this.translations));
+        examListEl.appendChild(
+          createViewLoading(loadingKey, this.translations),
+        );
 
         try {
           let view: HTMLElement;
           if (tab === "insights") {
-            view = await renderInsightsView(this.libraryController, undefined, this.translations);
+            view = await renderInsightsView(
+              this.libraryController,
+              undefined,
+              this.translations,
+            );
           } else {
-            view = await renderTelemetryView(this.libraryController, this.translations);
+            view = await renderTelemetryView(
+              this.libraryController,
+              this.translations,
+            );
           }
           examListEl.innerHTML = "";
           examListEl.appendChild(view);
@@ -1165,10 +1199,7 @@ export class App {
           // Show error state with Reload button (Phase 17)
           examListEl.innerHTML = "";
           examListEl.appendChild(
-            createViewError(
-              () => this.showLibraryTab(tab),
-              this.translations,
-            ),
+            createViewError(() => this.showLibraryTab(tab), this.translations),
           );
         }
       }
@@ -1309,9 +1340,9 @@ export class App {
     localStorage.setItem("ginaxams_lang", lang);
 
     // Persist to IndexedDB settings (Phase 16)
-    this.settingsService.setLanguage(lang).catch((e) =>
-      console.warn("Failed to persist language setting:", e),
-    );
+    this.settingsService
+      .setLanguage(lang)
+      .catch((e) => console.warn("Failed to persist language setting:", e));
 
     // Update active button states
     const langEn = document.getElementById("langEn");
@@ -1489,13 +1520,17 @@ export class App {
     setText("txtAiPreviewCategories", T.aiPreviewCategories);
 
     // Exam name input placeholder
-    const aiExamName = document.getElementById("aiExamName") as HTMLInputElement | null;
+    const aiExamName = document.getElementById(
+      "aiExamName",
+    ) as HTMLInputElement | null;
     if (aiExamName) {
       aiExamName.placeholder = T.aiPromptExamNamePlaceholder || "";
     }
 
     // JSON paste textarea placeholder
-    const aiJsonPasteInput = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+    const aiJsonPasteInput = document.getElementById(
+      "aiJsonPasteInput",
+    ) as HTMLTextAreaElement | null;
     if (aiJsonPasteInput) {
       aiJsonPasteInput.placeholder = T.aiPastePlaceholder || "";
     }
@@ -1630,7 +1665,9 @@ export class App {
         folderName = this.translations.uncategorized;
       }
 
-      listEl.appendChild(this.renderFolderSection(folderId, folderName, folderExams));
+      listEl.appendChild(
+        this.renderFolderSection(folderId, folderName, folderExams),
+      );
     }
   }
 
@@ -1884,18 +1921,29 @@ export class App {
       );
     } catch (e) {
       if (e instanceof DuplicateExamError) {
-        const msg = (this.translations.confirmOverwriteExam || 'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?')
+        const msg = (
+          this.translations.confirmOverwriteExam ||
+          'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?'
+        )
           .replace("{examId}", e.examId)
           .replace("{title}", e.existingTitle);
         if (confirm(msg)) {
           try {
             const text = await file.text();
             const data = JSON.parse(text);
-            const examId = await this.libraryController.importExam(data, "uncategorized", true);
+            const examId = await this.libraryController.importExam(
+              data,
+              "uncategorized",
+              true,
+            );
             await this.refreshLibrary();
-            const imported = this.libraryState?.exams.find((ex) => ex.id === examId);
+            const imported = this.libraryState?.exams.find(
+              (ex) => ex.id === examId,
+            );
             const title = imported?.title ?? "Exam";
-            alert(`${this.translations.importSuccessful || "Import successful"}: ${title}`);
+            alert(
+              `${this.translations.importSuccessful || "Import successful"}: ${title}`,
+            );
           } catch (e2) {
             console.error("Import failed:", e2);
             const message = e2 instanceof Error ? e2.message : "Unknown error";
@@ -1926,12 +1974,16 @@ export class App {
     const T = this.translations;
 
     // Confirm destructive action
-    if (!confirm(T.restoreWarning ?? "This will replace ALL your data. Continue?")) {
+    if (
+      !confirm(T.restoreWarning ?? "This will replace ALL your data. Continue?")
+    ) {
       return;
     }
 
     // Open file picker
-    const restoreInput = document.getElementById("restoreFileInput") as HTMLInputElement | null;
+    const restoreInput = document.getElementById(
+      "restoreFileInput",
+    ) as HTMLInputElement | null;
     if (!restoreInput) return;
 
     // Reset value so the same file can be selected again
@@ -1993,11 +2045,15 @@ export class App {
       <button class="exam-export-option" data-action="copy">
         <span>📋</span> ${T.copyJson ?? "Copy JSON"}
       </button>
-      ${canShareFiles() ? `
+      ${
+        canShareFiles()
+          ? `
         <button class="exam-export-option" data-action="share">
           <span>🔗</span> ${T.shareExam ?? "Share"}
         </button>
-      ` : ""}
+      `
+          : ""
+      }
     `;
 
     // Position near the button
@@ -2009,7 +2065,9 @@ export class App {
 
     // Handle actions
     menu.addEventListener("click", async (e) => {
-      const btn = (e.target as HTMLElement).closest("[data-action]") as HTMLElement | null;
+      const btn = (e.target as HTMLElement).closest(
+        "[data-action]",
+      ) as HTMLElement | null;
       if (!btn) return;
 
       const action = btn.dataset.action;
@@ -2021,11 +2079,16 @@ export class App {
         alert(T.exportExamSuccess ?? "Exam exported!");
       } else if (action === "copy") {
         const ok = await copyJsonToClipboard(examData);
-        alert(ok ? (T.copiedToClipboard ?? "Copied to clipboard!") : (T.exportFailed ?? "Export failed"));
+        alert(
+          ok
+            ? (T.copiedToClipboard ?? "Copied to clipboard!")
+            : (T.exportFailed ?? "Export failed"),
+        );
       } else if (action === "share") {
         const filename = `${examTitle.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
         const ok = await shareJson(examData, examTitle, filename);
-        if (!ok) alert(T.shareNotSupported ?? "Sharing not supported on this device");
+        if (!ok)
+          alert(T.shareNotSupported ?? "Sharing not supported on this device");
       }
     });
 
@@ -2192,8 +2255,10 @@ export class App {
           categoria: ["Arithmetic"],
           articulo_referencia: "Basic Addition Rules",
           feedback: {
-            cita_literal: "The sum of two and two equals four. Addition is the process of combining two or more numbers to obtain a total.",
-            explicacion_fallo: "2 + 2 = 4. The number 3 is too low (that would be 1 + 2), 5 is too high (that would be 2 + 3), and 6 is the result of 2 + 4.",
+            cita_literal:
+              "The sum of two and two equals four. Addition is the process of combining two or more numbers to obtain a total.",
+            explicacion_fallo:
+              "2 + 2 = 4. The number 3 is too low (that would be 1 + 2), 5 is too high (that would be 2 + 3), and 6 is the result of 2 + 4.",
           },
           answers: [
             { letter: "A", text: "3", isCorrect: false },
@@ -2208,8 +2273,10 @@ export class App {
           categoria: ["Arithmetic"],
           articulo_referencia: "Basic Subtraction Rules",
           feedback: {
-            cita_literal: "Subtraction is the inverse of addition. When we subtract 3 from 5, we remove 3 units from 5, leaving 2.",
-            explicacion_fallo: "5 − 3 = 2. The number 1 would be 4 − 3, the number 3 would be 6 − 3, and 8 would be 5 + 3 (addition, not subtraction).",
+            cita_literal:
+              "Subtraction is the inverse of addition. When we subtract 3 from 5, we remove 3 units from 5, leaving 2.",
+            explicacion_fallo:
+              "5 − 3 = 2. The number 1 would be 4 − 3, the number 3 would be 6 − 3, and 8 would be 5 + 3 (addition, not subtraction).",
           },
           answers: [
             { letter: "A", text: "1", isCorrect: false },
@@ -2224,8 +2291,10 @@ export class App {
           categoria: ["Arithmetic"],
           articulo_referencia: "Basic Division Rules",
           feedback: {
-            cita_literal: "Division distributes a number into equal parts. Dividing 10 by 2 yields 5, meaning 10 can be split into two groups of 5.",
-            explicacion_fallo: "10 ÷ 2 = 5. The number 2 would be 10 ÷ 5, the number 8 would be 10 − 2, and 20 would be 10 × 2 (multiplication, not division).",
+            cita_literal:
+              "Division distributes a number into equal parts. Dividing 10 by 2 yields 5, meaning 10 can be split into two groups of 5.",
+            explicacion_fallo:
+              "10 ÷ 2 = 5. The number 2 would be 10 ÷ 5, the number 8 would be 10 − 2, and 20 would be 10 × 2 (multiplication, not division).",
           },
           answers: [
             { letter: "A", text: "2", isCorrect: false },
@@ -2240,8 +2309,10 @@ export class App {
           categoria: ["Arithmetic"],
           articulo_referencia: "Basic Multiplication Rules",
           feedback: {
-            cita_literal: "Multiplication is repeated addition. 3 × 3 means adding 3 three times: 3 + 3 + 3 = 9.",
-            explicacion_fallo: "3 × 3 = 9. The number 6 would be 3 × 2 or 3 + 3, the number 12 would be 3 × 4, and 27 would be 3 × 3 × 3 (3 cubed).",
+            cita_literal:
+              "Multiplication is repeated addition. 3 × 3 means adding 3 three times: 3 + 3 + 3 = 9.",
+            explicacion_fallo:
+              "3 × 3 = 9. The number 6 would be 3 × 2 or 3 + 3, the number 12 would be 3 × 4, and 27 would be 3 × 3 × 3 (3 cubed).",
           },
           answers: [
             { letter: "A", text: "6", isCorrect: false },
@@ -2256,8 +2327,10 @@ export class App {
           categoria: ["Arithmetic"],
           articulo_referencia: "Basic Addition Rules",
           feedback: {
-            cita_literal: "Adding 1 to any number gives the next consecutive number. 7 + 1 = 8.",
-            explicacion_fallo: "7 + 1 = 8. The number 6 would be 7 − 1, the number 7 would be 7 + 0, and 9 would be 7 + 2.",
+            cita_literal:
+              "Adding 1 to any number gives the next consecutive number. 7 + 1 = 8.",
+            explicacion_fallo:
+              "7 + 1 = 8. The number 6 would be 7 − 1, the number 7 would be 7 + 0, and 9 would be 7 + 2.",
           },
           answers: [
             { letter: "A", text: "6", isCorrect: false },
@@ -2372,7 +2445,9 @@ export class App {
       downloadAsJson(templateData, "exam_template.json");
     } catch {
       // Fallback for non-JSON content
-      const blob = new Blob([code.textContent || ""], { type: "application/json" });
+      const blob = new Blob([code.textContent || ""], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -2426,11 +2501,16 @@ export class App {
       if (preview) preview.classList.add("hidden");
       const pasteStatus = document.getElementById("aiJsonPasteStatus");
       if (pasteStatus) pasteStatus.classList.add("hidden");
-      const pasteInput = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+      const pasteInput = document.getElementById(
+        "aiJsonPasteInput",
+      ) as HTMLTextAreaElement | null;
       if (pasteInput) pasteInput.value = "";
       // Reset exam name status
       const nameStatus = document.getElementById("aiExamNameStatus");
-      if (nameStatus) { nameStatus.classList.add("hidden"); nameStatus.className = "ai-exam-name-status hidden"; }
+      if (nameStatus) {
+        nameStatus.classList.add("hidden");
+        nameStatus.className = "ai-exam-name-status hidden";
+      }
     }
   }
 
@@ -2445,7 +2525,9 @@ export class App {
   generateAIPrompt(): void {
     const T = this.translations;
     const examName =
-      (document.getElementById("aiExamName") as HTMLInputElement)?.value?.trim() || "";
+      (
+        document.getElementById("aiExamName") as HTMLInputElement
+      )?.value?.trim() || "";
     const numQuestions =
       (document.getElementById("aiNumQuestions") as HTMLInputElement)?.value ||
       "10";
@@ -2493,9 +2575,14 @@ export class App {
       .join(",\n");
 
     // Use the exam name as both exam_id and title
-    const safeExamId = examName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const safeExamId = examName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
 
-    const schemaNote = T.aiPromptSchemaNote || "Please generate a JSON object in this exact format:";
+    const schemaNote =
+      T.aiPromptSchemaNote ||
+      "Please generate a JSON object in this exact format:";
     const rules = (T.aiPromptRules || "").replace("{difficulty}", diffLabel);
 
     let prompt = `${body}
@@ -2577,7 +2664,9 @@ ${rules}`;
 
   private async doCheckExamName(): Promise<void> {
     const T = this.translations;
-    const nameInput = document.getElementById("aiExamName") as HTMLInputElement | null;
+    const nameInput = document.getElementById(
+      "aiExamName",
+    ) as HTMLInputElement | null;
     const statusEl = document.getElementById("aiExamNameStatus");
     if (!nameInput || !statusEl) return;
 
@@ -2590,12 +2679,17 @@ ${rules}`;
 
     try {
       const exams = await this.libraryController.getExams();
-      const safeId = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const safeId = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
       const duplicate = exams.find(
         (e) => e.data.exam_id === safeId || e.data.exam_id === name,
       );
       if (duplicate) {
-        statusEl.textContent = T.aiPromptExamNameDuplicate || "An exam with this name already exists. It will be overwritten if you import.";
+        statusEl.textContent =
+          T.aiPromptExamNameDuplicate ||
+          "An exam with this name already exists. It will be overwritten if you import.";
         statusEl.className = "ai-exam-name-status warning";
       } else {
         statusEl.classList.add("hidden");
@@ -2620,7 +2714,9 @@ ${rules}`;
   async pasteFromClipboard(): Promise<void> {
     try {
       const text = await navigator.clipboard.readText();
-      const input = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+      const input = document.getElementById(
+        "aiJsonPasteInput",
+      ) as HTMLTextAreaElement | null;
       if (input) {
         input.value = text;
         input.focus();
@@ -2634,7 +2730,9 @@ ${rules}`;
 
   validatePastedJson(): void {
     const T = this.translations;
-    const input = document.getElementById("aiJsonPasteInput") as HTMLTextAreaElement | null;
+    const input = document.getElementById(
+      "aiJsonPasteInput",
+    ) as HTMLTextAreaElement | null;
     const statusEl = document.getElementById("aiJsonPasteStatus");
     const previewEl = document.getElementById("aiJsonPreview");
     const importBtn = document.getElementById("aiJsonImportBtn");
@@ -2649,7 +2747,8 @@ ${rules}`;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      statusEl.textContent = T.aiJsonInvalidJson || "Invalid JSON: could not parse the text.";
+      statusEl.textContent =
+        T.aiJsonInvalidJson || "Invalid JSON: could not parse the text.";
       statusEl.className = "ai-json-paste-status error";
       previewEl.classList.add("hidden");
       importBtn.classList.add("hidden");
@@ -2671,13 +2770,16 @@ ${rules}`;
       const questionsVal = document.getElementById("aiPreviewQuestionsValue");
       const categoriesVal = document.getElementById("aiPreviewCategoriesValue");
       if (titleVal) titleVal.textContent = validated.title;
-      if (questionsVal) questionsVal.textContent = String(validated.questions.length);
-      if (categoriesVal) categoriesVal.textContent = validated.categorias.join(", ");
+      if (questionsVal)
+        questionsVal.textContent = String(validated.questions.length);
+      if (categoriesVal)
+        categoriesVal.textContent = validated.categorias.join(", ");
 
       previewEl.classList.remove("hidden");
       importBtn.classList.remove("hidden");
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown validation error";
+      const message =
+        e instanceof Error ? e.message : "Unknown validation error";
       statusEl.textContent = `${T.aiJsonInvalidSchema || "Invalid exam format"}: ${message}`;
       statusEl.className = "ai-json-paste-status error";
       previewEl.classList.add("hidden");
@@ -2691,7 +2793,9 @@ ${rules}`;
     if (!this.lastValidatedExamJson) return;
 
     try {
-      const examId = await this.libraryController.importExam(this.lastValidatedExamJson);
+      const examId = await this.libraryController.importExam(
+        this.lastValidatedExamJson,
+      );
       await this.refreshLibrary();
 
       const imported = this.libraryState?.exams.find((e) => e.id === examId);
@@ -2703,16 +2807,27 @@ ${rules}`;
       this.lastValidatedExamJson = null;
     } catch (e) {
       if (e instanceof DuplicateExamError) {
-        const msg = (T.confirmOverwriteExam || 'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?')
+        const msg = (
+          T.confirmOverwriteExam ||
+          'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?'
+        )
           .replace("{examId}", e.examId)
           .replace("{title}", e.existingTitle);
         if (confirm(msg)) {
           try {
-            const examId = await this.libraryController.importExam(this.lastValidatedExamJson!, "uncategorized", true);
+            const examId = await this.libraryController.importExam(
+              this.lastValidatedExamJson!,
+              "uncategorized",
+              true,
+            );
             await this.refreshLibrary();
-            const imported = this.libraryState?.exams.find((ex) => ex.id === examId);
+            const imported = this.libraryState?.exams.find(
+              (ex) => ex.id === examId,
+            );
             const title = imported?.title ?? "Exam";
-            alert(`${T.aiImportSuccess || "Exam imported successfully!"}: ${title}`);
+            alert(
+              `${T.aiImportSuccess || "Exam imported successfully!"}: ${title}`,
+            );
             this.closeAIPromptGenerator();
             this.lastValidatedExamJson = null;
           } catch (e2) {
@@ -2754,9 +2869,12 @@ ${rules}`;
     document.addEventListener("click", (e) => {
       const helpMenu = document.getElementById("helpMenuPopup");
       const helpBtn = document.getElementById("helpToggleBtn");
-      if (helpMenu && !helpMenu.classList.contains("hidden") &&
-          !helpMenu.contains(e.target as Node) &&
-          !helpBtn?.contains(e.target as Node)) {
+      if (
+        helpMenu &&
+        !helpMenu.classList.contains("hidden") &&
+        !helpMenu.contains(e.target as Node) &&
+        !helpBtn?.contains(e.target as Node)
+      ) {
         helpMenu.classList.add("hidden");
       }
     });
