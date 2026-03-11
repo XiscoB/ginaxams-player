@@ -61,8 +61,19 @@ export class ExamStorage {
         reject(error);
       };
 
+      request.onblocked = () => {
+        console.error("IndexedDB blocked: close other tabs using this app");
+        reject(new Error("IndexedDB blocked: close other tabs and retry"));
+      };
+
       request.onsuccess = (event) => {
         this.db = (event.target as IDBOpenDBRequest).result;
+        // Auto-close when another connection requests a version change
+        // (e.g. deleteDatabase). This prevents blocking.
+        this.db.onversionchange = () => {
+          this.db?.close();
+          this.db = null;
+        };
         console.log("IndexedDB ready");
         resolve(this.db);
       };
@@ -146,6 +157,17 @@ export class ExamStorage {
    */
   async ready(): Promise<IDBDatabase> {
     return this.readyPromise;
+  }
+
+  /**
+   * Close the database connection (if open).
+   * Used before deleteDatabase to unblock the delete request.
+   */
+  close(): void {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
   }
 
   /**
@@ -865,3 +887,69 @@ export class ExamStorage {
 
 // Singleton instance
 export const storage = new ExamStorage();
+
+/**
+ * Delete the entire IndexedDB database.
+ * Use for recovery when the DB is corrupted or incompatible.
+ * Sets a localStorage flag so any pending open on reload
+ * can be cleanly handled.
+ */
+export function deleteDatabase(): Promise<void> {
+  // Close any open connection first so deleteDatabase isn't blocked
+  storage.close();
+
+  // Flag so we can retry on a fresh page if this attempt gets blocked
+  localStorage.setItem("ginaxams_pendingDelete", "1");
+
+  return new Promise((resolve) => {
+    // Safety timeout: if nothing fires in 2s, resolve anyway.
+    // The page reload will drop all connections and the browser
+    // will retry deletion on next load via the localStorage flag.
+    const timeout = setTimeout(() => {
+      console.warn("deleteDatabase timed out, proceeding with reload");
+      resolve();
+    }, 2000);
+
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => {
+      clearTimeout(timeout);
+      localStorage.removeItem("ginaxams_pendingDelete");
+      resolve();
+    };
+    request.onerror = () => {
+      clearTimeout(timeout);
+      console.warn("deleteDatabase error, proceeding with reload");
+      resolve();
+    };
+    request.onblocked = () => {
+      clearTimeout(timeout);
+      console.warn("deleteDatabase blocked, proceeding with reload");
+      resolve();
+    };
+  });
+}
+
+/**
+ * If a previous deleteDatabase attempt was interrupted, retry it.
+ * Call this BEFORE creating ExamStorage on page load.
+ */
+export function retryPendingDelete(): Promise<void> {
+  if (!localStorage.getItem("ginaxams_pendingDelete")) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => {
+      localStorage.removeItem("ginaxams_pendingDelete");
+      resolve();
+    };
+    request.onerror = () => {
+      localStorage.removeItem("ginaxams_pendingDelete");
+      resolve();
+    };
+    request.onblocked = () => {
+      localStorage.removeItem("ginaxams_pendingDelete");
+      resolve();
+    };
+  });
+}

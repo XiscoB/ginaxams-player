@@ -45,6 +45,7 @@ export interface AppDeps {
   libraryController: ExamLibraryController;
   settingsService: SettingsService;
   onStorageReady: () => Promise<void>;
+  onStorageError: (errorMessage: string) => void;
 }
 
 /**
@@ -65,6 +66,7 @@ export class App {
   private libraryController: ExamLibraryController;
   private settingsService: SettingsService;
   private onStorageReady: () => Promise<void>;
+  private onStorageError: (errorMessage: string) => void;
 
   // Language
   private translations: Translations = getTranslations("en");
@@ -81,6 +83,7 @@ export class App {
     this.libraryController = deps.libraryController;
     this.settingsService = deps.settingsService;
     this.onStorageReady = deps.onStorageReady;
+    this.onStorageError = deps.onStorageError;
 
     // Initialize PracticeManager as dumb renderer
     this.practiceManager = new PracticeManager({
@@ -123,12 +126,20 @@ export class App {
   // ==========================================================================
 
   private async init(): Promise<void> {
+    // Bind language buttons early so they work even before storage is ready
+    this.bindLanguageButtons();
+
+    // Apply language from localStorage / browser detection immediately
+    const earlyLang = (localStorage.getItem("ginaxams_lang") ||
+      null) as LanguageCode | null;
+    this.setLanguageVisualOnly(earlyLang || detectBrowserLanguage());
+
     try {
       await this.onStorageReady();
 
       const settings = await this.settingsService.load();
 
-      // Language
+      // Language (may override early detection with DB-persisted value)
       const savedLang = (settings.language ||
         localStorage.getItem("ginaxams_lang") ||
         null) as LanguageCode | null;
@@ -149,6 +160,13 @@ export class App {
       this.renderVersionFooter();
     } catch (e) {
       console.error("App Init Error:", e);
+      const msg = e instanceof Error ? e.message : "Unknown database error";
+      const isEs = this._currentLang === "es";
+      this.onStorageError(
+        isEs
+          ? `Error al inicializar la base de datos: ${msg}. Puedes eliminar todos los datos guardados para solucionarlo.`
+          : `Failed to initialize database: ${msg}. You can delete all saved data to fix this.`,
+      );
     }
   }
 
@@ -193,6 +211,22 @@ export class App {
   // Language
   // ==========================================================================
 
+  /**
+   * Apply language visually (translations + page text) without persisting.
+   * Used during early init before storage is ready.
+   */
+  private setLanguageVisualOnly(lang: LanguageCode): void {
+    this._currentLang = lang;
+    this.translations = getTranslations(lang);
+
+    const langEn = document.getElementById("langEn");
+    const langEs = document.getElementById("langEs");
+    langEn?.classList.toggle("active", lang === "en");
+    langEs?.classList.toggle("active", lang === "es");
+
+    updatePageText(this.translations);
+  }
+
   private setLanguage(lang: LanguageCode): void {
     this._currentLang = lang;
     this.translations = getTranslations(lang);
@@ -222,6 +256,19 @@ export class App {
   // Event Binding
   // ==========================================================================
 
+  /**
+   * Bind language buttons early (before storage ready) so the UI
+   * language can be switched even while the DB is loading/failing.
+   */
+  private bindLanguageButtons(): void {
+    document
+      .getElementById("langEn")
+      ?.addEventListener("click", () => this.setLanguage("en"));
+    document
+      .getElementById("langEs")
+      ?.addEventListener("click", () => this.setLanguage("es"));
+  }
+
   private bindEvents(): void {
     const fileInput = document.getElementById(
       "fileInput",
@@ -250,12 +297,7 @@ export class App {
       }
     });
 
-    document
-      .getElementById("langEn")
-      ?.addEventListener("click", () => this.setLanguage("en"));
-    document
-      .getElementById("langEs")
-      ?.addEventListener("click", () => this.setLanguage("es"));
+    // Language buttons are bound earlier in bindLanguageButtons()
 
     document
       .getElementById("aiExamName")
