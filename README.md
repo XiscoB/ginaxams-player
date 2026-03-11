@@ -42,26 +42,26 @@ All imported exams **must** comply with schema_version "2.0". No legacy formats 
 
 ### Required Exam Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `schema_version` | `"2.0"` | Literal string, must be exactly "2.0" |
-| `exam_id` | `string` | Unique identifier for the exam |
-| `title` | `string` | Human-readable exam title |
-| `categorias` | `string[]` | Non-empty array of category strings |
-| `total_questions` | `number` | Must equal `questions.length` |
-| `questions` | `Question[]` | Array of question objects |
+| Field             | Type         | Description                           |
+| ----------------- | ------------ | ------------------------------------- |
+| `schema_version`  | `"2.0"`      | Literal string, must be exactly "2.0" |
+| `exam_id`         | `string`     | Unique identifier for the exam        |
+| `title`           | `string`     | Human-readable exam title             |
+| `categorias`      | `string[]`   | Non-empty array of category strings   |
+| `total_questions` | `number`     | Must equal `questions.length`         |
+| `questions`       | `Question[]` | Array of question objects             |
 
 ### Required Question Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `number` | `number` | Question number (unique within exam) |
-| `text` | `string` | Question text |
-| `categoria` | `string[]` | Subset of exam `categorias` |
-| `articulo_referencia` | `string` | Legal article reference |
-| `feedback.cita_literal` | `string` | Literal legal citation |
-| `feedback.explicacion_fallo` | `string` | Pedagogical failure explanation |
-| `answers` | `Answer[]` | Exactly **one** correct answer required |
+| Field                        | Type       | Description                             |
+| ---------------------------- | ---------- | --------------------------------------- |
+| `number`                     | `number`   | Question number (unique within exam)    |
+| `text`                       | `string`   | Question text                           |
+| `categoria`                  | `string[]` | Subset of exam `categorias`             |
+| `articulo_referencia`        | `string`   | Legal article reference                 |
+| `feedback.cita_literal`      | `string`   | Literal legal citation                  |
+| `feedback.explicacion_fallo` | `string`   | Pedagogical failure explanation         |
+| `answers`                    | `Answer[]` | Exactly **one** correct answer required |
 
 Strict validation is enforced. Invalid schema throws descriptive errors. No fallback parsing.
 
@@ -73,23 +73,23 @@ All exam sessions are persistent **Attempt** entities. There are no implicit ses
 
 ### Attempt Types
 
-| Type | Purpose | Updates Telemetry |
-|------|---------|-------------------|
-| `free` | Learning mode with instant feedback | **No** |
-| `simulacro` | Exam simulation with timer | **Yes** |
-| `review` | Adaptive review based on weakness | **Yes** |
+| Type        | Purpose                             | Updates Telemetry |
+| ----------- | ----------------------------------- | ----------------- |
+| `free`      | Learning mode with instant feedback | **No**            |
+| `simulacro` | Exam simulation with timer          | **Yes**           |
+| `review`    | Adaptive review based on weakness   | **Yes**           |
 
 ### Attempt Structure
 
 ```typescript
 interface Attempt {
-  id: string;                    // Unique identifier
+  id: string; // Unique identifier
   type: "free" | "simulacro" | "review";
-  createdAt: string;             // ISO timestamp
-  sourceExamIds: string[];       // Referenced exams
-  config: AttemptConfig;         // Type-specific configuration
-  parentAttemptId?: string;      // For chained attempts
-  result?: AttemptResult;        // Computed after completion
+  createdAt: string; // ISO timestamp
+  sourceExamIds: string[]; // Referenced exams
+  config: AttemptConfig; // Type-specific configuration
+  parentAttemptId?: string; // For chained attempts
+  result?: AttemptResult; // Computed after completion
 }
 ```
 
@@ -103,15 +103,15 @@ Telemetry tracks per-question performance metrics. It is **never** mutated to er
 
 ### Tracked Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `timesCorrect` | `number` | Count of correct answers |
-| `timesWrong` | `number` | Count of wrong answers |
-| `timesBlank` | `number` | Count of blank answers |
-| `consecutiveCorrect` | `number` | Streak of consecutive correct answers |
-| `avgResponseTimeMs` | `number` | Rolling average response time |
-| `totalSeen` | `number` | Total times question has been presented |
-| `lastSeenAt` | `string` | ISO timestamp of last presentation |
+| Field                | Type     | Description                             |
+| -------------------- | -------- | --------------------------------------- |
+| `timesCorrect`       | `number` | Count of correct answers                |
+| `timesWrong`         | `number` | Count of wrong answers                  |
+| `timesBlank`         | `number` | Count of blank answers                  |
+| `consecutiveCorrect` | `number` | Streak of consecutive correct answers   |
+| `avgResponseTimeMs`  | `number` | Rolling average response time           |
+| `totalSeen`          | `number` | Total times question has been presented |
+| `lastSeenAt`         | `string` | ISO timestamp of last presentation      |
 
 ### Telemetry Rules
 
@@ -179,11 +179,11 @@ Result is clamped to >= 0
 
 ### Default Weights
 
-| Parameter | Default Value |
-|-----------|---------------|
-| `wrongWeight` | 2.0 |
-| `blankWeight` | 1.2 |
-| `recoveryWeight` | 1.0 |
+| Parameter             | Default Value      |
+| --------------------- | ------------------ |
+| `wrongWeight`         | 2.0                |
+| `blankWeight`         | 1.2                |
+| `recoveryWeight`      | 1.0                |
 | `weakTimeThresholdMs` | 15000 (15 seconds) |
 
 ### Review Generation Flow
@@ -206,16 +206,17 @@ Database version: **4** (Phase 7: Removed legacy progress store)
 
 ### Stores
 
-| Store | Purpose | Key Path |
-|-------|---------|----------|
-| `exams` | StoredExam objects | `id` |
-| `folders` | Folder objects | `id` |
-| `attempts` | Attempt records | `id` |
+| Store               | Purpose                | Key Path                                      |
+| ------------------- | ---------------------- | --------------------------------------------- |
+| `exams`             | StoredExam objects     | `id`                                          |
+| `folders`           | Folder objects         | `id`                                          |
+| `attempts`          | Attempt records        | `id`                                          |
 | `questionTelemetry` | Per-question telemetry | `id` (format: `${examId}::${questionNumber}`) |
 
 ### Cascade Deletion
 
 Deleting an exam automatically deletes:
+
 - All telemetry entries for that exam
 - All attempts that reference the exam
 
