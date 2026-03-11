@@ -58,8 +58,7 @@ function showDatabaseErrorRecovery(errorMessage: string): void {
   const titleEl = document.getElementById("dbErrorTitle");
   if (titleEl)
     titleEl.textContent = isEs ? "Error de Base de Datos" : "Database Error";
-  if (msgEl)
-    msgEl.textContent = errorMessage;
+  if (msgEl) msgEl.textContent = errorMessage;
   if (deleteBtn)
     deleteBtn.textContent = isEs
       ? "Borrar todos los datos y recargar"
