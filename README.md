@@ -296,3 +296,52 @@ npm test -- --run # Run tests once
 ## License
 
 MIT
+
+## Architecture Overview
+
+GinaXams Player uses a layered architecture where each layer has a clear responsibility and boundary.
+
+### Layered Architecture
+
+- src/domain: Pure business rules and deterministic logic, including scoring, weakness computation, review selection, telemetry transitions, and schema validation.
+- src/application: Use-case orchestration and runtime flow control, including attempt coordination, timers, settings coordination, and integration between domain and persistence.
+- src/storage: IndexedDB access, schema versioning, migrations, and cascade operations for persisted exams, attempts, and telemetry.
+- src/ui: Presentation components, view composition, and user interaction handling. This layer renders state and dispatches user intent to application services.
+- src/core: App bootstrap and composition root. It wires controllers, services, and UI mounting so the full system starts with explicit dependencies.
+
+### Deterministic Domain Design
+
+- Domain logic must be deterministic: the same inputs must always produce the same outputs.
+- Domain functions do not call Math.random or Date.now.
+- Any randomness or clock behavior is injected from outside the domain, typically by application orchestration using seeded RNG and explicit timestamps.
+
+### Adaptive Review Pipeline
+
+Conceptual flow:
+
+1. Telemetry collection from persisted per-question history.
+2. Weakness calculation using configured weights and response-time penalty rules.
+3. Question ranking by descending weakness.
+4. Question selection for the target review size, with fallback fill behavior when needed.
+5. Attempt execution that records outcomes and updates telemetry for supported attempt types.
+
+### Telemetry Model
+
+Tracked metrics per question:
+
+- timesCorrect
+- timesWrong
+- timesBlank
+- consecutiveCorrect
+- avgResponseTimeMs
+- totalSeen
+- lastSeenAt
+
+Weakness is not stored as a persistent field. It is derived at runtime from telemetry plus configuration.
+
+### Testing Strategy
+
+- Domain logic is fully unit tested.
+- Core domain functions are deterministic pure functions, making results reproducible.
+- The project uses a Vitest test suite for automated verification.
+- UI behavior is primarily validated through manual testing during reconstruction.
