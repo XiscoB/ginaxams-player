@@ -1,0 +1,105 @@
+/**
+ * Demo Exam — Sample data for first-run auto-import.
+ *
+ * This is a valid schema_version 2.0 exam used for onboarding.
+ * Extracted from inline data to keep controllers lean.
+ */
+export const DEMO_EXAM = {
+  schema_version: "2.0" as const,
+  exam_id: "sample-basic-arithmetic",
+  title: "Sample Exam: Basic Arithmetic",
+  categorias: ["Arithmetic"],
+  total_questions: 5,
+  questions: [
+    {
+      number: 1,
+      text: "What is 2 + 2?",
+      categoria: ["Arithmetic"],
+      articulo_referencia: "Basic Addition Rules",
+      feedback: {
+        cita_literal:
+          "The sum of two and two equals four. Addition is the process of combining two or more numbers to obtain a total.",
+        explicacion_fallo:
+          "2 + 2 = 4. The number 3 is too low (that would be 1 + 2), 5 is too high (that would be 2 + 3), and 6 is the result of 2 + 4.",
+      },
+      answers: [
+        { letter: "A", text: "3", isCorrect: false },
+        { letter: "B", text: "4", isCorrect: true },
+        { letter: "C", text: "5", isCorrect: false },
+        { letter: "D", text: "6", isCorrect: false },
+      ],
+    },
+    {
+      number: 2,
+      text: "What is 5 − 3?",
+      categoria: ["Arithmetic"],
+      articulo_referencia: "Basic Subtraction Rules",
+      feedback: {
+        cita_literal:
+          "Subtraction is the inverse of addition. When we subtract 3 from 5, we remove 3 units from 5, leaving 2.",
+        explicacion_fallo:
+          "5 − 3 = 2. The number 1 would be 4 − 3, the number 3 would be 6 − 3, and 8 would be 5 + 3 (addition, not subtraction).",
+      },
+      answers: [
+        { letter: "A", text: "1", isCorrect: false },
+        { letter: "B", text: "2", isCorrect: true },
+        { letter: "C", text: "3", isCorrect: false },
+        { letter: "D", text: "8", isCorrect: false },
+      ],
+    },
+    {
+      number: 3,
+      text: "What is 10 ÷ 2?",
+      categoria: ["Arithmetic"],
+      articulo_referencia: "Basic Division Rules",
+      feedback: {
+        cita_literal:
+          "Division distributes a number into equal parts. Dividing 10 by 2 yields 5, meaning 10 can be split into two groups of 5.",
+        explicacion_fallo:
+          "10 ÷ 2 = 5. The number 2 would be 10 ÷ 5, the number 8 would be 10 − 2, and 20 would be 10 × 2 (multiplication, not division).",
+      },
+      answers: [
+        { letter: "A", text: "2", isCorrect: false },
+        { letter: "B", text: "5", isCorrect: true },
+        { letter: "C", text: "8", isCorrect: false },
+        { letter: "D", text: "20", isCorrect: false },
+      ],
+    },
+    {
+      number: 4,
+      text: "What is 3 × 3?",
+      categoria: ["Arithmetic"],
+      articulo_referencia: "Basic Multiplication Rules",
+      feedback: {
+        cita_literal:
+          "Multiplication is repeated addition. 3 × 3 means adding 3 three times: 3 + 3 + 3 = 9.",
+        explicacion_fallo:
+          "3 × 3 = 9. The number 6 would be 3 × 2 or 3 + 3, the number 12 would be 3 × 4, and 27 would be 3 × 3 × 3 (3 cubed).",
+      },
+      answers: [
+        { letter: "A", text: "6", isCorrect: false },
+        { letter: "B", text: "9", isCorrect: true },
+        { letter: "C", text: "12", isCorrect: false },
+        { letter: "D", text: "27", isCorrect: false },
+      ],
+    },
+    {
+      number: 5,
+      text: "What is 7 + 1?",
+      categoria: ["Arithmetic"],
+      articulo_referencia: "Basic Addition Rules",
+      feedback: {
+        cita_literal:
+          "Adding 1 to any number gives the next consecutive number. 7 + 1 = 8.",
+        explicacion_fallo:
+          "7 + 1 = 8. The number 6 would be 7 − 1, the number 7 would be 7 + 0, and 9 would be 7 + 2.",
+      },
+      answers: [
+        { letter: "A", text: "6", isCorrect: false },
+        { letter: "B", text: "7", isCorrect: false },
+        { letter: "C", text: "8", isCorrect: true },
+        { letter: "D", text: "9", isCorrect: false },
+      ],
+    },
+  ],
+};
