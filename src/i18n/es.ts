@@ -216,8 +216,8 @@ export const LANG_ES = {
   aiPromptMaterialNext:
     "[Pegaré el material de estudio en el siguiente mensaje]",
   aiPromptLanguage: "español",
-  kimiSuggestion:
-    "💡 <strong>Consejo:</strong> Este prompt fue pensado para usar con <a href='#' onclick='window.app.openExternalLink(\"https://kimi.moonshot.cn\", \"Kimi\"); return false;'>Kimi AI</a> - ¡pruébalo para obtener mejores resultados!",
+  notebookSuggestion:
+    "💡 <strong>Consejo:</strong> Para mejores resultados, sube tu material de estudio a <a href='#' onclick='window.app.openExternalLink(\"https://notebooklm.google.com\", \"NotebookLM\"); return false;'>NotebookLM</a> como fuente y pega este prompt ahí.",
 
   // Choice Modal
   howToCreate: "¿Cómo quieres crear tu examen?",
@@ -455,5 +455,15 @@ export const LANG_ES = {
   trapPrefix: "trampa",
   trapPossible: "posible",
   trapConfirmed: "confirmada",
+
+  // Common UI Labels
+  error: "Error",
+  cancel: "Cancelar",
+  create: "Crear",
+  save: "Guardar",
+  createFolderFirst: "Crea una carpeta primero para mover exámenes.",
+  overwrite: "Sobrescribir",
+  restore: "Restaurar",
+  clearDataFailed: "Error al borrar los datos. Inténtalo de nuevo.",
   locale: "es",
 } as const;

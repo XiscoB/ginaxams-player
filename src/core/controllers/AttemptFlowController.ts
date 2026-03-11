@@ -13,6 +13,7 @@
  */
 
 import type { AttemptController } from "../../application/attemptController.js";
+import { showAlertModal } from "../../ui/components/ConfirmModal.js";
 import type {
   AttemptViewState,
   AttemptResultViewState,
@@ -113,7 +114,12 @@ export class AttemptFlowController {
   selectExam(examId: string): void {
     const exam = this.deps.getLibraryExam(examId);
     if (!exam) {
-      alert(this.deps.getTranslations().examNotFound);
+      showAlertModal(
+        this.deps.getTranslations().error ?? "Error",
+        this.deps.getTranslations().examNotFound ?? "Exam not found",
+        "danger",
+        "❌",
+      );
       return;
     }
     this.pendingAttempt = { examId, examTitle: exam.title };
@@ -252,7 +258,12 @@ export class AttemptFlowController {
       }
     } catch (e) {
       console.error("Failed to start attempt:", e);
-      alert("Failed to start attempt. Please try again.");
+      showAlertModal(
+        this.deps.getTranslations().error ?? "Error",
+        "Failed to start attempt. Please try again.",
+        "danger",
+        "❌",
+      );
     }
   }
 

@@ -156,7 +156,7 @@ export function updatePageText(T: Translations): void {
   setText("txtCopyGeneratedPrompt", T.copyGeneratedPrompt);
   setText("txtNowPaste", T.nowPaste);
   setHtml("txtMaterialInChatLabel", T.materialInChatLabel);
-  setHtml("txtKimiSuggestion", T.kimiSuggestion);
+  setHtml("txtNotebookSuggestion", T.notebookSuggestion);
 
   // Exam name & JSON paste
   setText("txtAiExamNameLabel", T.aiPromptExamName);

@@ -202,8 +202,8 @@ window.LANG_EN = {
   aiPromptMaterialBelow: "Study material to create questions from:",
   aiPromptMaterialNext: "[I will paste my study material in the next message]",
   aiPromptLanguage: "English",
-  kimiSuggestion:
-    "💡 <strong>Tip:</strong> This prompt was generated with <a href='#' onclick='window.app.openExternalLink(\"https://kimi.moonshot.cn\", \"Kimi\"); return false;'>Kimi AI</a> in mind - give it a try for even better results!",
+  notebookSuggestion:
+    "💡 <strong>Tip:</strong> For best results, upload your study material to <a href='#' onclick='window.app.openExternalLink(\"https://notebooklm.google.com\", \"NotebookLM\"); return false;'>NotebookLM</a> as a source, then paste this prompt there.",
 
   // Choice Modal
   howToCreate: "How do you want to create your exam?",

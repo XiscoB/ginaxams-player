@@ -205,8 +205,8 @@ window.LANG_ES = {
   aiPromptMaterialNext:
     "[Pegaré el material de estudio en el siguiente mensaje]",
   aiPromptLanguage: "español",
-  kimiSuggestion:
-    "💡 <strong>Consejo:</strong> Este prompt fue pensado para usar con <a href='#' onclick='window.app.openExternalLink(\"https://kimi.moonshot.cn\", \"Kimi\"); return false;'>Kimi AI</a> - ¡pruébalo para obtener mejores resultados!",
+  notebookSuggestion:
+    "💡 <strong>Consejo:</strong> Para mejores resultados, sube tu material de estudio a <a href='#' onclick='window.app.openExternalLink(\"https://notebooklm.google.com\", \"NotebookLM\"); return false;'>NotebookLM</a> como fuente y pega este prompt ahí.",
 
   // Choice Modal
   howToCreate: "¿Cómo quieres crear tu examen?",

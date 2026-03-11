@@ -29,6 +29,10 @@ import {
 import { APP_VERSION } from "../application/version.js";
 import { updatePageText } from "../ui/updatePageText.js";
 import { removeAttemptConfigScreen } from "../ui/views/AttemptConfigView.js";
+import {
+  showConfirmModal,
+  showAlertModal,
+} from "../ui/components/ConfirmModal.js";
 import { AttemptFlowController } from "./controllers/AttemptFlowController.js";
 import { LibraryFlowController } from "./controllers/LibraryFlowController.js";
 
@@ -74,10 +78,6 @@ export class App {
   get currentLang(): LanguageCode {
     return this._currentLang;
   }
-
-  // External link state
-  private pendingExternalUrl = "";
-  private pendingExternalName = "";
 
   constructor(deps: AppDeps) {
     this.libraryController = deps.libraryController;
@@ -322,7 +322,6 @@ export class App {
         id: "choiceModal",
         closeFn: () => this.libraryFlow.closeChoiceModal(),
       },
-      { id: "externalLinkModal", closeFn: () => this.closeExternalLinkModal() },
     ];
 
     for (const { id, closeFn } of overlays) {
@@ -351,31 +350,19 @@ export class App {
   // ==========================================================================
 
   openExternalLink(url: string, name: string): void {
-    this.pendingExternalUrl = url;
-    this.pendingExternalName = name;
-
-    const modal = document.getElementById("externalLinkModal");
-    const urlDisplay = document.getElementById("externalLinkUrl");
-    const titleDisplay = document.getElementById("txtLeavingSite");
-    if (modal) modal.classList.remove("hidden");
-    if (urlDisplay) urlDisplay.textContent = url;
-    if (titleDisplay) {
-      titleDisplay.textContent = `${this.translations.leavingSite || "You're about to leave GinaXams Player"} → ${this.pendingExternalName}`;
-    }
-  }
-
-  closeExternalLinkModal(): void {
-    const modal = document.getElementById("externalLinkModal");
-    if (modal) modal.classList.add("hidden");
-    this.pendingExternalUrl = "";
-    this.pendingExternalName = "";
-  }
-
-  confirmExternalLink(): void {
-    if (this.pendingExternalUrl) {
-      window.open(this.pendingExternalUrl, "_blank");
-    }
-    this.closeExternalLinkModal();
+    const T = this.translations;
+    showConfirmModal({
+      title: `${T.leavingSite || "You're about to leave GinaXams Player"} → ${name}`,
+      message: `${T.externalLinkConfirm || "You'll be redirected to:"}\n\n${url}`,
+      confirmLabel: T.continue || "Continue",
+      cancelLabel: T.stayHere || "Stay Here",
+      variant: "info",
+      icon: "🚀",
+    }).then((confirmed) => {
+      if (confirmed) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    });
   }
 
   // ==========================================================================
@@ -415,17 +402,34 @@ export class App {
   }
 
   private async clearAllData(): Promise<void> {
-    const msg =
-      this.translations.confirmClearData ??
-      "This will delete ALL exams, folders and progress. This cannot be undone. Are you sure?";
-    if (!confirm(msg)) return;
+    const T = this.translations;
+    const confirmed = await showConfirmModal({
+      title: T.clearData ?? "Clear All Data",
+      message:
+        T.confirmClearData ??
+        "This will delete ALL exams, folders and progress. This cannot be undone. Are you sure?",
+      confirmLabel: T.clearData ?? "Clear All Data",
+      cancelLabel: T.cancel ?? "Cancel",
+      variant: "danger",
+      icon: "🗑️",
+      doubleConfirm: true,
+      doubleConfirmLabel: T.confirmClearData
+        ? "⚠️ " + (T.clearData ?? "Clear All Data")
+        : "⚠️ Yes, delete everything",
+    });
+    if (!confirmed) return;
 
     try {
       await this.libraryController.clearAllData();
       window.location.reload();
     } catch (e) {
       console.error("Failed to clear data:", e);
-      alert("Failed to clear data. Please try again.");
+      await showAlertModal(
+        T.error ?? "Error",
+        T.clearDataFailed ?? "Failed to clear data. Please try again.",
+        "danger",
+        "❌",
+      );
     }
   }
 

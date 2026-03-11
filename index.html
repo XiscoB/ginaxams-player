@@ -1873,16 +1873,6 @@
         color: var(--text-secondary);
       }
 
-      .ai-tool-kimi {
-        background: linear-gradient(
-          135deg,
-          rgba(0, 212, 255, 0.2),
-          rgba(157, 0, 255, 0.2)
-        );
-        border-color: var(--accent-primary);
-        color: var(--accent-primary);
-        font-weight: 600;
-      }
 
       .ai-prompt-output {
         width: 100%;
@@ -1985,26 +1975,7 @@
         transform: translateY(-2px);
       }
 
-      .ai-tool-link.kimi {
-        background: linear-gradient(
-          135deg,
-          rgba(0, 212, 255, 0.15),
-          rgba(157, 0, 255, 0.15)
-        );
-        border-color: var(--accent-primary);
-        color: var(--accent-primary);
-        font-weight: 600;
-      }
-
-      .ai-tool-link.kimi:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(0, 212, 255, 0.25),
-          rgba(157, 0, 255, 0.25)
-        );
-      }
-
-      /* Kimi suggestion below prompt */
+      /* AI suggestion below prompt */
       .ai-prompt-suggestion {
         text-align: center;
         margin-top: 15px;
@@ -2103,19 +2074,6 @@
         transform: translate(2px, -2px);
       }
 
-      .ai-destination-btn.kimi {
-        background: linear-gradient(
-          135deg,
-          rgba(0, 212, 255, 0.1),
-          rgba(157, 0, 255, 0.1)
-        );
-        border-color: rgba(0, 212, 255, 0.3);
-      }
-
-      .ai-destination-btn.kimi:hover {
-        border-color: var(--accent-primary);
-        box-shadow: 0 5px 15px rgba(0, 212, 255, 0.25);
-      }
 
       /* Template Modal */
       .template-modal-overlay {
@@ -4136,7 +4094,7 @@
                 <span class="ai-destination-arrow">↗</span>
               </button>
               <button
-                class="ai-destination-btn kimi"
+                class="ai-destination-btn"
                 onclick="
                   window.app.openExternalLink(
                     'https://kimi.moonshot.cn',
@@ -4151,22 +4109,23 @@
             </div>
           </div>
 
-          <!-- Kimi suggestion outside the prompt -->
+          <!-- NotebookLM suggestion outside the prompt -->
           <div class="ai-prompt-suggestion">
-            <p class="ai-prompt-suggestion-text" id="txtKimiSuggestion">
-              💡 <strong>Tip:</strong> This prompt was generated with
+            <p class="ai-prompt-suggestion-text" id="txtNotebookSuggestion">
+              💡 <strong>Tip:</strong> For best results, upload your study
+              material to
               <a
                 href="#"
                 onclick="
                   window.app.openExternalLink(
-                    'https://kimi.moonshot.cn',
-                    'Kimi',
+                    'https://notebooklm.google.com',
+                    'NotebookLM',
                   );
                   return false;
                 "
-                >Kimi AI</a
+                >NotebookLM</a
               >
-              in mind - give it a try for even better results!
+              as a source, then paste this prompt there.
             </p>
           </div>
 

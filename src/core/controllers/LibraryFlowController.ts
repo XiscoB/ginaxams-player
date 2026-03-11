@@ -33,6 +33,12 @@ import {
   createViewError,
 } from "../../ui/components/ViewStatus.js";
 import {
+  showConfirmModal,
+  showAlertModal,
+} from "../../ui/components/ConfirmModal.js";
+import { showInputModal } from "../../ui/components/InputModal.js";
+import { showSelectModal } from "../../ui/components/SelectModal.js";
+import {
   renderLibraryList,
   renderExamExportMenu,
 } from "../../ui/views/LibraryView.js";
@@ -177,14 +183,26 @@ export class LibraryFlowController {
 
   async promptCreateFolder(): Promise<void> {
     const T = this.deps.getTranslations();
-    const name = prompt(T.folderName);
-    if (!name || name.trim().length === 0) return;
+    const name = await showInputModal({
+      title: T.newFolder ?? "New Folder",
+      label: T.folderName ?? "Folder Name:",
+      placeholder: T.newFolder ?? "New Folder",
+      confirmLabel: T.create ?? "Create",
+      cancelLabel: T.cancel ?? "Cancel",
+      icon: "📁",
+    });
+    if (!name) return;
 
     try {
       await this.deps.libraryController.createFolder(name.trim());
       await this.refreshLibrary();
     } catch {
-      alert(T.errorCreatingFolder);
+      showAlertModal(
+        T.error ?? "Error",
+        T.errorCreatingFolder ?? "Failed to create folder",
+        "danger",
+        "❌",
+      );
     }
   }
 
@@ -194,14 +212,26 @@ export class LibraryFlowController {
     if (!folder) return;
 
     const T = this.deps.getTranslations();
-    const name = prompt(T.newName, folder.name);
-    if (!name || name.trim().length === 0) return;
+    const name = await showInputModal({
+      title: T.rename ?? "Rename",
+      label: T.newName ?? "New name:",
+      defaultValue: folder.name,
+      confirmLabel: T.save ?? "Save",
+      cancelLabel: T.cancel ?? "Cancel",
+      icon: "✏️",
+    });
+    if (!name) return;
 
     try {
-      await this.deps.libraryController.renameFolder(folderId, name.trim());
+      await this.deps.libraryController.renameFolder(folderId, name);
       await this.refreshLibrary();
     } catch {
-      alert(T.errorRenaming || "Error renaming folder");
+      showAlertModal(
+        T.error ?? "Error",
+        T.errorRenaming || "Error renaming folder",
+        "danger",
+        "❌",
+      );
     }
   }
 
@@ -211,13 +241,26 @@ export class LibraryFlowController {
     if (!folder) return;
 
     const T = this.deps.getTranslations();
-    if (!confirm(`${T.confirmDeleteFolder} "${folder.name}"?`)) return;
+    const confirmed = await showConfirmModal({
+      title: T.confirmDeleteFolder ?? "Delete folder?",
+      message: `${T.confirmDeleteFolder ?? "Exams will be moved to Uncategorized. Continue?"} "${folder.name}"?`,
+      confirmLabel: T.delete ?? "Delete",
+      cancelLabel: T.cancel ?? "Cancel",
+      variant: "danger",
+      icon: "🗑️",
+    });
+    if (!confirmed) return;
 
     try {
       await this.deps.libraryController.deleteFolder(folderId);
       await this.refreshLibrary();
     } catch {
-      alert(T.errorDeletingFolder);
+      showAlertModal(
+        T.error ?? "Error",
+        T.errorDeletingFolder ?? "Failed to delete folder",
+        "danger",
+        "❌",
+      );
     }
   }
 
@@ -231,14 +274,26 @@ export class LibraryFlowController {
     if (!exam) return;
 
     const T = this.deps.getTranslations();
-    const name = prompt(T.newName, exam.title);
-    if (!name || name.trim().length === 0) return;
+    const name = await showInputModal({
+      title: T.rename ?? "Rename",
+      label: T.newName ?? "New name:",
+      defaultValue: exam.title,
+      confirmLabel: T.save ?? "Save",
+      cancelLabel: T.cancel ?? "Cancel",
+      icon: "✏️",
+    });
+    if (!name) return;
 
     try {
-      await this.deps.libraryController.renameExam(examId, name.trim());
+      await this.deps.libraryController.renameExam(examId, name);
       await this.refreshLibrary();
     } catch {
-      alert(T.errorRenaming || "Error renaming exam");
+      showAlertModal(
+        T.error ?? "Error",
+        T.errorRenaming || "Error renaming exam",
+        "danger",
+        "❌",
+      );
     }
   }
 
@@ -248,23 +303,38 @@ export class LibraryFlowController {
     if (!exam) return;
 
     const T = this.deps.getTranslations();
-    const folderNames = this.libraryState.folders.map((f) => f.name).join("\n");
-    const folderId = prompt(`${T.moveToFolder}:\n${folderNames}`);
-    if (!folderId) return;
-
-    const targetFolder = this.libraryState.folders.find(
-      (f) => f.name === folderId || f.id === folderId,
-    );
-    if (!targetFolder) {
-      alert(T.folderNotFound || "Folder not found");
+    const folderOptions = this.libraryState.folders.map((f) => ({
+      label: f.name,
+      value: f.id,
+      icon: "📁",
+    }));
+    if (folderOptions.length === 0) {
+      showAlertModal(
+        T.newFolder ?? "New Folder",
+        T.createFolderFirst ?? "Create a folder first to move exams into it.",
+        "info",
+        "📁",
+      );
       return;
     }
+    const targetFolderId = await showSelectModal({
+      title: T.moveToFolder ?? "Move to folder",
+      options: folderOptions,
+      cancelLabel: T.cancel ?? "Cancel",
+      icon: "📂",
+    });
+    if (!targetFolderId) return;
 
     try {
-      await this.deps.libraryController.moveExam(examId, targetFolder.id);
+      await this.deps.libraryController.moveExam(examId, targetFolderId);
       await this.refreshLibrary();
     } catch {
-      alert(T.errorMovingExam || "Error moving exam");
+      showAlertModal(
+        T.error ?? "Error",
+        T.errorMovingExam || "Error moving exam",
+        "danger",
+        "❌",
+      );
     }
   }
 
@@ -274,13 +344,26 @@ export class LibraryFlowController {
     if (!exam) return;
 
     const T = this.deps.getTranslations();
-    if (!confirm(`${T.confirmDelete} "${exam.title}"?`)) return;
+    const confirmed = await showConfirmModal({
+      title: T.confirmDelete ?? "Delete exam?",
+      message: `${T.confirmDelete ?? "Delete exam?"} "${exam.title}"?`,
+      confirmLabel: T.delete ?? "Delete",
+      cancelLabel: T.cancel ?? "Cancel",
+      variant: "danger",
+      icon: "🗑️",
+    });
+    if (!confirmed) return;
 
     try {
       await this.deps.libraryController.deleteExam(examId);
       await this.refreshLibrary();
     } catch {
-      alert(T.errorDeletingExam);
+      showAlertModal(
+        T.error ?? "Error",
+        T.errorDeletingExam ?? "Failed to delete exam",
+        "danger",
+        "❌",
+      );
     }
   }
 
@@ -298,7 +381,12 @@ export class LibraryFlowController {
 
       const imported = this.libraryState?.exams.find((e) => e.id === examId);
       const title = imported?.title ?? "Exam";
-      alert(`${T.importSuccessful || "Import successful"}: ${title}`);
+      showAlertModal(
+        T.importSuccessful || "Import successful",
+        `${T.importSuccessful || "Import successful"}: ${title}`,
+        "success",
+        "✅",
+      );
     } catch (e) {
       if (e instanceof DuplicateExamError) {
         const msg = (
@@ -307,7 +395,17 @@ export class LibraryFlowController {
         )
           .replace("{examId}", e.examId)
           .replace("{title}", e.existingTitle);
-        if (confirm(msg)) {
+        const overwrite = await showConfirmModal({
+          title: T.confirmOverwriteExam
+            ? (T.importFailed ?? "Duplicate")
+            : "Duplicate Exam",
+          message: msg,
+          confirmLabel: T.overwrite ?? "Overwrite",
+          cancelLabel: T.cancel ?? "Cancel",
+          variant: "warning",
+          icon: "⚠️",
+        });
+        if (overwrite) {
           try {
             const text = await file.text();
             const data = JSON.parse(text);
@@ -321,18 +419,33 @@ export class LibraryFlowController {
               (ex) => ex.id === examId,
             );
             const title = imported?.title ?? "Exam";
-            alert(`${T.importSuccessful || "Import successful"}: ${title}`);
+            showAlertModal(
+              T.importSuccessful || "Import successful",
+              `${T.importSuccessful || "Import successful"}: ${title}`,
+              "success",
+              "✅",
+            );
           } catch (e2) {
             console.error("Import failed:", e2);
             const message = e2 instanceof Error ? e2.message : "Unknown error";
-            alert(`${T.importFailed}: ${message}`);
+            showAlertModal(
+              T.importFailed ?? "Import failed",
+              `${T.importFailed}: ${message}`,
+              "danger",
+              "❌",
+            );
           }
         }
         return;
       }
       console.error("Import failed:", e);
       const message = e instanceof Error ? e.message : "Unknown error";
-      alert(`${T.importFailed}: ${message}`);
+      showAlertModal(
+        T.importFailed ?? "Import failed",
+        `${T.importFailed}: ${message}`,
+        "danger",
+        "❌",
+      );
     }
   }
 
@@ -342,20 +455,37 @@ export class LibraryFlowController {
       const snapshot = await this.deps.libraryController.createBackup();
       const filename = `ginaxams_backup_${new Date().toISOString().split("T")[0]}.json`;
       downloadAsJson(snapshot, filename);
-      alert(T.backupCreated ?? "Backup downloaded!");
+      showAlertModal(
+        T.backupCreated ?? "Backup downloaded!",
+        T.backupCreated ?? "Backup downloaded!",
+        "success",
+        "💾",
+      );
     } catch (e) {
       console.error("Export failed:", e);
-      alert(T.exportFailed);
+      showAlertModal(
+        T.error ?? "Error",
+        T.exportFailed ?? "Export failed",
+        "danger",
+        "❌",
+      );
     }
   }
 
   async restoreLibrary(): Promise<void> {
     const T = this.deps.getTranslations();
 
-    if (
-      !confirm(T.restoreWarning ?? "This will replace ALL your data. Continue?")
-    )
-      return;
+    const confirmed = await showConfirmModal({
+      title: T.restore ?? "Restore",
+      message: T.restoreWarning ?? "This will replace ALL your data. Continue?",
+      confirmLabel: T.restore ?? "Restore",
+      cancelLabel: T.cancel ?? "Cancel",
+      variant: "warning",
+      icon: "📥",
+      doubleConfirm: true,
+      doubleConfirmLabel: "⚠️ " + (T.restore ?? "Yes, restore"),
+    });
+    if (!confirmed) return;
 
     const restoreInput = document.getElementById(
       "restoreFileInput",
@@ -374,11 +504,21 @@ export class LibraryFlowController {
         const data = JSON.parse(text);
         await this.deps.libraryController.restoreBackup(data);
         await this.refreshLibrary();
-        alert(T.restoreSuccess ?? "Backup restored successfully!");
+        showAlertModal(
+          T.restoreSuccess ?? "Backup restored!",
+          T.restoreSuccess ?? "Backup restored successfully!",
+          "success",
+          "✅",
+        );
       } catch (err) {
         console.error("Restore failed:", err);
         const msg = err instanceof Error ? err.message : "Unknown error";
-        alert(`${T.restoreFailed ?? "Restore failed"}: ${msg}`);
+        showAlertModal(
+          T.restoreFailed ?? "Restore failed",
+          `${T.restoreFailed ?? "Restore failed"}: ${msg}`,
+          "danger",
+          "❌",
+        );
       }
     };
 
@@ -398,7 +538,12 @@ export class LibraryFlowController {
     try {
       examData = await this.deps.libraryController.exportExamJson(examId);
     } catch {
-      alert(T.exportFailed ?? "Export failed");
+      showAlertModal(
+        T.error ?? "Error",
+        T.exportFailed ?? "Export failed",
+        "danger",
+        "❌",
+      );
       return;
     }
 
@@ -591,7 +736,12 @@ export class LibraryFlowController {
 
     try {
       await navigator.clipboard.writeText(code.textContent || "");
-      alert(this.deps.getTranslations().copied || "Copied to clipboard!");
+      showAlertModal(
+        this.deps.getTranslations().copied || "Copied!",
+        this.deps.getTranslations().copied || "Copied to clipboard!",
+        "success",
+        "📋",
+      );
     } catch {
       const textarea = document.createElement("textarea");
       textarea.value = code.textContent || "";
@@ -599,7 +749,12 @@ export class LibraryFlowController {
       textarea.select();
       document.execCommand("copy");
       document.body.removeChild(textarea);
-      alert(this.deps.getTranslations().copied || "Copied to clipboard!");
+      showAlertModal(
+        this.deps.getTranslations().copied || "Copied!",
+        this.deps.getTranslations().copied || "Copied to clipboard!",
+        "success",
+        "📋",
+      );
     }
   }
 
@@ -621,8 +776,11 @@ export class LibraryFlowController {
       a.click();
       URL.revokeObjectURL(url);
     }
-    alert(
+    showAlertModal(
+      this.deps.getTranslations().templateDownloaded || "Downloaded!",
       this.deps.getTranslations().templateDownloaded || "Template downloaded!",
+      "success",
+      "💾",
     );
   }
 
@@ -704,7 +862,12 @@ export class LibraryFlowController {
       "medium";
 
     if (!examName) {
-      alert(T.aiPromptExamNameRequired || "Please enter an exam name.");
+      showAlertModal(
+        T.error ?? "Error",
+        T.aiPromptExamNameRequired || "Please enter an exam name.",
+        "warning",
+        "⚠️",
+      );
       return;
     }
 
@@ -950,7 +1113,12 @@ ${rules}`;
 
       const imported = this.libraryState?.exams.find((e) => e.id === examId);
       const title = imported?.title ?? "Exam";
-      alert(`${T.aiImportSuccess || "Exam imported successfully!"}: ${title}`);
+      showAlertModal(
+        T.aiImportSuccess || "Exam imported!",
+        `${T.aiImportSuccess || "Exam imported successfully!"}: ${title}`,
+        "success",
+        "✅",
+      );
 
       this.closeAIPromptGenerator();
       this.lastValidatedExamJson = null;
@@ -962,7 +1130,15 @@ ${rules}`;
         )
           .replace("{examId}", e.examId)
           .replace("{title}", e.existingTitle);
-        if (confirm(msg)) {
+        const overwrite = await showConfirmModal({
+          title: T.importFailed ?? "Duplicate Exam",
+          message: msg,
+          confirmLabel: T.overwrite ?? "Overwrite",
+          cancelLabel: T.cancel ?? "Cancel",
+          variant: "warning",
+          icon: "⚠️",
+        });
+        if (overwrite) {
           try {
             const examId = await this.deps.libraryController.importExam(
               this.lastValidatedExamJson!,
@@ -974,22 +1150,35 @@ ${rules}`;
               (ex) => ex.id === examId,
             );
             const title = imported?.title ?? "Exam";
-            alert(
+            showAlertModal(
+              T.aiImportSuccess || "Exam imported!",
               `${T.aiImportSuccess || "Exam imported successfully!"}: ${title}`,
+              "success",
+              "✅",
             );
             this.closeAIPromptGenerator();
             this.lastValidatedExamJson = null;
           } catch (e2) {
             console.error("Import failed:", e2);
             const message = e2 instanceof Error ? e2.message : "Unknown error";
-            alert(`${T.importFailed || "Import failed"}: ${message}`);
+            showAlertModal(
+              T.importFailed ?? "Import failed",
+              `${T.importFailed || "Import failed"}: ${message}`,
+              "danger",
+              "❌",
+            );
           }
         }
         return;
       }
       console.error("Import failed:", e);
       const message = e instanceof Error ? e.message : "Unknown error";
-      alert(`${T.importFailed || "Import failed"}: ${message}`);
+      showAlertModal(
+        T.importFailed ?? "Import failed",
+        `${T.importFailed || "Import failed"}: ${message}`,
+        "danger",
+        "❌",
+      );
     }
   }
 }

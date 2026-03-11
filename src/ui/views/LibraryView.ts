@@ -6,6 +6,7 @@
  */
 
 import type { Translations } from "../../i18n/index.js";
+import { showAlertModal } from "../components/ConfirmModal.js";
 import type {
   ExamCardView,
   LibraryViewState,
@@ -325,19 +326,32 @@ export function renderExamExportMenu(
     if (action === "download") {
       const filename = `${examTitle.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
       downloadAsJson(examData, filename);
-      alert(T.exportExamSuccess ?? "Exam exported!");
+      showAlertModal(
+        T.exportExamSuccess ?? "Exported!",
+        T.exportExamSuccess ?? "Exam exported!",
+        "success",
+        "💾",
+      );
     } else if (action === "copy") {
       const ok = await copyJsonToClipboard(examData);
-      alert(
+      showAlertModal(
+        ok ? (T.copiedToClipboard ?? "Copied!") : (T.exportFailed ?? "Error"),
         ok
           ? (T.copiedToClipboard ?? "Copied to clipboard!")
           : (T.exportFailed ?? "Export failed"),
+        ok ? "success" : "danger",
+        ok ? "📋" : "❌",
       );
     } else if (action === "share") {
       const filename = `${examTitle.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
       const ok = await shareJson(examData, examTitle, filename);
       if (!ok)
-        alert(T.shareNotSupported ?? "Sharing not supported on this device");
+        showAlertModal(
+          T.error ?? "Error",
+          T.shareNotSupported ?? "Sharing not supported on this device",
+          "warning",
+          "⚠️",
+        );
     }
   });
 

@@ -334,7 +334,7 @@ export interface Translations {
   copyGeneratedPrompt: string;
   aiPromptNoMaterial: string;
   materialInChatLabel: string;
-  kimiSuggestion: string;
+  notebookSuggestion: string;
   // AI Prompt body (generated prompt text)
   aiPromptBody: string;
   aiPromptSchemaNote: string;
