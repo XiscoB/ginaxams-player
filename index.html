@@ -3816,6 +3816,7 @@
           class="onboarding-skip"
           onclick="window.app.skipOnboarding()"
           id="txtOnboardingSkip"
+          data-testid="onboarding-skip"
         >
           Skip
         </button>
@@ -4216,7 +4217,7 @@
       </header>
 
       <!-- SCREEN 1: LIBRARY / FILE LOAD -->
-      <div id="fileScreen">
+      <div id="fileScreen" data-testid="library-screen">
         <div class="library-container">
           <!-- Template Modal (Popup) -->
           <div id="templateModal" class="template-modal-overlay hidden">
@@ -4364,7 +4365,7 @@
             </div>
           </div>
 
-          <div class="file-input-area">
+          <div class="file-input-area" data-testid="file-drop-zone">
             <button
               id="helpToggleBtn"
               class="help-btn-inline"
@@ -4482,15 +4483,15 @@
             </div>
           </div>
 
-          <div id="examList" class="exam-list-container">
+          <div id="examList" class="exam-list-container" data-testid="exam-list">
             <!-- Exam items injected here -->
-            <div class="no-exams" id="txtLoading">Loading...</div>
+            <div class="no-exams" id="txtLoading" data-testid="loading-indicator">Loading...</div>
           </div>
         </div>
       </div>
 
       <!-- SCREEN 2: MODE SELECTION (OPTIONS) -->
-      <div id="modeScreen" class="hidden">
+      <div id="modeScreen" class="hidden" data-testid="mode-screen">
         <div class="options-container">
           <div class="options-title" id="txtOptions">Options</div>
 
@@ -4540,7 +4541,7 @@
       </div>
 
       <!-- SCREEN 3: PRACTICE -->
-      <div id="practiceScreen" class="hidden">
+      <div id="practiceScreen" class="hidden" data-testid="practice-screen">
         <div class="nav-buttons-top">
           <button
             class="nav-btn prev"
@@ -4587,11 +4588,11 @@
         <div id="practiceMinimapContainer" class="question-minimap"></div>
 
         <div class="question-card">
-          <div id="questionNumber" class="question-number">Question 1</div>
-          <div id="questionText" class="question-text"></div>
+          <div id="questionNumber" class="question-number" data-testid="question-number">Question 1</div>
+          <div id="questionText" class="question-text" data-testid="question-text"></div>
           <div id="questionImages" class="question-images"></div>
 
-          <div id="answersContainer" class="answers"></div>
+          <div id="answersContainer" class="answers" data-testid="answers-container"></div>
 
           <!-- Feedback Section - rendered dynamically by PracticeManager -->
           <div id="feedbackSection" class="hidden"></div>
@@ -4607,17 +4608,17 @@
           <button id="prevBtn" class="nav-btn prev" disabled>
             <span id="txtPrevious">Previous</span>
           </button>
-          <button id="nextBtn" class="nav-btn next">
+          <button id="nextBtn" class="nav-btn next" data-testid="next-button">
             <span id="txtNext">Next</span>
           </button>
-          <button id="finishBtn" class="nav-btn next" style="display: none">
+          <button id="finishBtn" class="nav-btn next" style="display: none" data-testid="finish-button">
             <span id="txtFinish">Finish</span>
           </button>
         </div>
       </div>
 
       <!-- SCREEN 4: RESULTS -->
-      <div id="resultsScreen" class="hidden">
+      <div id="resultsScreen" class="hidden" data-testid="results-screen">
         <h2
           style="text-align: center; margin-bottom: var(--space-lg)"
           id="txtResults"
@@ -4642,7 +4643,7 @@
           <!-- Main Score Circle -->
           <div class="score-circle-container">
             <div class="score-circle" id="scoreCircle">
-              <span class="score-percentage" id="finalScore">0%</span>
+              <span class="score-percentage" id="finalScore" data-testid="final-score">0%</span>
               <span class="score-label" id="scoreDetails">0 correct</span>
             </div>
           </div>

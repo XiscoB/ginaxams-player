@@ -64,6 +64,7 @@ export function showConfirmModal(
 
     // --- Overlay ---
     const overlay = document.createElement("div");
+    overlay.dataset.testid = "confirm-modal-overlay";
     overlay.style.cssText = `
       position: fixed; inset: 0; z-index: 30000;
       background: rgba(0, 0, 0, 0.85);
