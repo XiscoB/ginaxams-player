@@ -149,7 +149,6 @@ export class App {
       // Restore tab
       this.libraryFlow.activeLibraryTab = settings.lastOpenedTab || "library";
 
-      await this.loadTemplateJSON();
       await this.libraryFlow.refreshLibrary();
       await this.libraryFlow.autoLoadExampleExam();
 
@@ -430,21 +429,6 @@ export class App {
         "danger",
         "❌",
       );
-    }
-  }
-
-  // ==========================================================================
-  // Template Loading
-  // ==========================================================================
-
-  private async loadTemplateJSON(): Promise<void> {
-    try {
-      const response = await fetch("./template.json");
-      if (response.ok) {
-        await response.json();
-      }
-    } catch {
-      console.log("No template.json found");
     }
   }
 
