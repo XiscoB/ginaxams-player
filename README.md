@@ -249,6 +249,20 @@ All engine parameters are centralized in `src/domain/defaults.ts` and injected i
 
 ---
 
+## Deterministic Engine Design
+
+The domain layer is fully deterministic.
+
+- No `Math.random()` or `Date.now()` calls inside domain logic
+- Randomness is injected via seeded RNG
+- All domain functions are pure and side-effect free
+
+This allows:
+
+- reproducible adaptive review sessions
+- deterministic unit tests
+- easier debugging of question selection algorithms
+
 ## License
 
 MIT

@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import { resolve } from "path";
 
 export default defineConfig({
+  base: "/ginaxams/",
   build: {
     outDir: "dist",
     emptyOutDir: true,
