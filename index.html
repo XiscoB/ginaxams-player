@@ -1,0 +1,4944 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <title>Ginaxams</title>
+    <!-- Main entry point -->
+
+    <style>
+      :root {
+        /* Backgrounds */
+        --bg-primary: #0f0f1a;
+        --bg-secondary: rgba(20, 20, 35, 0.6);
+        --bg-card: rgba(30, 30, 50, 0.4);
+
+        /* Accent */
+        --accent-primary: #00d4ff;
+        --accent-secondary: #00ff88;
+        --accent-gradient: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+
+        /* Semantic Colors */
+        --color-success: #00ff88;
+        --color-success-dim: #1a3d2e;
+        --color-success-bg: rgba(0, 255, 136, 0.12);
+        --color-success-border: rgba(0, 255, 136, 0.4);
+        --color-error: #ff4757;
+        --color-error-dim: #3d1a1a;
+        --color-error-bg: rgba(255, 71, 87, 0.12);
+        --color-error-border: rgba(255, 71, 87, 0.4);
+        --color-warning: #ffd700;
+        --color-warning-bg: rgba(255, 215, 0, 0.12);
+        --color-warning-border: rgba(255, 215, 0, 0.4);
+        --color-neutral: #a0a0b0;
+        --color-neutral-bg: rgba(160, 160, 176, 0.08);
+        --color-neutral-border: rgba(160, 160, 176, 0.25);
+
+        /* Text */
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0b0;
+        --text-muted: #666680;
+
+        /* Borders */
+        --border-color: rgba(255, 255, 255, 0.1);
+        --border-hover: rgba(255, 255, 255, 0.2);
+
+        /* Spacing Scale */
+        --space-xs: 4px;
+        --space-sm: 8px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 32px;
+        --space-2xl: 48px;
+
+        /* Radii */
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+
+        /* Shadows */
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+        --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+
+        /* Transitions */
+        --transition-fast: 0.15s ease;
+        --transition-normal: 0.25s ease;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: var(--bg-primary);
+        background-image:
+          radial-gradient(
+            ellipse at top left,
+            rgba(0, 212, 255, 0.15) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at bottom right,
+            rgba(0, 255, 136, 0.1) 0%,
+            transparent 50%
+          );
+        color: var(--text-primary);
+        min-height: 100vh;
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        position: relative;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        font-weight: 800;
+        margin-bottom: 8px;
+        cursor: pointer;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -1px;
+        transition: transform 0.3s ease;
+      }
+
+      h1:hover {
+        transform: scale(1.02);
+        filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.5));
+      }
+
+      .exam-title {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        font-weight: 400;
+      }
+
+      .lang-switch {
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: flex;
+        gap: 8px;
+      }
+
+      .lang-btn {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 6px 14px;
+        cursor: pointer;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .lang-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+      }
+
+      .lang-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+        font-weight: 600;
+      }
+
+      .lang-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      /* Screens */
+      .hidden {
+        display: none !important;
+      }
+
+      /* --- Library Styles (New) --- */
+      .library-container {
+        position: relative;
+      }
+
+      .file-input-area {
+        position: relative;
+        background: var(--bg-card);
+        border: 2px dashed var(--border-color);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(20px);
+        box-shadow: var(--shadow);
+      }
+
+      .file-input-area:hover {
+        border-color: var(--accent-primary);
+        background: rgba(30, 30, 50, 0.6);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 212, 255, 0.15);
+      }
+
+      /* Library Tab Bar */
+      .library-tab-bar {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 4px;
+        box-shadow: var(--shadow);
+      }
+
+      .library-tab-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-secondary, #888);
+        font-size: 0.9em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .library-tab-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary, #fff);
+      }
+
+      .library-tab-btn.active {
+        background: var(--accent-primary, #00d4ff);
+        color: #000;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+      }
+
+      .file-label {
+        display: block;
+        cursor: pointer;
+      }
+
+      .upload-icon {
+        font-size: 3.5em;
+        margin-bottom: 20px;
+        display: block;
+        filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.3));
+      }
+
+      .upload-main-text {
+        font-size: 1.3em;
+        font-weight: 600;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 8px;
+      }
+
+      .upload-sub-text {
+        font-size: 0.95em;
+        color: var(--text-secondary);
+      }
+
+      .exam-list-container {
+        margin-top: 20px;
+      }
+
+      .category-section {
+        margin-bottom: 12px;
+      }
+
+      .category-header {
+        background: var(--bg-card);
+        padding: 14px 18px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        transition: all 0.2s ease;
+      }
+      .category-header:hover {
+        background: rgba(40, 40, 65, 0.5);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .category-icon {
+        margin-right: 12px;
+        font-size: 1.2em;
+      }
+      .category-name {
+        flex: 1;
+        font-weight: 600;
+        font-size: 1.05em;
+      }
+      .category-count {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        margin-right: 12px;
+        font-weight: 500;
+      }
+      .category-toggle {
+        font-size: 0.9em;
+        transition: transform 0.3s ease;
+        opacity: 0.7;
+      }
+
+      .category-section.collapsed .category-exams {
+        display: none;
+      }
+      .category-section.collapsed .category-toggle {
+        transform: rotate(-90deg);
+      }
+
+      .category-section.drop-target {
+        background: rgba(0, 212, 255, 0.08);
+        border-radius: 16px;
+        box-shadow:
+          0 0 0 2px var(--accent-primary),
+          0 0 30px rgba(0, 212, 255, 0.2);
+      }
+
+      .category-section.drop-target .category-header {
+        background: rgba(40, 40, 65, 0.8);
+      }
+
+      .category-exams {
+        padding: 12px 0 12px 20px;
+      }
+
+      .exam-item {
+        background: var(--bg-card);
+        padding: 16px 20px;
+        border-radius: 14px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        justify-content: space-between;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .exam-item:hover {
+        background: rgba(40, 40, 65, 0.6);
+        border-color: var(--accent-primary);
+        transform: translateX(4px);
+        box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+      }
+
+      body.dragging .exam-item {
+        opacity: 0.5;
+      }
+
+      .exam-item[draggable="true"]:active {
+        cursor: grabbing;
+      }
+
+      .exam-item-info {
+        flex: 1;
+      }
+      .exam-item-title {
+        font-weight: 600;
+        font-size: 1.1em;
+        margin-bottom: 10px;
+      }
+
+      .exam-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: 10px;
+      }
+
+      .exam-item-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .exam-item-meta {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+      }
+
+      /* Exam Stats Container */
+      .exam-stats-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .exam-stats-row {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+      }
+
+      .stat-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .stat-icon {
+        font-size: 1.1em;
+      }
+
+      .stat-value {
+        font-weight: 700;
+        font-size: 1em;
+        color: var(--text-primary);
+        white-space: nowrap;
+      }
+
+      .stat-label {
+        font-size: 0.75em;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .attempts-stat .stat-value {
+        color: var(--accent-primary);
+      }
+
+      .last-stat {
+        background: rgba(0, 212, 255, 0.08);
+        border-color: rgba(0, 212, 255, 0.2);
+      }
+
+      .best-stat {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1) 0%,
+          rgba(0, 255, 136, 0.1) 100%
+        );
+        border-color: rgba(0, 212, 255, 0.3);
+      }
+
+      .best-stat .stat-value {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* Best Score Progress Bar */
+      .best-score-bar {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+
+      .best-score-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s ease;
+        box-shadow: 0 0 10px currentColor;
+      }
+
+      .exam-score-placeholder {
+        margin-left: 10px;
+      }
+      .exam-score-placeholder.good {
+        color: #00ff88;
+      }
+      .exam-score-placeholder.medium {
+        color: #ffd700;
+      }
+      .exam-score-placeholder.bad {
+        color: #ff4757;
+      }
+
+      .no-exams {
+        text-align: center;
+        padding: 50px 40px;
+        color: var(--text-secondary);
+        background: var(--bg-card);
+        border-radius: 20px;
+        border: 1px dashed var(--border-color);
+        backdrop-filter: blur(10px);
+      }
+
+      /* --- Existing Styles --- */
+
+      .mode-select {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      .mode-btn {
+        padding: 12px 24px;
+        font-size: 0.95em;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .mode-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2);
+      }
+
+      .mode-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+        box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+      }
+
+      /* Progress Bar */
+      .progress-container {
+        background: #333;
+        border-radius: 10px;
+        height: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #00d4ff, #00ff88);
+        transition: width 0.3s;
+      }
+
+      .progress-text {
+        text-align: center;
+        color: #888;
+        font-size: 0.9em;
+        margin-bottom: 15px;
+      }
+
+      /* Question Minimap */
+      .question-minimap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 15px;
+        padding: 12px;
+        background: #16213e;
+        border-radius: 8px;
+        justify-content: center;
+      }
+
+      .minimap-item {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75em;
+        font-weight: bold;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+      }
+
+      .minimap-item:hover {
+        transform: scale(1.15);
+        z-index: 10;
+      }
+
+      .minimap-item.current {
+        border-color: #00d4ff;
+        box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+      }
+
+      .minimap-item.was-correct {
+        background: #1a3d2e;
+        color: #00ff88;
+      }
+
+      .minimap-item.was-incorrect {
+        background: #3d1a1a;
+        color: #ff4757;
+      }
+
+      .minimap-item.user-correct {
+        background: #00ff88;
+        color: #1a1a2e;
+      }
+
+      .minimap-item.user-incorrect {
+        background: #ff4757;
+        color: #fff;
+      }
+
+      .minimap-item.unanswered {
+        background: #333;
+        color: #888;
+      }
+
+      /* Flagged minimap item */
+      .minimap-item.flagged {
+        border-color: var(--color-warning);
+        position: relative;
+      }
+
+      .minimap-flag {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        font-size: 0.55em;
+        line-height: 1;
+        color: var(--color-warning);
+        pointer-events: none;
+      }
+
+      /* Flag Button */
+      .flag-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        font-size: 0.85em;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        user-select: none;
+      }
+
+      .flag-btn:hover {
+        border-color: var(--color-warning);
+        color: var(--color-warning);
+      }
+
+      .flag-btn.flagged {
+        border-color: var(--color-warning);
+        color: var(--color-warning);
+        background: var(--color-warning-bg);
+      }
+
+      /* Summary Modal */
+      .summary-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+        backdrop-filter: blur(4px);
+      }
+
+      .summary-modal {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-xl);
+        max-width: 520px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .summary-modal__title {
+        text-align: center;
+        margin-bottom: var(--space-lg);
+        font-size: 1.25rem;
+        color: var(--text-primary);
+      }
+
+      .summary-modal__stats {
+        display: flex;
+        gap: var(--space-md);
+        justify-content: center;
+        margin-bottom: var(--space-lg);
+      }
+
+      .summary-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+        min-width: 80px;
+        border: 1px solid var(--border-color);
+      }
+
+      .summary-stat__value {
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      .summary-stat__label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+      }
+
+      .summary-stat--answered .summary-stat__value {
+        color: var(--color-success);
+      }
+
+      .summary-stat--unanswered .summary-stat__value {
+        color: var(--text-muted);
+      }
+
+      .summary-stat--flagged .summary-stat__value {
+        color: var(--color-warning);
+      }
+
+      .summary-modal__quick-jumps {
+        display: flex;
+        gap: var(--space-sm);
+        justify-content: center;
+        margin-bottom: var(--space-lg);
+      }
+
+      .summary-modal__jump-btn {
+        font-size: 0.8em;
+      }
+
+      .summary-modal__nav-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-sm);
+        text-align: center;
+      }
+
+      .summary-modal__navigator {
+        margin-bottom: var(--space-lg);
+      }
+
+      .summary-modal__actions {
+        display: flex;
+        gap: var(--space-md);
+        justify-content: center;
+      }
+
+      .summary-modal__actions .btn {
+        flex: 1;
+        text-align: center;
+        padding: 10px 16px;
+      }
+
+      /* Navigation at Top */
+      .nav-buttons-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      /* Question Card */
+      .question-card {
+        background: #16213e;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .question-number {
+        color: #00d4ff;
+        font-size: 0.9em;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .question-status {
+        font-size: 0.8em;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+
+      .question-status.was-correct {
+        background: #1a3d2e;
+        color: #00ff88;
+      }
+
+      .question-status.was-incorrect {
+        background: #3d1a1a;
+        color: #ff4757;
+      }
+
+      .question-text {
+        font-size: 1.2em;
+        line-height: 1.6;
+        margin-bottom: 25px;
+      }
+
+      .question-images {
+        margin: 15px 0;
+        text-align: center;
+      }
+
+      .question-images img {
+        max-width: 100%;
+        border-radius: 8px;
+        margin: 10px 0;
+        background: #fff;
+        padding: 10px;
+      }
+
+      /* Answer Options */
+      .answers {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .answer-option {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        background: #1a1a2e;
+        border: 2px solid #333;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .answer-option:hover {
+        border-color: #00d4ff;
+        background: #1f2844;
+      }
+
+      .answer-option.selected {
+        border-color: #00d4ff;
+        background: #1f3a5f;
+      }
+
+      .answer-option.correct {
+        border-color: #00ff88;
+        background: #1a3d2e;
+      }
+
+      .answer-option.incorrect {
+        border-color: #ff4757;
+        background: #3d1a1a;
+      }
+
+      .answer-option.show-correct {
+        border-color: #00ff88;
+        background: #1a3d2e;
+      }
+
+      .answer-letter {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #333;
+        border-radius: 50%;
+        margin-right: 15px;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .answer-text {
+        flex: 1;
+      }
+
+      .answer-icon {
+        margin-left: 10px;
+        font-size: 1.2em;
+      }
+
+      /* Navigation */
+      .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+      }
+
+      .nav-btn {
+        padding: 12px 25px;
+        font-size: 1em;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
+        background: #333;
+        color: #eee;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+      }
+
+      .nav-btn.next {
+        background: #00d4ff;
+        color: #1a1a2e;
+      }
+
+      .nav-btn.finish {
+        background: #00ff88;
+        color: #1a1a2e;
+      }
+
+      .nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Results */
+      /* Score Display - Modern Circle Design */
+      .score-circle-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 25px;
+      }
+
+      .score-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: conic-gradient(
+          var(--score-color, var(--accent-primary)) var(--score-percent, 0%),
+          var(--bg-card) 0
+        );
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: 0 0 40px rgba(0, 212, 255, 0.2);
+        transition: all 0.5s ease;
+      }
+
+      .score-circle::before {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: var(--bg-primary);
+      }
+
+      .score-percentage {
+        font-size: 3em;
+        font-weight: 800;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        position: relative;
+        z-index: 1;
+      }
+
+      .score-label {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        margin-top: 5px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .score-circle.good {
+        --score-color: var(--accent-secondary);
+      }
+      .score-circle.medium {
+        --score-color: #ffd700;
+      }
+      .score-circle.bad {
+        --score-color: #ff6b6b;
+      }
+
+      /* Score Comparison - Last vs Best */
+      .score-comparison {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+
+      .score-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 24px;
+        min-width: 120px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
+
+      .score-box.best {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1) 0%,
+          rgba(0, 255, 136, 0.1) 100%
+        );
+        border-color: var(--accent-primary);
+      }
+
+      .score-box-label {
+        display: block;
+        font-size: 0.75em;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+      }
+
+      .score-box-value {
+        display: block;
+        font-size: 1.5em;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .score-box.best .score-box-value {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .review-summary-title {
+        margin-top: 30px;
+        margin-bottom: 15px;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+
+      /* Legacy score display (for backward compatibility) */
+      .score-display {
+        text-align: center;
+        padding: 40px;
+        background: var(--bg-card);
+        border-radius: 20px;
+        margin-bottom: 30px;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+      }
+
+      .score {
+        font-size: 4em;
+        font-weight: bold;
+        margin: 20px 0;
+        color: #fff;
+      }
+
+      .score.good {
+        color: var(--accent-secondary);
+      }
+      .score.medium {
+        color: #ffd700;
+      }
+      .score.bad {
+        color: #ff6b6b;
+      }
+
+      .review-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .review-item {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .review-item:hover {
+        transform: scale(1.1);
+      }
+
+      .review-item.correct {
+        background: #1a3d2e;
+        color: #00ff88;
+      }
+
+      .review-item.incorrect {
+        background: #3d1a1a;
+        color: #ff4757;
+      }
+
+      .review-item.unanswered {
+        background: #333;
+        color: #888;
+      }
+
+      /* Options */
+      .options-container {
+        background: #16213e;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+
+      .options-title {
+        color: #00d4ff;
+        margin-bottom: 15px;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .checkbox-option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        cursor: pointer;
+      }
+
+      .checkbox-option input {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+        accent-color: #00d4ff;
+      }
+
+      .main-menu-link {
+        text-align: center;
+        margin-top: 20px;
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+      .main-menu-link:hover {
+        color: var(--accent-primary);
+        text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+      }
+
+      /* icon-btn for library */
+      .icon-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        font-size: 1em;
+        opacity: 0.7;
+        transition: all 0.2s ease;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 6px;
+      }
+      .icon-btn:hover {
+        opacity: 1;
+        background: rgba(0, 212, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: scale(1.05);
+      }
+
+      /* Template Section */
+      .template-section {
+        background: var(--bg-card);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 25px;
+        border: 1px solid var(--border-color);
+        animation: fadeIn 0.3s ease;
+        backdrop-filter: blur(20px);
+        box-shadow: var(--shadow);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .template-title {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 1.2em;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+      }
+
+      .template-desc {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        margin-bottom: 18px;
+        line-height: 1.6;
+      }
+
+      .template-code-container {
+        position: relative;
+        margin-bottom: 18px;
+      }
+
+      .template-code {
+        background: rgba(10, 10, 20, 0.6);
+        border-radius: 12px;
+        padding: 20px;
+        padding-right: 110px;
+        font-family: "JetBrains Mono", "Consolas", "Monaco", monospace;
+        font-size: 0.8em;
+        color: var(--accent-secondary);
+        overflow-x: auto;
+        border: 1px solid var(--border-color);
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        line-height: 1.5;
+      }
+
+      .template-code .key {
+        color: var(--accent-primary);
+      }
+
+      .template-code .string {
+        color: #ffd700;
+      }
+
+      .template-code .boolean {
+        color: #ff6b9d;
+      }
+
+      .template-code .number {
+        color: #ff9f43;
+      }
+
+      .template-copy-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 8px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        backdrop-filter: blur(10px);
+      }
+
+      .template-copy-btn:hover {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+        border-color: var(--accent-primary);
+        transform: translateY(-1px);
+      }
+
+      .template-copy-btn.copied {
+        background: var(--accent-secondary);
+        color: var(--bg-primary);
+        border-color: var(--accent-secondary);
+      }
+
+      .template-ai-note {
+        background: rgba(0, 212, 255, 0.08);
+        border-radius: 12px;
+        padding: 16px 20px;
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        border-left: 3px solid var(--accent-primary);
+        margin-bottom: 18px;
+      }
+
+      .template-ai-note strong {
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      /* AI Prompt Section in Template */
+      .ai-prompt-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .ai-prompt-divider {
+        text-align: center;
+        margin-bottom: 15px;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        position: relative;
+      }
+
+      .ai-prompt-divider::before,
+      .ai-prompt-divider::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 30%;
+        height: 1px;
+        background: var(--border-color);
+      }
+
+      .ai-prompt-divider::before {
+        left: 0;
+      }
+      .ai-prompt-divider::after {
+        right: 0;
+      }
+
+      .mode-btn-accent {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.15),
+          rgba(157, 0, 255, 0.15)
+        ) !important;
+        border-color: rgba(0, 212, 255, 0.4) !important;
+      }
+
+      .mode-btn-accent:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.25),
+          rgba(157, 0, 255, 0.25)
+        ) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 212, 255, 0.2);
+      }
+
+      /* AI Prompt Modal - Exam Name Status */
+      .ai-exam-name-status {
+        font-size: 0.85em;
+        padding: 6px 10px;
+        border-radius: 8px;
+        margin-top: 2px;
+        line-height: 1.4;
+      }
+
+      .ai-exam-name-status.warning {
+        color: #ffb340;
+        background: rgba(255, 179, 64, 0.1);
+        border-left: 3px solid #ffb340;
+      }
+
+      .ai-exam-name-status.error {
+        color: #ff4d6a;
+        background: rgba(255, 77, 106, 0.1);
+        border-left: 3px solid #ff4d6a;
+      }
+
+      /* AI Prompt Modal - Source Attachment Note */
+      .ai-prompt-source-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 16px;
+        background: rgba(0, 212, 255, 0.05);
+        border-radius: 12px;
+        border-left: 3px solid var(--accent-primary);
+      }
+
+      .ai-prompt-source-icon {
+        font-size: 1.3em;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .ai-prompt-source-note p {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      /* AI Prompt Modal - JSON Paste Section */
+      .ai-prompt-paste-divider {
+        text-align: center;
+        margin: 20px 0 15px;
+        color: var(--text-secondary);
+        font-size: 0.85em;
+        position: relative;
+      }
+
+      .ai-prompt-paste-divider::before,
+      .ai-prompt-paste-divider::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 40%;
+        height: 1px;
+        background: var(--border-color);
+      }
+
+      .ai-prompt-paste-divider::before {
+        left: 0;
+      }
+
+      .ai-prompt-paste-divider::after {
+        right: 0;
+      }
+
+      .ai-prompt-have-response-btn {
+        width: 100%;
+        background: var(--bg-card);
+        border: 2px dashed var(--accent-primary);
+        border-radius: 14px;
+        padding: 16px 24px;
+        color: var(--accent-primary);
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-have-response-btn:hover {
+        background: rgba(0, 212, 255, 0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 212, 255, 0.15);
+      }
+
+      .ai-json-paste-section {
+        margin-top: 15px;
+        animation: fadeInUp 0.3s ease;
+      }
+
+      .ai-json-paste-input {
+        width: 100%;
+        min-height: 180px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        color: var(--text-primary);
+        font-size: 0.88em;
+        font-family: "JetBrains Mono", "Consolas", monospace;
+        resize: vertical;
+        line-height: 1.6;
+        margin-bottom: 12px;
+        transition: border-color 0.2s ease;
+      }
+
+      .ai-json-paste-input:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-json-paste-input::placeholder {
+        color: var(--text-secondary);
+        font-family: inherit;
+      }
+
+      .ai-json-validate-row {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .ai-json-paste-clipboard-btn {
+        background: var(--bg-card);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0 14px;
+        color: var(--text-secondary);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .ai-json-paste-clipboard-btn:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        background: rgba(0, 212, 255, 0.05);
+      }
+
+      .ai-json-validate-btn {
+        flex: 1;
+        background: var(--bg-card);
+        border: 2px solid var(--accent-primary);
+        border-radius: 12px;
+        padding: 14px;
+        color: var(--accent-primary);
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-json-validate-btn:hover {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+      }
+
+      .ai-json-paste-status {
+        margin-top: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.9em;
+        line-height: 1.5;
+      }
+
+      .ai-json-paste-status.success {
+        color: #50fa7b;
+        background: rgba(80, 250, 123, 0.1);
+        border-left: 3px solid #50fa7b;
+      }
+
+      .ai-json-paste-status.error {
+        color: #ff4d6a;
+        background: rgba(255, 77, 106, 0.1);
+        border-left: 3px solid #ff4d6a;
+      }
+
+      .ai-json-preview {
+        margin-top: 15px;
+        padding: 16px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+      }
+
+      .ai-json-preview-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+      }
+
+      .ai-json-preview-row:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .ai-json-preview-label {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        font-weight: 500;
+      }
+
+      .ai-json-preview-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.95em;
+        text-align: right;
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ai-json-import-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #50fa7b, #2ecc71);
+        border: none;
+        border-radius: 14px;
+        padding: 16px 24px;
+        color: #1a1a2e;
+        font-weight: 700;
+        font-size: 1.05em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-json-import-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(80, 250, 123, 0.3);
+      }
+
+      /* AI Prompt Modal */
+      .ai-prompt-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .ai-prompt-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .ai-prompt-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 550px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        padding: 35px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .ai-prompt-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.5em;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+      }
+
+      .ai-prompt-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .ai-prompt-icon {
+        font-size: 3.5em;
+        display: block;
+        margin-bottom: 15px;
+      }
+
+      .ai-prompt-title {
+        font-size: 1.6em;
+        font-weight: 700;
+        margin-bottom: 8px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .ai-prompt-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+      }
+
+      .ai-prompt-form {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .ai-prompt-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .ai-prompt-field label {
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 0.95em;
+      }
+
+      .ai-prompt-input,
+      .ai-prompt-select {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: var(--text-primary);
+        font-size: 1em;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-input:focus,
+      .ai-prompt-select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-prompt-textarea {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 16px;
+        color: var(--text-primary);
+        font-size: 0.95em;
+        min-height: 120px;
+        resize: vertical;
+        font-family: inherit;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-textarea:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-prompt-textarea::placeholder {
+        color: var(--text-secondary);
+      }
+
+      .ai-prompt-generate-btn {
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
+        border: none;
+        border-radius: 14px;
+        padding: 16px 24px;
+        color: var(--bg-primary);
+        font-weight: 700;
+        font-size: 1.05em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-generate-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(0, 212, 255, 0.3);
+      }
+
+      .ai-prompt-result {
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 1px solid var(--border-color);
+        animation: fadeIn 0.4s ease;
+      }
+
+      .ai-prompt-result-header {
+        text-align: center;
+        margin-bottom: 15px;
+      }
+
+      .ai-prompt-result-header span {
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 600;
+        font-size: 1.1em;
+      }
+
+      .ai-prompt-result-info {
+        text-align: center;
+        margin-bottom: 15px;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+      }
+
+      .ai-prompt-tools {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .ai-tool-tag {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        color: var(--text-secondary);
+      }
+
+      .ai-prompt-output {
+        width: 100%;
+        min-height: 200px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        color: var(--text-primary);
+        font-size: 0.9em;
+        font-family: "JetBrains Mono", "Consolas", monospace;
+        resize: vertical;
+        margin-bottom: 15px;
+        line-height: 1.6;
+      }
+
+      .ai-prompt-copy-btn {
+        width: 100%;
+        background: var(--bg-card);
+        border: 2px solid var(--accent-primary);
+        border-radius: 12px;
+        padding: 14px;
+        color: var(--accent-primary);
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-copy-btn:hover {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+      }
+
+      /* Material checkbox */
+      .ai-prompt-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+        background: rgba(0, 212, 255, 0.05);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .ai-prompt-checkbox:hover {
+        background: rgba(0, 212, 255, 0.1);
+      }
+
+      .ai-prompt-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: var(--accent-primary);
+        cursor: pointer;
+      }
+
+      .ai-prompt-checkbox label {
+        cursor: pointer;
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .ai-prompt-checkbox strong {
+        color: var(--accent-primary);
+      }
+
+      /* AI Tool Links */
+      .ai-prompt-tools {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .ai-tool-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+
+      .ai-tool-link:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        transform: translateY(-2px);
+      }
+
+      /* AI suggestion below prompt */
+      .ai-prompt-suggestion {
+        text-align: center;
+        margin-top: 15px;
+        padding: 12px;
+        background: rgba(0, 212, 255, 0.05);
+        border-radius: 10px;
+        border-left: 3px solid var(--accent-primary);
+      }
+
+      .ai-prompt-suggestion-text {
+        color: var(--text-secondary);
+        font-size: 0.85em;
+        line-height: 1.5;
+      }
+
+      .ai-prompt-suggestion-text a {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .ai-prompt-suggestion-text a:hover {
+        text-decoration: underline;
+      }
+
+      /* AI Destinations (shown after copy) */
+      .ai-destinations {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+        animation: fadeInUp 0.4s ease;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .ai-destinations-title {
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        margin-bottom: 15px;
+      }
+
+      .ai-destinations-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .ai-destination-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.95em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+      }
+
+      .ai-destination-btn:hover {
+        border-color: var(--accent-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 212, 255, 0.15);
+      }
+
+      .ai-destination-icon {
+        font-size: 1.3em;
+      }
+
+      .ai-destination-btn span:nth-child(2) {
+        flex: 1;
+        font-weight: 500;
+      }
+
+      .ai-destination-arrow {
+        color: var(--text-secondary);
+        font-size: 1.1em;
+        transition: all 0.2s ease;
+      }
+
+      .ai-destination-btn:hover .ai-destination-arrow {
+        color: var(--accent-primary);
+        transform: translate(2px, -2px);
+      }
+
+      /* Template Modal */
+      .template-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .template-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .template-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 700px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        padding: 30px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      .template-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.5em;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .template-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+      }
+
+      .template-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .template-modal-icon {
+        font-size: 2em;
+      }
+
+      .template-modal-title {
+        font-size: 1.5em;
+        font-weight: 700;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* Choice Modal */
+      .choice-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .choice-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .choice-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 500px;
+        width: 100%;
+        position: relative;
+        padding: 35px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      .choice-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.5em;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .choice-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+      }
+
+      .choice-modal-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .choice-modal-icon {
+        font-size: 3.5em;
+        display: block;
+        margin-bottom: 15px;
+      }
+
+      .choice-modal-title {
+        font-size: 1.6em;
+        font-weight: 700;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .choice-options {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .choice-option {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        width: 100%;
+      }
+
+      .choice-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+
+      .choice-option-icon {
+        font-size: 2.5em;
+        flex-shrink: 0;
+      }
+
+      .choice-option-content {
+        flex: 1;
+      }
+
+      .choice-option h3 {
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--text-primary);
+      }
+
+      .choice-option p {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .choice-arrow {
+        font-size: 1.5em;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+      }
+
+      .choice-option:hover .choice-arrow {
+        color: var(--accent-primary);
+        transform: translateX(5px);
+      }
+
+      .choice-option.easy {
+        border-color: rgba(0, 212, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.05),
+          rgba(0, 212, 255, 0.02)
+        );
+      }
+
+      .choice-option.easy:hover {
+        border-color: var(--accent-primary);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1),
+          rgba(0, 212, 255, 0.05)
+        );
+      }
+
+      .choice-option.advanced {
+        border-color: rgba(157, 0, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.05),
+          rgba(157, 0, 255, 0.02)
+        );
+      }
+
+      .choice-option.advanced:hover {
+        border-color: #9d00ff;
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.1),
+          rgba(157, 0, 255, 0.05)
+        );
+      }
+
+      /* External Link Modal */
+      .external-link-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(15px);
+        z-index: 30000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .external-link-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .external-link-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 400px;
+        width: 100%;
+        padding: 35px;
+        text-align: center;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.3s ease;
+      }
+
+      .external-link-icon {
+        font-size: 4em;
+        margin-bottom: 15px;
+        animation: bounce 1s infinite;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .external-link-title {
+        font-size: 1.4em;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--text-primary);
+      }
+
+      .external-link-text {
+        color: var(--text-secondary);
+        margin-bottom: 15px;
+      }
+
+      .external-link-url {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-family: monospace;
+        font-size: 0.9em;
+        color: var(--accent-primary);
+        word-break: break-all;
+        margin-bottom: 25px;
+      }
+
+      .external-link-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .external-link-btn {
+        flex: 1;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        font-size: 1em;
+      }
+
+      .external-link-btn.secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      .external-link-btn.secondary:hover {
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+      }
+
+      .external-link-btn.primary {
+        background: var(--accent-gradient);
+        color: var(--bg-primary);
+      }
+
+      .external-link-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+      }
+
+      @media (max-width: 600px) {
+        .ai-prompt-modal {
+          padding: 25px 20px;
+          max-height: 95vh;
+          max-width: 95%;
+        }
+        .ai-prompt-title {
+          font-size: 1.4em;
+        }
+        .ai-prompt-tools {
+          gap: 6px;
+        }
+        .ai-tool-tag {
+          padding: 4px 10px;
+          font-size: 0.75em;
+        }
+        .ai-destinations-grid {
+          grid-template-columns: 1fr;
+        }
+        .ai-destination-btn {
+          padding: 12px 14px;
+        }
+        .template-modal {
+          padding: 25px 20px;
+          max-width: 95%;
+        }
+        .template-modal-title {
+          font-size: 1.3em;
+        }
+        .choice-modal {
+          padding: 30px 20px;
+          max-width: 95%;
+        }
+        .choice-modal-title {
+          font-size: 1.4em;
+        }
+        .choice-option {
+          padding: 16px;
+        }
+        .choice-option-icon {
+          font-size: 2em;
+        }
+        .external-link-modal {
+          padding: 30px 20px;
+          max-width: 95%;
+        }
+        .external-link-buttons {
+          flex-direction: column;
+        }
+        .external-link-btn {
+          width: 100%;
+        }
+      }
+
+      /* Help Button */
+      .help-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.2em;
+        transition: all 0.2s ease;
+        z-index: 10000;
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+      }
+
+      .help-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+
+      .help-btn.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+      }
+
+      /* Onboarding Modal */
+      .onboarding-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .onboarding-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .onboarding-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        max-width: 500px;
+        width: 100%;
+        padding: 40px;
+        text-align: center;
+        position: relative;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.3s ease;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      }
+
+      .onboarding-overlay.active .onboarding-modal {
+        transform: translateY(0) scale(1);
+      }
+
+      .onboarding-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .onboarding-title {
+        font-size: 1.8em;
+        font-weight: 700;
+        margin-bottom: 15px;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .onboarding-text {
+        color: var(--text-secondary);
+        line-height: 1.7;
+        margin-bottom: 30px;
+        font-size: 1.05em;
+      }
+
+      .onboarding-steps {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 25px;
+        margin-bottom: 30px;
+      }
+
+      .onboarding-step {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--border-color);
+        transition: all 0.3s ease;
+      }
+
+      .onboarding-step.active {
+        background: var(--accent-primary);
+        width: 30px;
+        border-radius: 5px;
+      }
+
+      .onboarding-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+      }
+
+      .onboarding-btn {
+        padding: 12px 30px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        font-size: 1em;
+      }
+
+      .onboarding-btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      .onboarding-btn-secondary:hover {
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .onboarding-btn-primary {
+        background: var(--accent-gradient);
+        color: var(--bg-primary);
+      }
+
+      .onboarding-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+      }
+
+      .onboarding-skip {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 0.9em;
+        padding: 5px 10px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .onboarding-skip:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .onboarding-highlight {
+        background: rgba(0, 212, 255, 0.15);
+        padding: 2px 8px;
+        border-radius: 6px;
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      /* Onboarding Choice Buttons (in last step) */
+      .onboarding-choices {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .onboarding-choice {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 18px;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        width: 100%;
+        animation: fadeInUp 0.5s ease forwards;
+      }
+
+      .onboarding-choice:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .onboarding-choice:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      .onboarding-choice:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+
+      .onboarding-choice-icon {
+        font-size: 2.2em;
+        flex-shrink: 0;
+      }
+
+      .onboarding-choice-content {
+        flex: 1;
+      }
+
+      .onboarding-choice h4 {
+        font-size: 1.15em;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text-primary);
+      }
+
+      .onboarding-choice p {
+        font-size: 0.85em;
+        color: var(--text-secondary);
+        line-height: 1.3;
+      }
+
+      .onboarding-choice-arrow {
+        font-size: 1.5em;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+      }
+
+      .onboarding-choice:hover .onboarding-choice-arrow {
+        color: var(--accent-primary);
+        transform: translateX(5px);
+      }
+
+      .onboarding-choice.easy {
+        border-color: rgba(0, 212, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.05),
+          rgba(0, 212, 255, 0.02)
+        );
+      }
+
+      .onboarding-choice.easy:hover {
+        border-color: var(--accent-primary);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.1),
+          rgba(0, 212, 255, 0.05)
+        );
+      }
+
+      .onboarding-choice.advanced {
+        border-color: rgba(157, 0, 255, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.05),
+          rgba(157, 0, 255, 0.02)
+        );
+      }
+
+      .onboarding-choice.advanced:hover {
+        border-color: #9d00ff;
+        background: linear-gradient(
+          135deg,
+          rgba(157, 0, 255, 0.1),
+          rgba(157, 0, 255, 0.05)
+        );
+      }
+
+      @media (max-width: 600px) {
+        .onboarding-modal {
+          padding: 30px 20px;
+          max-width: 95%;
+        }
+        .onboarding-title {
+          font-size: 1.4em;
+        }
+        .onboarding-text {
+          font-size: 0.95em;
+        }
+        .onboarding-buttons {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .onboarding-btn {
+          width: 100%;
+        }
+        .onboarding-choices {
+          gap: 10px;
+        }
+        .onboarding-choice {
+          padding: 14px;
+        }
+        .onboarding-choice-icon {
+          font-size: 1.8em;
+        }
+        .onboarding-choice h4 {
+          font-size: 1em;
+        }
+        .onboarding-choice p {
+          font-size: 0.8em;
+        }
+        .onboarding-steps {
+          margin-top: 20px;
+          margin-bottom: 20px;
+        }
+      }
+
+      .help-btn-inline {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.1em;
+        transition: all 0.2s ease;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+      }
+
+      .help-btn-inline:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: scale(1.1);
+      }
+
+      .help-btn-inline.active {
+        background: var(--accent-gradient);
+        border-color: transparent;
+      }
+
+      /* Help Menu Popup */
+      .help-menu-popup {
+        position: absolute;
+        top: 55px;
+        right: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 8px;
+        min-width: 200px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        z-index: 100;
+        backdrop-filter: blur(20px);
+        animation: menuFadeIn 0.2s ease;
+      }
+
+      @keyframes menuFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .help-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px 16px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.95em;
+        cursor: pointer;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        text-align: left;
+      }
+
+      .help-menu-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateX(4px);
+      }
+
+      .help-menu-item span:first-child {
+        font-size: 1.3em;
+      }
+
+      /* Exam Export Popup Menu */
+      .exam-export-menu {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 6px;
+        min-width: 180px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(20px);
+        animation: menuFadeIn 0.15s ease;
+      }
+
+      .exam-export-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 10px 14px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.9em;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        text-align: left;
+      }
+
+      .exam-export-option:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateX(3px);
+      }
+
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 1.5em;
+        }
+        .question-text {
+          font-size: 1.1em;
+        }
+        .mode-btn {
+          padding: 12px 20px;
+        }
+
+        /* Container padding for small screens */
+        .container {
+          padding: 15px;
+        }
+
+        /* Library container */
+        .library-container {
+          padding: 0;
+        }
+
+        /* File input area */
+        .file-input-area {
+          padding: 30px 20px;
+        }
+
+        /* Exam items */
+        .exam-item {
+          padding: 12px;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+
+        .exam-item-info {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .exam-item-title {
+          margin-bottom: 8px;
+          word-break: break-word;
+        }
+
+        .exam-stats-row {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .stat-item {
+          flex: 1 1 calc(50% - 4px);
+          min-width: 0;
+          justify-content: flex-start;
+        }
+
+        .exam-stats-row .best-stat {
+          flex-basis: 100%;
+        }
+
+        .stat-label {
+          font-size: 0.7em;
+        }
+
+        .best-score-bar {
+          margin-top: 2px;
+        }
+
+        /* Exam actions */
+        .exam-actions {
+          width: 100%;
+          justify-content: flex-end;
+          gap: 4px;
+          margin-left: 0;
+        }
+
+        .icon-btn {
+          width: 32px;
+          height: 32px;
+          font-size: 0.9em;
+        }
+
+        /* Help menu popup */
+        .help-menu-popup {
+          right: 5px;
+          min-width: 180px;
+        }
+
+        /* Folder header */
+        .folder-header {
+          padding: 12px;
+        }
+
+        /* Library controls */
+        .library-controls {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .library-controls button {
+          flex: 1;
+          min-width: 120px;
+          font-size: 0.85em;
+          padding: 8px 12px;
+        }
+      }
+
+      /* ==========================================================================
+         Wrong Answer Feedback (Tarjeta Roja) - Schema v2.0
+         ========================================================================== */
+      .wrong-answer-feedback {
+        margin-top: 20px;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      .wrong-answer-feedback.hidden {
+        display: none;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .wrong-feedback-card {
+        background: linear-gradient(135deg, #1a0f0f 0%, #2d1f1f 100%);
+        border: 2px solid #ff4757;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(255, 71, 87, 0.3);
+      }
+
+      .wrong-feedback-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 71, 87, 0.3);
+      }
+
+      .wrong-feedback-icon {
+        font-size: 24px;
+      }
+
+      .wrong-feedback-title {
+        font-size: 1.2em;
+        font-weight: 600;
+        color: #ff6b7a;
+      }
+
+      .wrong-feedback-content {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .correct-answer-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+      }
+
+      .answer-letter-large {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+        color: #0a0e27;
+        font-size: 1.3em;
+        font-weight: 700;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .answer-letter-large + .answer-text {
+        color: #fff;
+        font-size: 1.1em;
+        font-weight: 500;
+      }
+
+      .feedback-section {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        padding: 12px 15px;
+      }
+
+      .feedback-label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #888;
+        margin-bottom: 6px;
+      }
+
+      .feedback-text {
+        color: #ccc;
+        font-size: 0.95em;
+        line-height: 1.5;
+      }
+
+      .feedback-quote {
+        margin: 0;
+        padding: 10px 15px;
+        border-left: 3px solid #ffd700;
+        background: rgba(255, 215, 0, 0.05);
+        color: #ddd;
+        font-style: italic;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .feedback-explanation {
+        color: #ccc;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .wrong-feedback-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .continue-btn {
+        background: linear-gradient(135deg, #ff4757 0%, #ff3344 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+      }
+
+      .continue-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 71, 87, 0.5);
+      }
+
+      .continue-btn:active {
+        transform: translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        .wrong-feedback-card {
+          padding: 15px;
+        }
+
+        .correct-answer-section {
+          padding: 12px;
+        }
+
+        .answer-letter-large {
+          width: 36px;
+          height: 36px;
+          font-size: 1.1em;
+        }
+
+        .wrong-feedback-title {
+          font-size: 1.1em;
+        }
+      }
+
+      /* ================================================================
+         Phase 3: Mode Cards
+         ================================================================ */
+      .mode-cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+        margin-bottom: var(--space-lg);
+      }
+
+      .mode-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        backdrop-filter: blur(20px);
+        transition:
+          border-color var(--transition-normal),
+          box-shadow var(--transition-normal),
+          transform var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .mode-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--accent-gradient);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+      }
+
+      .mode-card:hover {
+        border-color: var(--accent-primary);
+        box-shadow: 0 8px 24px rgba(0, 212, 255, 0.12);
+        transform: translateY(-2px);
+      }
+
+      .mode-card:hover::before {
+        opacity: 1;
+      }
+
+      .mode-card--free::before {
+        background: var(--accent-primary);
+      }
+      .mode-card--simulacro::before {
+        background: var(--color-warning);
+      }
+      .mode-card--review::before {
+        background: var(--color-success);
+      }
+
+      .mode-card__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-sm);
+      }
+
+      .mode-card__icon {
+        font-size: 1.6em;
+        line-height: 1;
+      }
+
+      .mode-card__title {
+        font-size: 1.15em;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .mode-card__desc {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        line-height: 1.5;
+        margin-bottom: var(--space-md);
+      }
+
+      .mode-card__desc span {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .mode-card__actions {
+        display: flex;
+        gap: var(--space-sm);
+        justify-content: flex-end;
+      }
+
+      /* ================================================================
+         Phase 3: Unified Button System
+         ================================================================ */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-sm);
+        padding: 10px 20px;
+        font-size: 0.95em;
+        font-weight: 600;
+        font-family: inherit;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        backdrop-filter: blur(10px);
+        line-height: 1.4;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-primary);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: none;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .btn:disabled,
+      .btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .btn--primary {
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--primary:hover:not(:disabled) {
+        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+        background: var(--accent-gradient);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--primary:active:not(:disabled) {
+        box-shadow: 0 2px 8px rgba(0, 212, 255, 0.2);
+        background: var(--accent-gradient);
+      }
+
+      .btn--secondary {
+        background: transparent;
+        border-color: var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      .btn--secondary:hover:not(:disabled) {
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .btn--success {
+        background: var(--color-success);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--success:hover:not(:disabled) {
+        box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+        background: var(--color-success);
+        border-color: transparent;
+        color: var(--bg-primary);
+      }
+
+      .btn--sm {
+        padding: 6px 14px;
+        font-size: 0.85em;
+      }
+
+      .btn--lg {
+        padding: 14px 28px;
+        font-size: 1.05em;
+      }
+
+      /* Ensure existing mode-btn has consistent states */
+      .mode-btn:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      .mode-btn:disabled,
+      .mode-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      /* Ensure nav-btn has consistent disabled state */
+      .nav-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+        filter: grayscale(0.5);
+      }
+
+      .nav-btn:active:not(:disabled) {
+        transform: translateY(0) !important;
+      }
+
+      /* ================================================================
+         Phase 3: Improved Answer Feedback
+         ================================================================ */
+      .answer-option.correct {
+        border-color: var(--color-success-border);
+        background: var(--color-success-bg);
+      }
+
+      .answer-option.correct .answer-letter {
+        background: var(--color-success);
+        color: var(--bg-primary);
+      }
+
+      .answer-option.wrong {
+        border-color: var(--color-error-border);
+        background: var(--color-error-bg);
+      }
+
+      .answer-option.wrong .answer-letter {
+        background: var(--color-error);
+        color: #fff;
+      }
+
+      .answer-option.incorrect {
+        border-color: var(--color-error-border);
+        background: var(--color-error-bg);
+      }
+
+      .answer-option.incorrect .answer-letter {
+        background: var(--color-error);
+        color: #fff;
+      }
+
+      .answer-option.show-correct {
+        border-color: var(--color-success-border);
+        background: var(--color-success-bg);
+      }
+
+      .answer-option.show-correct .answer-letter {
+        background: var(--color-success);
+        color: var(--bg-primary);
+      }
+
+      /* Feedback panel - distinct from answer list */
+      .feedback-panel {
+        margin-top: var(--space-lg);
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      .feedback-panel--correct {
+        border-color: var(--color-success-border);
+      }
+
+      .feedback-panel--wrong {
+        border-color: var(--color-error-border);
+      }
+
+      .feedback-panel__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: var(--space-md);
+        font-weight: 600;
+        font-size: 1.05em;
+      }
+
+      .feedback-panel--correct .feedback-panel__header {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+      }
+
+      .feedback-panel--wrong .feedback-panel__header {
+        background: var(--color-error-bg);
+        color: var(--color-error);
+      }
+
+      .feedback-panel__body {
+        padding: var(--space-md);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+
+      .feedback-panel__field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xs);
+      }
+
+      .feedback-panel__label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .feedback-panel__value {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .feedback-panel__citation {
+        padding: var(--space-sm) var(--space-md);
+        border-left: 3px solid var(--color-warning);
+        background: var(--color-warning-bg);
+        color: var(--text-secondary);
+        font-style: italic;
+        font-size: 0.95em;
+        line-height: 1.6;
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      }
+
+      /* ================================================================
+         Phase 3: Results Screen Layout
+         ================================================================ */
+      .results-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        margin-bottom: var(--space-md);
+        backdrop-filter: blur(20px);
+      }
+
+      .results-section__title {
+        font-size: 0.8em;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        margin-bottom: var(--space-md);
+        font-weight: 600;
+      }
+
+      .results-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-sm);
+      }
+
+      .results-stat {
+        text-align: center;
+        padding: var(--space-md) var(--space-sm);
+        border-radius: var(--radius-md);
+        background: var(--color-neutral-bg);
+        border: 1px solid transparent;
+      }
+
+      .results-stat--correct {
+        background: var(--color-success-bg);
+        border-color: var(--color-success-border);
+      }
+
+      .results-stat--wrong {
+        background: var(--color-error-bg);
+        border-color: var(--color-error-border);
+      }
+
+      .results-stat--blank {
+        background: var(--color-neutral-bg);
+        border-color: var(--color-neutral-border);
+      }
+
+      .results-stat__value {
+        font-size: 1.8em;
+        font-weight: 800;
+        display: block;
+        margin-bottom: var(--space-xs);
+      }
+
+      .results-stat--correct .results-stat__value {
+        color: var(--color-success);
+      }
+      .results-stat--wrong .results-stat__value {
+        color: var(--color-error);
+      }
+      .results-stat--blank .results-stat__value {
+        color: var(--color-neutral);
+      }
+
+      .results-stat__label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+      }
+
+      .results-score-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-md) 0;
+        border-top: 1px solid var(--border-color);
+        margin-top: var(--space-md);
+      }
+
+      .results-score-row__label {
+        font-size: 1em;
+        color: var(--text-secondary);
+      }
+
+      .results-score-row__value {
+        font-size: 1.4em;
+        font-weight: 800;
+      }
+
+      .results-time-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-sm) 0;
+      }
+
+      .results-time-row__label {
+        color: var(--text-secondary);
+        font-size: 0.95em;
+      }
+
+      .results-time-row__value {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .results-actions {
+        display: flex;
+        gap: var(--space-sm);
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: var(--space-md);
+      }
+
+      .results-actions .btn {
+        min-width: 160px;
+      }
+
+      /* Review items with semantic colors */
+      .review-item.correct {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+        border: 1px solid var(--color-success-border);
+      }
+
+      .review-item.incorrect {
+        background: var(--color-error-bg);
+        color: var(--color-error);
+        border: 1px solid var(--color-error-border);
+      }
+
+      .review-item.unanswered {
+        background: var(--color-neutral-bg);
+        color: var(--color-neutral);
+        border: 1px solid var(--color-neutral-border);
+      }
+
+      /* Score circle semantic colors */
+      .score-circle.good {
+        --score-color: var(--color-success);
+      }
+      .score-circle.medium {
+        --score-color: var(--color-warning);
+      }
+      .score-circle.bad {
+        --score-color: var(--color-error);
+      }
+
+      /* Minimap semantic colors */
+      .minimap-item.user-correct {
+        background: var(--color-success);
+        color: var(--bg-primary);
+      }
+
+      .minimap-item.user-incorrect {
+        background: var(--color-error);
+        color: #fff;
+      }
+
+      .minimap-item.was-correct {
+        background: var(--color-success-bg);
+        color: var(--color-success);
+      }
+
+      .minimap-item.was-incorrect {
+        background: var(--color-error-bg);
+        color: var(--color-error);
+      }
+
+      /* ================================================================
+         Phase 3: Spacing Consistency Overrides
+         ================================================================ */
+      .question-card {
+        padding: var(--space-lg);
+        margin-bottom: var(--space-md);
+        border-radius: var(--radius-lg);
+      }
+
+      .answers {
+        gap: var(--space-sm);
+      }
+
+      .nav-buttons {
+        gap: var(--space-md);
+      }
+
+      .nav-buttons-top {
+        gap: var(--space-md);
+        margin-bottom: var(--space-md);
+      }
+
+      .progress-container {
+        margin-bottom: var(--space-sm);
+      }
+
+      .file-input-area {
+        padding: var(--space-xl) var(--space-lg);
+        margin-bottom: var(--space-lg);
+        border-radius: var(--radius-xl);
+      }
+
+      .exam-item {
+        padding: var(--space-md) var(--space-lg);
+        margin-bottom: var(--space-sm);
+        border-radius: var(--radius-lg);
+      }
+
+      .category-exams {
+        padding: var(--space-sm) 0 var(--space-sm) var(--space-lg);
+      }
+
+      .category-header {
+        padding: var(--space-md);
+        border-radius: var(--radius-lg);
+      }
+
+      /* Mode cards responsive */
+      @media (max-width: 600px) {
+        .mode-card {
+          padding: var(--space-md);
+        }
+
+        .mode-card__title {
+          font-size: 1.05em;
+        }
+
+        .mode-card__actions {
+          flex-direction: column;
+        }
+
+        .mode-card__actions .btn {
+          width: 100%;
+        }
+
+        .results-stats-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: var(--space-xs);
+        }
+
+        .results-stat__value {
+          font-size: 1.4em;
+        }
+
+        .results-actions {
+          flex-direction: column;
+        }
+
+        .results-actions .btn {
+          width: 100%;
+          min-width: unset;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/ginaxams-player/assets/main-Da9MAflX.js"></script>
+  </head>
+  <body>
+    <!-- Onboarding Modal -->
+    <div id="onboardingOverlay" class="onboarding-overlay">
+      <div class="onboarding-modal">
+        <button
+          class="onboarding-skip"
+          onclick="window.app.skipOnboarding()"
+          id="txtOnboardingSkip"
+          data-testid="onboarding-skip"
+        >
+          Skip
+        </button>
+
+        <div id="onboardingContent">
+          <!-- Step 1: Welcome -->
+          <div class="onboarding-step-content" data-step="1">
+            <span class="onboarding-icon">📚</span>
+            <h2 class="onboarding-title" id="txtOnboardingWelcomeTitle">
+              Welcome to Ginaxams
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingWelcomeText">
+              Your personal exam practice companion. Import exams, practice with
+              different modes, and track your progress over time.
+            </p>
+          </div>
+
+          <!-- Step 2: Local Storage & Backup -->
+          <div class="onboarding-step-content hidden" data-step="2">
+            <span class="onboarding-icon">🔒</span>
+            <h2 class="onboarding-title" id="txtOnboardingStorageTitle">
+              Your Data Stays Private
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingStorageText">
+              All your exams, progress and scores are stored
+              <strong>only on your device</strong> for complete privacy. Use
+              <span class="onboarding-highlight">⬇ Copia de Seguridad</span> to
+              export your data and
+              <span class="onboarding-highlight">⬆ Restaurar</span> to import it
+              on another device.
+            </p>
+          </div>
+
+          <!-- Step 3: Import -->
+          <div class="onboarding-step-content hidden" data-step="3">
+            <span class="onboarding-icon">📂</span>
+            <h2 class="onboarding-title" id="txtOnboardingImportTitle">
+              Import Your Exams
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingImportText">
+              Once you have your exam file (in JSON format), click the
+              <span class="onboarding-highlight">📂 Import Exam</span> area to
+              load it. You can also drag & drop files directly!
+            </p>
+          </div>
+
+          <!-- Step 4: Practice -->
+          <div class="onboarding-step-content hidden" data-step="4">
+            <span class="onboarding-icon">🎯</span>
+            <h2 class="onboarding-title" id="txtOnboardingPracticeTitle">
+              Practice & Learn
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingPracticeText">
+              Use <span class="onboarding-highlight">Practice Mode</span> to
+              test yourself with shuffled questions and track your scores.
+              Review your mistakes with the
+              <span class="onboarding-highlight">Falladas</span> filter to focus
+              on what needs improvement.
+            </p>
+          </div>
+
+          <!-- Step 5: Create Your First Exam (with choice buttons) -->
+          <div class="onboarding-step-content hidden" data-step="5">
+            <span class="onboarding-icon">💡</span>
+            <h2 class="onboarding-title" id="txtOnboardingCreateTitle">
+              Create Your Exam
+            </h2>
+            <p class="onboarding-text" id="txtOnboardingCreateText">
+              Ready to create your own exam? Choose how you want to do it:
+            </p>
+            <div class="onboarding-choices">
+              <button
+                class="onboarding-choice easy"
+                onclick="window.app.finishOnboardingAndShowAIPrompt()"
+              >
+                <span class="onboarding-choice-icon">🤖</span>
+                <div class="onboarding-choice-content">
+                  <h4 id="txtOnboardingEasyTitle">Easy Way</h4>
+                  <p id="txtOnboardingEasyDesc">
+                    Generate a custom AI prompt with your preferences
+                  </p>
+                </div>
+                <span class="onboarding-choice-arrow">→</span>
+              </button>
+              <button
+                class="onboarding-choice advanced"
+                onclick="window.app.finishOnboardingAndShowTemplate()"
+              >
+                <span class="onboarding-choice-icon">💻</span>
+                <div class="onboarding-choice-content">
+                  <h4 id="txtOnboardingAdvancedTitle">Advanced Way</h4>
+                  <p id="txtOnboardingAdvancedDesc">
+                    View and edit the JSON template directly
+                  </p>
+                </div>
+                <span class="onboarding-choice-arrow">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="onboarding-steps">
+          <div class="onboarding-step active" data-step="1"></div>
+          <div class="onboarding-step" data-step="2"></div>
+          <div class="onboarding-step" data-step="3"></div>
+          <div class="onboarding-step" data-step="4"></div>
+          <div class="onboarding-step" data-step="5"></div>
+        </div>
+
+        <div class="onboarding-buttons">
+          <button
+            id="onboardingPrevBtn"
+            class="onboarding-btn onboarding-btn-secondary hidden"
+            onclick="window.app.prevOnboardingStep()"
+          >
+            <span id="txtOnboardingBack">Back</span>
+          </button>
+          <button
+            id="onboardingNextBtn"
+            class="onboarding-btn onboarding-btn-primary"
+            onclick="window.app.nextOnboardingStep()"
+          >
+            <span id="txtOnboardingNext">Next</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Prompt Generator Modal -->
+    <div id="aiPromptModal" class="ai-prompt-modal-overlay hidden">
+      <div class="ai-prompt-modal">
+        <button
+          class="ai-prompt-close"
+          onclick="window.app.closeAIPromptGenerator()"
+        >
+          ✕
+        </button>
+
+        <div class="ai-prompt-header">
+          <span class="ai-prompt-icon">🤖</span>
+          <h2 class="ai-prompt-title" id="txtAIPromptTitle">
+            Generate AI Prompt
+          </h2>
+          <p class="ai-prompt-subtitle" id="txtAIPromptSubtitle">
+            Fill in the details and we'll create a perfect prompt for you
+          </p>
+        </div>
+
+        <div class="ai-prompt-form">
+          <div class="ai-prompt-field">
+            <label id="txtAiExamNameLabel">Exam name</label>
+            <input
+              type="text"
+              id="aiExamName"
+              class="ai-prompt-input"
+              placeholder="e.g. Constitutional Law 2026"
+            />
+            <div id="aiExamNameStatus" class="ai-exam-name-status hidden"></div>
+          </div>
+
+          <div class="ai-prompt-field">
+            <label id="txtNumQuestionsLabel">Number of questions</label>
+            <input
+              type="number"
+              id="aiNumQuestions"
+              min="1"
+              max="100"
+              value="10"
+              class="ai-prompt-input"
+            />
+          </div>
+
+          <div class="ai-prompt-field">
+            <label id="txtNumAnswersLabel">Answers per question</label>
+            <input
+              type="number"
+              id="aiNumAnswers"
+              min="2"
+              max="6"
+              value="4"
+              class="ai-prompt-input"
+            />
+          </div>
+
+          <div class="ai-prompt-field">
+            <label id="txtDifficultyLabel">Difficulty level</label>
+            <select id="aiDifficulty" class="ai-prompt-select">
+              <option value="easy" id="txtDifficultyEasy">Easy</option>
+              <option value="medium" id="txtDifficultyMedium" selected>
+                Medium
+              </option>
+              <option value="hard" id="txtDifficultyHard">Hard</option>
+              <option value="mixed" id="txtDifficultyMixed">
+                Mixed (varied levels)
+              </option>
+            </select>
+          </div>
+
+          <div class="ai-prompt-source-note">
+            <span class="ai-prompt-source-icon">📎</span>
+            <p id="txtAttachSources">
+              Attach your source files or study materials directly in the AI
+              chat alongside this prompt.
+            </p>
+          </div>
+
+          <button
+            class="ai-prompt-generate-btn"
+            onclick="window.app.generateAIPrompt()"
+          >
+            <span>✨</span>
+            <span id="txtGeneratePromptBtn">Generate Prompt</span>
+          </button>
+        </div>
+
+        <!-- Generated Prompt Result -->
+        <div id="aiPromptResult" class="ai-prompt-result hidden">
+          <div class="ai-prompt-result-header">
+            <span id="txtYourPrompt">Your custom prompt is ready!</span>
+          </div>
+          <textarea
+            id="aiGeneratedPrompt"
+            class="ai-prompt-output"
+            readonly
+          ></textarea>
+          <button
+            class="ai-prompt-copy-btn"
+            onclick="window.app.copyGeneratedPrompt()"
+          >
+            <span>📋</span>
+            <span id="txtCopyGeneratedPrompt">Copy Prompt</span>
+          </button>
+
+          <!-- AI Destinations (shown after copy) -->
+          <div id="aiDestinations" class="ai-destinations hidden">
+            <div class="ai-destinations-title" id="txtNowPaste">
+              Now paste it into your favorite AI:
+            </div>
+            <div class="ai-destinations-grid">
+              <button
+                class="ai-destination-btn"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://chat.openai.com',
+                    'ChatGPT',
+                  )
+                "
+              >
+                <span class="ai-destination-icon">🗨️</span>
+                <span>ChatGPT</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+              <button
+                class="ai-destination-btn"
+                onclick="
+                  window.app.openExternalLink('https://claude.ai', 'Claude')
+                "
+              >
+                <span class="ai-destination-icon">🎭</span>
+                <span>Claude</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+              <button
+                class="ai-destination-btn"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://notebooklm.google.com',
+                    'NotebookLM',
+                  )
+                "
+              >
+                <span class="ai-destination-icon">📖</span>
+                <span>NotebookLM</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+              <button
+                class="ai-destination-btn"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://kimi.moonshot.cn',
+                    'Kimi',
+                  )
+                "
+              >
+                <span class="ai-destination-icon">✨</span>
+                <span>Kimi</span>
+                <span class="ai-destination-arrow">↗</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- NotebookLM suggestion outside the prompt -->
+          <div class="ai-prompt-suggestion">
+            <p class="ai-prompt-suggestion-text" id="txtNotebookSuggestion">
+              💡 <strong>Tip:</strong> For best results, upload your study
+              material to
+              <a
+                href="#"
+                onclick="
+                  window.app.openExternalLink(
+                    'https://notebooklm.google.com',
+                    'NotebookLM',
+                  );
+                  return false;
+                "
+                >NotebookLM</a
+              >
+              as a source, then paste this prompt there.
+            </p>
+          </div>
+
+          <!-- JSON Paste Section -->
+          <div class="ai-prompt-paste-divider">
+            <span id="txtAiOrDivider">or</span>
+          </div>
+          <button
+            class="ai-prompt-have-response-btn"
+            id="aiShowPasteBtn"
+            onclick="window.app.toggleJsonPasteSection()"
+          >
+            📥 <span id="txtAiHaveResponse">I have the AI's response</span>
+          </button>
+          <div id="aiJsonPasteSection" class="ai-json-paste-section hidden">
+            <textarea
+              id="aiJsonPasteInput"
+              class="ai-json-paste-input"
+              placeholder="Paste the JSON that the AI generated here..."
+            ></textarea>
+            <div class="ai-json-validate-row">
+              <button
+                class="ai-json-paste-clipboard-btn"
+                onclick="window.app.pasteFromClipboard()"
+                title="Paste from clipboard"
+              >
+                📋
+              </button>
+              <button
+                class="ai-json-validate-btn"
+                id="aiJsonValidateBtn"
+                onclick="window.app.validatePastedJson()"
+              >
+                ✅ <span id="txtAiValidateBtn">Validate Exam</span>
+              </button>
+            </div>
+            <div
+              id="aiJsonPasteStatus"
+              class="ai-json-paste-status hidden"
+            ></div>
+            <div id="aiJsonPreview" class="ai-json-preview hidden">
+              <div class="ai-json-preview-row">
+                <span class="ai-json-preview-label" id="txtAiPreviewTitle"
+                  >Title</span
+                >
+                <span
+                  class="ai-json-preview-value"
+                  id="aiPreviewTitleValue"
+                ></span>
+              </div>
+              <div class="ai-json-preview-row">
+                <span class="ai-json-preview-label" id="txtAiPreviewQuestions"
+                  >Questions</span
+                >
+                <span
+                  class="ai-json-preview-value"
+                  id="aiPreviewQuestionsValue"
+                ></span>
+              </div>
+              <div class="ai-json-preview-row">
+                <span class="ai-json-preview-label" id="txtAiPreviewCategories"
+                  >Categories</span
+                >
+                <span
+                  class="ai-json-preview-value"
+                  id="aiPreviewCategoriesValue"
+                ></span>
+              </div>
+            </div>
+            <button
+              class="ai-json-import-btn hidden"
+              id="aiJsonImportBtn"
+              onclick="window.app.importPastedJson()"
+            >
+              📦 <span id="txtAiImportBtn">Import Exam</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <header>
+        <div class="lang-switch">
+          <button id="langEn" class="lang-btn">EN</button>
+          <button id="langEs" class="lang-btn">ES</button>
+        </div>
+        <h1 id="appTitle" onclick="window.app.showFileScreen()">Ginaxams</h1>
+        <div id="examTitle" class="exam-title"></div>
+      </header>
+
+      <!-- SCREEN 1: LIBRARY / FILE LOAD -->
+      <div id="fileScreen" data-testid="library-screen">
+        <div class="library-container">
+          <!-- Template Modal (Popup) -->
+          <div id="templateModal" class="template-modal-overlay hidden">
+            <div class="template-modal">
+              <button
+                class="template-modal-close"
+                onclick="window.app.closeTemplateModal()"
+              >
+                ✕
+              </button>
+              <div class="template-modal-header">
+                <span class="template-modal-icon">📋</span>
+                <h2 class="template-modal-title" id="txtExamFormat">
+                  Exam Format
+                </h2>
+              </div>
+              <div class="template-desc" id="txtExamFormatDesc">
+                Exams are JSON files with questions, answers and correct
+                answers.
+              </div>
+              <div class="template-ai-note">
+                <strong id="txtUseWithAI">💡 Use with AI</strong>
+                <p id="txtAIHelpText">
+                  You can use this template with AI tools like NotebookLM,
+                  ChatGPT or Claude to create your own exams. Just copy the JSON
+                  below and paste it to the AI, asking it to create questions in
+                  the same format.
+                </p>
+              </div>
+              <div class="template-code-container">
+                <pre class="template-code" id="templateCode"></pre>
+                <button
+                  class="template-copy-btn"
+                  onclick="window.app.copyTemplate()"
+                  title="Copy to clipboard"
+                >
+                  📋 <span id="txtCopyTemplate">Copy JSON</span>
+                </button>
+              </div>
+              <div
+                class="template-desc"
+                id="txtCopyInstead"
+                style="margin-top: 10px; text-align: center"
+              >
+                Or copy the JSON directly to paste into an AI chat
+              </div>
+              <div style="display: flex; gap: 10px; margin-top: 15px">
+                <button
+                  class="mode-btn"
+                  onclick="window.app.downloadTemplate()"
+                  style="flex: 1"
+                >
+                  <span id="txtDownloadTemplate">📥 Download Template</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Choice Modal: Advanced vs Easy -->
+          <div id="choiceModal" class="choice-modal-overlay hidden">
+            <div class="choice-modal">
+              <button
+                class="choice-modal-close"
+                onclick="window.app.closeChoiceModal()"
+              >
+                ✕
+              </button>
+              <div class="choice-modal-header">
+                <span class="choice-modal-icon">💡</span>
+                <h2 class="choice-modal-title" id="txtHowToCreate">
+                  How do you want to create your exam?
+                </h2>
+              </div>
+              <div class="choice-options">
+                <button
+                  class="choice-option easy"
+                  onclick="
+                    window.app.showAIPromptGenerator();
+                    window.app.closeChoiceModal();
+                  "
+                >
+                  <span class="choice-option-icon">🤖</span>
+                  <div class="choice-option-content">
+                    <h3 id="txtEasyWay">Easy Way</h3>
+                    <p id="txtEasyWayDesc">
+                      Generate a custom AI prompt. Just fill in your preferences
+                      and paste it to any AI assistant.
+                    </p>
+                  </div>
+                  <span class="choice-arrow">→</span>
+                </button>
+                <button
+                  class="choice-option advanced"
+                  onclick="
+                    window.app.showTemplateModal();
+                    window.app.closeChoiceModal();
+                  "
+                >
+                  <span class="choice-option-icon">💻</span>
+                  <div class="choice-option-content">
+                    <h3 id="txtAdvancedWay">Advanced Way</h3>
+                    <p id="txtAdvancedWayDesc">
+                      View the JSON template directly. For users comfortable
+                      with editing code.
+                    </p>
+                  </div>
+                  <span class="choice-arrow">→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- External Link Confirmation Modal -->
+          <div
+            id="externalLinkModal"
+            class="external-link-modal-overlay hidden"
+          >
+            <div class="external-link-modal">
+              <div class="external-link-icon">🚀</div>
+              <h3 class="external-link-title" id="txtLeavingSite">
+                You're about to leave Ginaxams
+              </h3>
+              <p class="external-link-text" id="txtExternalLinkConfirm">
+                You'll be redirected to:
+              </p>
+              <div class="external-link-url" id="externalLinkUrl">
+                https://...
+              </div>
+              <div class="external-link-buttons">
+                <button
+                  class="external-link-btn secondary"
+                  onclick="window.app.closeExternalLinkModal()"
+                  id="txtStayHere"
+                >
+                  Stay Here
+                </button>
+                <button
+                  class="external-link-btn primary"
+                  onclick="window.app.confirmExternalLink()"
+                  id="txtContinue"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="file-input-area" data-testid="file-drop-zone">
+            <button
+              id="helpToggleBtn"
+              class="help-btn-inline"
+              onclick="window.app.toggleHelpMenu()"
+              title="Help"
+            >
+              ❓
+            </button>
+            <!-- Help Menu Popup -->
+            <div id="helpMenuPopup" class="help-menu-popup hidden">
+              <button
+                class="help-menu-item"
+                onclick="
+                  window.app.showOnboarding();
+                  window.app.toggleHelpMenu();
+                "
+              >
+                <span>📖</span>
+                <span id="txtShowOnboarding">Show Tutorial</span>
+              </button>
+              <button
+                class="help-menu-item"
+                onclick="
+                  window.app.showChoiceModal();
+                  window.app.toggleHelpMenu();
+                "
+              >
+                <span>💡</span>
+                <span id="txtExamFormatBtn">Create Exam</span>
+              </button>
+            </div>
+            <input type="file" id="fileInput" accept=".json" class="hidden" />
+            <label for="fileInput" class="file-label">
+              <span class="upload-icon">📂</span>
+              <div class="upload-main-text" id="txtLoadExamFile">
+                Import Exam
+              </div>
+              <div class="upload-sub-text" id="txtClickToSelect">
+                Click or drag & drop JSON here
+              </div>
+            </label>
+            <input
+              type="file"
+              id="restoreFileInput"
+              accept=".json"
+              class="hidden"
+            />
+          </div>
+
+          <!-- Library Tab Bar -->
+          <div class="library-tab-bar">
+            <button
+              class="library-tab-btn active"
+              data-tab="library"
+              onclick="window.app.showLibraryTab('library')"
+            >
+              📚 <span id="txtTabLibrary">Library</span>
+            </button>
+            <button
+              class="library-tab-btn"
+              data-tab="insights"
+              onclick="window.app.showLibraryTab('insights')"
+            >
+              📊 <span id="txtTabInsights">Insights</span>
+            </button>
+            <button
+              class="library-tab-btn"
+              data-tab="telemetry"
+              onclick="window.app.showLibraryTab('telemetry')"
+            >
+              📈 <span id="txtTabTelemetry">Telemetry</span>
+            </button>
+          </div>
+
+          <div
+            id="libraryHeaderBar"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+            "
+          >
+            <h3 id="txtAvailableExams" style="color: #888">Library</h3>
+            <div style="display: flex; gap: 12px; align-items: center">
+              <span
+                class="main-menu-link"
+                id="btnBackup"
+                style="margin: 0; font-size: 0.9em; cursor: pointer"
+                onclick="window.app.exportLibrary()"
+                title=""
+                >💾 <span id="txtBackup">Backup</span></span
+              >
+              <span
+                class="main-menu-link"
+                id="btnRestore"
+                style="margin: 0; font-size: 0.9em; cursor: pointer"
+                onclick="window.app.restoreLibrary()"
+                title=""
+                >📥 <span id="txtRestore">Restore</span></span
+              >
+              <span
+                class="main-menu-link"
+                id="btnCreateFolder"
+                style="margin: 0; font-size: 0.9em; cursor: pointer"
+                onclick="window.app.promptCreateFolder()"
+                >📁 <span id="txtNewFolder">New Folder</span></span
+              >
+              <span
+                class="main-menu-link"
+                id="txtRefresh"
+                style="margin: 0; font-size: 0.9em"
+                >Refresh</span
+              >
+            </div>
+          </div>
+
+          <div id="examList" class="exam-list-container" data-testid="exam-list">
+            <!-- Exam items injected here -->
+            <div class="no-exams" id="txtLoading" data-testid="loading-indicator">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: MODE SELECTION (OPTIONS) -->
+      <div id="modeScreen" class="hidden" data-testid="mode-screen">
+        <div class="options-container">
+          <div class="options-title" id="txtOptions">Options</div>
+
+          <label class="checkbox-option">
+            <input type="checkbox" id="shuffleQuestions" checked />
+            <span id="txtShuffleQuestions">Shuffle questions</span>
+          </label>
+
+          <label class="checkbox-option">
+            <input type="checkbox" id="shuffleAnswers" checked />
+            <span id="txtShuffleAnswers">Shuffle answers</span>
+          </label>
+
+          <label class="checkbox-option">
+            <input type="checkbox" id="showFeedback" checked />
+            <span id="txtShowFeedback">Show feedback</span>
+          </label>
+        </div>
+
+        <div id="examStats" class="progress-text"></div>
+
+        <div class="mode-select">
+          <button
+            class="mode-btn active"
+            onclick="
+              window.app.practiceManager.startPractice(
+                window.app.practiceManager.getExamData(),
+                {
+                  shuffleQuestions:
+                    document.getElementById('shuffleQuestions').checked,
+                  shuffleAnswers:
+                    document.getElementById('shuffleAnswers').checked,
+                  showFeedback: document.getElementById('showFeedback').checked,
+                },
+              )
+            "
+          >
+            <span id="btnPracticeMode">Start Practice</span>
+          </button>
+        </div>
+
+        <div class="main-menu-link">
+          <span onclick="window.app.showFileScreen()" id="txtBackToMenu"
+            >← Back to Library</span
+          >
+        </div>
+      </div>
+
+      <!-- SCREEN 3: PRACTICE -->
+      <div id="practiceScreen" class="hidden" data-testid="practice-screen">
+        <div class="nav-buttons-top">
+          <button
+            class="nav-btn prev"
+            id="btnExit"
+            onclick="window.app.showFileScreen()"
+          >
+            <span id="txtExitReview">Menu</span>
+          </button>
+          <div
+            id="simulacroTimerArea"
+            class="hidden"
+            style="display: flex; align-items: center; gap: 8px"
+          >
+            <span
+              id="simulacroTimerDisplay"
+              style="
+                font-family: monospace;
+                font-size: 1.1em;
+                color: var(--accent-primary);
+              "
+            ></span>
+            <button
+              id="timerToggleBtn"
+              class="lang-btn"
+              style="font-size: 0.75em; padding: 4px 10px"
+              onclick="window.app.toggleTimerVisibility()"
+            >
+              Hide Timer
+            </button>
+          </div>
+          <div
+            id="progressText"
+            class="progress-text"
+            style="align-self: center; margin: 0"
+          >
+            Question 1/1
+          </div>
+        </div>
+
+        <div class="progress-container">
+          <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+
+        <div id="practiceMinimapContainer" class="question-minimap"></div>
+
+        <div class="question-card">
+          <div id="questionNumber" class="question-number" data-testid="question-number">Question 1</div>
+          <div id="questionText" class="question-text" data-testid="question-text"></div>
+          <div id="questionImages" class="question-images"></div>
+
+          <div id="answersContainer" class="answers" data-testid="answers-container"></div>
+
+          <!-- Feedback Section - rendered dynamically by PracticeManager -->
+          <div id="feedbackSection" class="hidden"></div>
+
+          <!-- Wrong Answer Feedback (Tarjeta Roja) - Shown only in free mode when answer is wrong -->
+          <div
+            id="wrongAnswerFeedback"
+            class="wrong-answer-feedback hidden"
+          ></div>
+        </div>
+
+        <div class="nav-buttons">
+          <button id="prevBtn" class="nav-btn prev" disabled>
+            <span id="txtPrevious">Previous</span>
+          </button>
+          <button id="nextBtn" class="nav-btn next" data-testid="next-button">
+            <span id="txtNext">Next</span>
+          </button>
+          <button id="finishBtn" class="nav-btn next" style="display: none" data-testid="finish-button">
+            <span id="txtFinish">Finish</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: RESULTS -->
+      <div id="resultsScreen" class="hidden" data-testid="results-screen">
+        <h2
+          style="text-align: center; margin-bottom: var(--space-lg)"
+          id="txtResults"
+        >
+          🏆 Results
+        </h2>
+
+        <!-- Mode indicator -->
+        <div style="text-align: center; margin-bottom: var(--space-sm)">
+          <span
+            id="resultModeLabel"
+            style="color: var(--text-muted); font-size: 0.9em"
+          ></span>
+        </div>
+
+        <!-- Score Summary Section -->
+        <div class="results-section">
+          <div class="results-section__title" id="txtScoreSummary">
+            Score Summary
+          </div>
+
+          <!-- Main Score Circle -->
+          <div class="score-circle-container">
+            <div class="score-circle" id="scoreCircle">
+              <span class="score-percentage" id="finalScore" data-testid="final-score">0%</span>
+              <span class="score-label" id="scoreDetails">0 correct</span>
+            </div>
+          </div>
+
+          <!-- Stats Grid: Correct / Wrong / Blank -->
+          <div id="resultsStatsGrid" class="results-stats-grid">
+            <div class="results-stat results-stat--correct">
+              <span class="results-stat__value" id="resultCorrectCount">0</span>
+              <span class="results-stat__label" id="txtResultCorrectLabel"
+                >Correct</span
+              >
+            </div>
+            <div class="results-stat results-stat--wrong">
+              <span class="results-stat__value" id="resultWrongCount">0</span>
+              <span class="results-stat__label" id="txtResultWrongLabel"
+                >Wrong</span
+              >
+            </div>
+            <div class="results-stat results-stat--blank">
+              <span class="results-stat__value" id="resultBlankCount">0</span>
+              <span class="results-stat__label" id="txtResultBlankLabel"
+                >Blank</span
+              >
+            </div>
+          </div>
+
+          <!-- Score & Percentage Row -->
+          <div class="results-score-row">
+            <span class="results-score-row__label" id="txtResultScoreLabel"
+              >Score</span
+            >
+            <span class="results-score-row__value" id="resultScoreValue"
+              >0</span
+            >
+          </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="results-section">
+          <div class="results-section__title" id="txtStatistics">
+            Statistics
+          </div>
+          <div class="results-time-row">
+            <span class="results-time-row__label" id="txtTotalQuestions"
+              >Total Questions</span
+            >
+            <span class="results-time-row__value" id="resultTotalQuestions"
+              >0</span
+            >
+          </div>
+          <div class="results-time-row">
+            <span class="results-time-row__label" id="txtTimeSpent"
+              >Time Spent</span
+            >
+            <span class="results-time-row__value" id="timeSpent">0:00</span>
+          </div>
+        </div>
+
+        <!-- Last vs Best Score -->
+        <div class="score-comparison" id="scoreComparison">
+          <div class="score-box">
+            <span class="score-box-label" id="txtLastScore">Last Score</span>
+            <span class="score-box-value" id="lastScoreValue">-</span>
+          </div>
+          <div class="score-box best">
+            <span class="score-box-label" id="txtBestScore">Best Score</span>
+            <span class="score-box-value" id="bestScoreValue">-</span>
+          </div>
+        </div>
+
+        <!-- Actions Section -->
+        <div class="results-actions">
+          <button id="btnTryAgain" class="btn btn--primary btn--lg">
+            <span id="lblTryAgain">Try Again</span>
+          </button>
+          <button id="btnReviewAnswers" class="btn btn--secondary btn--lg">
+            <span id="lblReviewAnswers">Review Answers</span>
+          </button>
+        </div>
+
+        <!-- Review Summary Grid -->
+        <div class="results-section" style="margin-top: var(--space-md)">
+          <div class="results-section__title" id="txtReviewSummaryTitle">
+            Review Summary
+          </div>
+          <div id="reviewSummary" class="review-summary"></div>
+        </div>
+
+        <div style="margin-top: var(--space-lg); text-align: center">
+          <button
+            class="btn btn--secondary"
+            onclick="window.app.showFileScreen()"
+            style="min-width: 200px"
+          >
+            <span id="txtBackToLibraryBtn">📚 Back to Library</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SCREEN 5: REVIEW -->
+      <div id="reviewScreen" class="hidden">
+        <div class="nav-buttons-top">
+          <button class="nav-btn prev" onclick="window.app.backToResults()">
+            <span id="txtBackReview">Back</span>
+          </button>
+          <div class="filters" style="display: flex; gap: 10px">
+            <button id="filterAll" class="lang-btn active">
+              <span id="txtFilterAll">All</span>
+            </button>
+            <button id="filterWrong" class="lang-btn">
+              <span id="txtFilterWrong">Wrong</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Review Jump Buttons -->
+        <div
+          id="reviewJumpButtons"
+          class="review-jump-buttons"
+          style="
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+          "
+        >
+          <button
+            class="btn btn--secondary btn--sm"
+            onclick="window.app.reviewNextWrong()"
+          >
+            <span id="txtNextWrong">❌ Next Wrong</span>
+          </button>
+          <button
+            class="btn btn--secondary btn--sm"
+            onclick="window.app.reviewNextBlank()"
+          >
+            <span id="txtNextBlank">⬜ Next Blank</span>
+          </button>
+        </div>
+
+        <div class="progress-container">
+          <div
+            id="reviewProgressBar"
+            class="progress-bar"
+            style="width: 0%"
+          ></div>
+        </div>
+        <div id="reviewProgressText" class="progress-text"></div>
+
+        <div id="reviewMinimapContainer" class="question-minimap"></div>
+
+        <div class="question-card">
+          <div id="reviewQuestionNumber" class="question-number">Question</div>
+          <div id="reviewQuestionText" class="question-text"></div>
+          <div id="reviewQuestionImages" class="question-images"></div>
+
+          <div
+            class="options-title"
+            style="margin-top: 20px; color: #00ff88; font-size: 0.8em"
+            id="txtCorrectAnswer"
+          >
+            Correct Answer:
+          </div>
+          <div
+            id="correctAnswerText"
+            style="margin-bottom: 20px; font-weight: bold"
+          ></div>
+
+          <div id="reviewAnswersContainer" class="answers"></div>
+
+          <!-- Feedback Section - rendered by PracticeManager.renderFeedbackPanel -->
+          <div id="reviewFeedbackSection" class="hidden"></div>
+        </div>
+
+        <div class="nav-buttons">
+          <button
+            onclick="window.app.reviewPrevQuestion()"
+            class="nav-btn prev"
+          >
+            <span id="txtReviewPrevious">Prev</span>
+          </button>
+          <button
+            onclick="window.app.reviewNextQuestion()"
+            class="nav-btn next"
+          >
+            <span id="txtReviewNext">Next</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database Error Recovery Overlay -->
+    <div
+      id="dbErrorOverlay"
+      class="hidden"
+      style="
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          background: var(--bg-primary, #0f0f1a);
+          border: 1px solid var(--color-error-border, rgba(255, 71, 87, 0.4));
+          border-radius: var(--radius-lg, 16px);
+          padding: 32px;
+          max-width: 460px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 16px 48px rgba(255, 71, 87, 0.2);
+        "
+      >
+        <div style="font-size: 2.5em; margin-bottom: 12px">⚠️</div>
+        <h2
+          id="dbErrorTitle"
+          style="
+            color: var(--color-error, #ff4757);
+            margin-bottom: 12px;
+            font-size: 1.3em;
+          "
+        >
+          Database Error
+        </h2>
+        <p
+          id="dbErrorMessage"
+          style="
+            color: var(--text-secondary, #a0a0b0);
+            font-size: 0.9em;
+            margin-bottom: 24px;
+            line-height: 1.5;
+          "
+        >
+          The app cannot load because the stored data is incompatible or
+          corrupted.
+        </p>
+        <button
+          id="dbErrorDeleteBtn"
+          style="
+            background: var(--color-error, #ff4757);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: var(--radius-md, 10px);
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+          "
+        >
+          Delete All Data &amp; Reload
+        </button>
+        <button
+          id="dbErrorConfirmBtn"
+          class="hidden"
+          style="
+            background: var(--color-error, #ff4757);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: var(--radius-md, 10px);
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 8px;
+          "
+        >
+          ⚠️ Yes, permanently delete everything
+        </button>
+        <button
+          id="dbErrorCancelBtn"
+          class="hidden"
+          style="
+            background: transparent;
+            color: var(--text-secondary, #a0a0b0);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            padding: 10px 28px;
+            border-radius: var(--radius-md, 10px);
+            font-size: 0.9em;
+            cursor: pointer;
+            width: 100%;
+          "
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </body>
+</html>
