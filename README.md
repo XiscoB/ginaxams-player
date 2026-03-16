@@ -4,6 +4,9 @@ GinaXams Player is a fully local, adaptive exam training engine built for struct
 
 It runs entirely in the browser, requires no backend, and stores all data locally using IndexedDB. Your data never leaves your device.
 
+🌐 **Live Demo:** https://xiscob.github.io/ginaxams-player
+📦 **Repository:** https://github.com/XiscoB/ginaxams-player
+
 ---
 
 ## Features
@@ -21,28 +24,27 @@ It runs entirely in the browser, requires no backend, and stores all data locall
 
 ---
 
-## Architecture
+## Screenshots
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Presentation Layer (Views, Components, Styles)            │
-├─────────────────────────────────────────────────────────────┤
-│  Application Layer (Controllers, Timer, Settings, i18n)    │
-├─────────────────────────────────────────────────────────────┤
-│  Domain Layer (Pure Functions: Scoring, Weakness, Review)  │
-├─────────────────────────────────────────────────────────────┤
-│  Storage Layer (IndexedDB v4)                              │
-└─────────────────────────────────────────────────────────────┘
-```
+### Home
 
-| Layer       | Location               | Constraints                                   |
-| ----------- | ---------------------- | --------------------------------------------- |
-| Domain      | `src/domain/`          | Pure functions only — no side effects, no DOM |
-| Application | `src/application/`     | Orchestration, timers, persistence            |
-| Storage     | `src/storage/`         | IndexedDB operations                          |
-| UI          | `src/ui/`, `src/core/` | Views, components, controllers                |
+![Home](docs/screenshots/home-dashboard.jpg)
 
-All domain logic is deterministic, side-effect-free, and fully testable without a browser.
+### Practice with Feedback
+
+![Practice](docs/screenshots/practice-feedback.jpg)
+
+### Exam Results
+
+![Results](docs/screenshots/exam-results.jpg)
+
+### Insights Dashboard
+
+![Insights](docs/screenshots/insights-dashboard.jpg)
+
+### Telemetry Explorer
+
+![Telemetry](docs/screenshots/telemetry-explorer.jpg)
 
 ---
 
@@ -228,15 +230,13 @@ All engine parameters are centralized in `src/domain/defaults.ts` and injected i
 
 ## Tech Stack
 
-| Tool       | Purpose                                           |
-| ---------- | ------------------------------------------------- |
-| Vite       | Build tool                                        |
-| TypeScript | Strict mode (`noImplicitAny`, `strictNullChecks`) |
-| Vitest     | Unit testing (881 tests)                          |
-| Playwright | End-to-end testing                                |
-| IndexedDB  | Local persistence                                 |
+- **TypeScript (strict mode)**
+- **Vite**
+- **IndexedDB**
+- **Vitest — 881 tests**
+- **Playwright (E2E)**
 
-No runtime dependencies. No frameworks. Pure TypeScript + DOM APIs.
+**Runtime:** zero dependencies, no frameworks, pure DOM APIs.
 
 ---
 
