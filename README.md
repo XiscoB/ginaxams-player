@@ -1,230 +1,162 @@
 # GinaXams Player
 
-> **⚠️ UI Status Notice**: The user interface is currently undergoing architectural reconstruction. This documentation reflects the **engine capabilities** (domain + application layers), not the current UI state.
-
 GinaXams Player is a fully local, adaptive exam training engine built for structured preparation of official exams.
 
-It runs entirely in the browser, requires no backend, and stores all data locally using IndexedDB.
+It runs entirely in the browser, requires no backend, and stores all data locally using IndexedDB. Your data never leaves your device.
+
+🌐 **Live Demo:** https://xiscob.github.io/ginaxams-player
+📦 **Repository:** https://github.com/XiscoB/ginaxams-player
 
 ---
 
-## Architecture Overview
+## Features
 
-The system follows a strict three-layer architecture:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Presentation Layer (UI) — Under Reconstruction            │
-├─────────────────────────────────────────────────────────────┤
-│  Application Layer (Orchestration, Timer, Persistence)     │
-├─────────────────────────────────────────────────────────────┤
-│  Domain Layer (Pure Logic: Scoring, Weakness, Telemetry)   │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Core Characteristics
-
-- Fully client-side (no backend)
-- Static-host deployable (GitHub Pages compatible)
-- Local-first persistence (IndexedDB)
-- Privacy-respecting (no data leaves the browser)
-- Deterministic and testable domain logic
-- Strict TypeScript architecture (strict mode enabled)
-- Attempt-based execution model
+- **Three training modes**: Free practice (instant feedback), Simulacro (timed exam simulation), and Adaptive Review (weakness-based)
+- **Adaptive engine**: Prioritizes weak questions using telemetry-driven weakness scoring, spaced repetition, category mastery, and trap detection
+- **Exam library**: Import, organize into folders, and manage multiple exam files (JSON schema v2.0)
+- **Rich analytics**: Home dashboard with quick stats and recommendations, telemetry explorer, and insights (category mastery, difficulty distribution, trap questions, weak questions, progress tracking)
+- **Exam readiness score**: 0–100 composite score based on mastery, recent simulacro results, and recovery rate
+- **Bilingual**: Full English and Spanish support with auto-detection
+- **Keyboard shortcuts**: Navigate questions and submit answers without touching the mouse
+- **Data portability**: Full backup/restore of all data (exams, telemetry, attempts, folders)
+- **Privacy-first**: Fully client-side, no backend, no tracking — GitHub Pages deployable
+- **881 unit tests**: Comprehensive coverage across domain, application, UI, and i18n layers
 
 ---
 
-## Golden Data Schema (v2.0) — MANDATORY
+## Screenshots
 
-All imported exams **must** comply with schema_version "2.0". No legacy formats supported.
+### Home
 
-### Required Exam Fields
+![Home](docs/screenshots/home-dashboard.jpg)
 
-| Field             | Type         | Description                           |
-| ----------------- | ------------ | ------------------------------------- |
-| `schema_version`  | `"2.0"`      | Literal string, must be exactly "2.0" |
-| `exam_id`         | `string`     | Unique identifier for the exam        |
-| `title`           | `string`     | Human-readable exam title             |
-| `categorias`      | `string[]`   | Non-empty array of category strings   |
-| `total_questions` | `number`     | Must equal `questions.length`         |
-| `questions`       | `Question[]` | Array of question objects             |
+### Practice with Feedback
 
-### Required Question Fields
+![Practice](docs/screenshots/practice-feedback.jpg)
 
-| Field                        | Type       | Description                             |
-| ---------------------------- | ---------- | --------------------------------------- |
-| `number`                     | `number`   | Question number (unique within exam)    |
-| `text`                       | `string`   | Question text                           |
-| `categoria`                  | `string[]` | Subset of exam `categorias`             |
-| `articulo_referencia`        | `string`   | Legal article reference                 |
-| `feedback.cita_literal`      | `string`   | Literal legal citation                  |
-| `feedback.explicacion_fallo` | `string`   | Pedagogical failure explanation         |
-| `answers`                    | `Answer[]` | Exactly **one** correct answer required |
+### Exam Results
 
-Strict validation is enforced. Invalid schema throws descriptive errors. No fallback parsing.
+![Results](docs/screenshots/exam-results.jpg)
+
+### Insights Dashboard
+
+![Insights](docs/screenshots/insights-dashboard.jpg)
+
+### Telemetry Explorer
+
+![Telemetry](docs/screenshots/telemetry-explorer.jpg)
 
 ---
 
-## Attempt-Based Execution Model
+## Getting Started
 
-All exam sessions are persistent **Attempt** entities. There are no implicit sessions.
+### Prerequisites
 
-### Attempt Types
+- Node.js 18+
+- npm
 
-| Type        | Purpose                             | Updates Telemetry |
-| ----------- | ----------------------------------- | ----------------- |
-| `free`      | Learning mode with instant feedback | **No**            |
-| `simulacro` | Exam simulation with timer          | **Yes**           |
-| `review`    | Adaptive review based on weakness   | **Yes**           |
+### Install & Run
 
-### Attempt Structure
-
-```typescript
-interface Attempt {
-  id: string; // Unique identifier
-  type: "free" | "simulacro" | "review";
-  createdAt: string; // ISO timestamp
-  sourceExamIds: string[]; // Referenced exams
-  config: AttemptConfig; // Type-specific configuration
-  parentAttemptId?: string; // For chained attempts
-  result?: AttemptResult; // Computed after completion
-}
+```bash
+npm install
+npm run dev       # Start development server
 ```
 
-Attempts are immutable once created. Results are computed using pure functions.
+### Build for Production
 
----
-
-## Telemetry Model (Per Question)
-
-Telemetry tracks per-question performance metrics. It is **never** mutated to erase mistakes.
-
-### Tracked Fields
-
-| Field                | Type     | Description                             |
-| -------------------- | -------- | --------------------------------------- |
-| `timesCorrect`       | `number` | Count of correct answers                |
-| `timesWrong`         | `number` | Count of wrong answers                  |
-| `timesBlank`         | `number` | Count of blank answers                  |
-| `consecutiveCorrect` | `number` | Streak of consecutive correct answers   |
-| `avgResponseTimeMs`  | `number` | Rolling average response time           |
-| `totalSeen`          | `number` | Total times question has been presented |
-| `lastSeenAt`         | `string` | ISO timestamp of last presentation      |
-
-### Telemetry Rules
-
-- **Free mode**: Does NOT update telemetry
-- **Simulacro & Review**: DO update telemetry
-- **Blank answers**: Increase weakness (lower weight than wrong)
-- **Wrong answers**: Increase weakness more strongly
-- **Consecutive correct**: Reduces weakness via recovery weight
-- **Historical counts**: Never deleted (mistakes persist)
-- **Weakness score**: Derived at runtime, not stored
-
-### Reset Behavior
-
-- Telemetry can be reset per exam or globally
-- Reset removes telemetry entries, not exam data
-- Deleting an exam cascades: deletes telemetry + related attempts
-
----
-
-## Simulacro Mode (Exam Simulation)
-
-Simulacro simulates real exam conditions with weighted multi-exam selection.
-
-### Features
-
-- **Weighted exam selection**: User-configurable weights per exam
-- **Random sampling**: Without replacement, deterministic with seeded RNG
-- **Configurable parameters**:
-  - `questionCount`: Number of questions to present
-  - `timeLimitMs`: Time limit in milliseconds
-  - `penalty`: Points deducted per wrong answer
-  - `reward`: Points awarded per correct answer
-- **Auto-submit**: On timer expiration
-- **Telemetry**: Generates telemetry updates (does not consume)
-
-### Scoring Formula
-
-```
-score = (correct × reward) - (wrong × penalty) - (blank × blankPenalty)
-percentage = round((correct / total) × 100)
+```bash
+npm run build     # TypeScript check + Vite build
+npm run preview   # Preview the production build locally
 ```
 
-Scoring is a pure function with no side effects.
+The output in `dist/` is a static site deployable to GitHub Pages or any static host.
+
+### Running Tests
+
+```bash
+npm test              # Unit tests in watch mode (Vitest)
+npm test -- --run     # Unit tests single run
+npm run test:e2e      # End-to-end tests (Playwright)
+```
 
 ---
 
-## Review Mode (Adaptive Engine)
+## Training Modes
 
-Review mode uses telemetry to compute weakness and prioritize questions needing practice.
+### Free Practice
 
-### Weakness Formula
+Learn at your own pace with instant feedback after each answer. Feedback includes the correct answer, the legal article reference, the literal citation, and an explanation. **Does not update telemetry** — safe for exploration.
+
+### Simulacro (Exam Simulation)
+
+Simulates real exam conditions:
+
+- Weighted multi-exam selection with seeded RNG (deterministic sampling)
+- Configurable question count, time limit, reward, and penalty
+- Auto-submits when the timer expires
+- **Updates telemetry** on completion
+
+**Scoring**: `score = (correct × reward) - (wrong × penalty) - (blank × blankPenalty)`
+
+### Review (Adaptive Engine)
+
+Targets your weakest areas using accumulated telemetry:
+
+1. Computes a weakness score per question
+2. Applies adaptive mix: 60% weakest, 30% medium, 10% random
+3. Integrates spaced repetition cooldowns and category mastery boosts
+4. Fills remaining slots with least-recently-seen questions
+5. **Updates telemetry** on completion — review sessions feed themselves
+
+**Weakness formula**:
 
 ```
 weakness = (timesWrong × wrongWeight)
          + (timesBlank × blankWeight)
          + timePenalty
          - (consecutiveCorrect × recoveryWeight)
-
-where timePenalty = avgResponseTimeMs > weakTimeThresholdMs
-                  ? (avgResponseTimeMs - weakTimeThresholdMs) / weakTimeThresholdMs
-                  : 0
-
-Result is clamped to >= 0
 ```
 
-### Default Weights
-
-| Parameter             | Default Value      |
-| --------------------- | ------------------ |
-| `wrongWeight`         | 2.0                |
-| `blankWeight`         | 1.2                |
-| `recoveryWeight`      | 1.0                |
-| `weakTimeThresholdMs` | 15000 (15 seconds) |
-
-### Review Generation Flow
-
-1. Collect telemetry for selected exam(s)
-2. Compute weakness score for each question
-3. Sort by weakness descending (highest weakness first)
-4. Take top N questions (default 60, configurable)
-5. If insufficient questions with telemetry, fill with least recently seen
-6. Create persistent `Attempt` (type: review)
-7. Execute and update telemetry
-
-Review sessions feed themselves naturally via telemetry updates.
+Result is clamped to >= 0. All weights are configurable (see Defaults below).
 
 ---
 
-## IndexedDB Schema
+## Telemetry
 
-Database version: **4** (Phase 7: Removed legacy progress store)
+Per-question telemetry is tracked across simulacro and review attempts. Historical mistake counts are **never deleted** — the weakness score is derived at runtime.
 
-### Stores
+| Field                | Type     | Description                        |
+| -------------------- | -------- | ---------------------------------- |
+| `timesCorrect`       | `number` | Correct answer count               |
+| `timesWrong`         | `number` | Wrong answer count                 |
+| `timesBlank`         | `number` | Blank answer count                 |
+| `consecutiveCorrect` | `number` | Current correct streak             |
+| `avgResponseTimeMs`  | `number` | Rolling average response time      |
+| `totalSeen`          | `number` | Total presentations                |
+| `lastSeenAt`         | `string` | ISO timestamp of last presentation |
 
-| Store               | Purpose                | Key Path                                      |
-| ------------------- | ---------------------- | --------------------------------------------- |
-| `exams`             | StoredExam objects     | `id`                                          |
-| `folders`           | Folder objects         | `id`                                          |
-| `attempts`          | Attempt records        | `id`                                          |
-| `questionTelemetry` | Per-question telemetry | `id` (format: `${examId}::${questionNumber}`) |
-
-### Cascade Deletion
-
-Deleting an exam automatically deletes:
-
-- All telemetry entries for that exam
-- All attempts that reference the exam
+Telemetry can be reset per exam or globally. Deleting an exam cascades: removes its telemetry and related attempts.
 
 ---
 
-## Golden Data JSON Format (v2.0)
+## Analytics & Insights
 
-### Example Structure
+The app provides several analytical views powered by telemetry data:
+
+- **Home Dashboard**: Quick stats (exams loaded, questions practiced, accuracy) and personalized recommendations
+- **Telemetry Explorer**: Per-question performance breakdown
+- **Category Mastery**: Weak / Learning / Mastered classification per category
+- **Difficulty Distribution**: Easy / Medium / Hard question classification based on error rates
+- **Trap Detection**: Identifies trick questions with high error rates
+- **Weak Questions**: Sorted list of questions needing the most practice
+- **Progress Tracking**: Improvement over time
+- **Exam Readiness**: Composite 0–100 score estimating preparedness
+
+---
+
+## Exam Data Format (Schema v2.0)
+
+All imported exams must comply with `schema_version: "2.0"`. Strict validation is enforced — invalid files throw descriptive errors.
 
 ```json
 {
@@ -254,41 +186,64 @@ Deleting an exam automatically deletes:
 }
 ```
 
+A sample exam is included at [practice/examples/example_exam.json](practice/examples/example_exam.json).
+
+### Required Fields
+
+**Exam level**: `schema_version` (literal `"2.0"`), `exam_id`, `title`, `categorias` (non-empty array), `total_questions` (must equal `questions.length`), `questions`.
+
+**Question level**: `number`, `text`, `categoria` (subset of exam's `categorias`), `articulo_referencia`, `feedback.cita_literal`, `feedback.explicacion_fallo`, `answers` (exactly one `isCorrect: true`).
+
 ---
 
-## Development
+## Configurable Defaults
 
-### Tech Stack
+All engine parameters are centralized in `src/domain/defaults.ts` and injected into domain functions — no magic numbers.
 
-- **Build Tool**: Vite
-- **Language**: TypeScript (strict mode: `noImplicitAny`, `strictNullChecks`)
-- **Testing**: Vitest
-- **Persistence**: IndexedDB
+| Parameter                  | Default | Description                           |
+| -------------------------- | ------- | ------------------------------------- |
+| `reviewQuestionCount`      | 60      | Questions per review session          |
+| `wrongWeight`              | 2.0     | Weakness weight for wrong answers     |
+| `blankWeight`              | 1.2     | Weakness weight for blank answers     |
+| `recoveryWeight`           | 1.0     | Recovery for consecutive correct      |
+| `weakTimeThresholdMs`      | 15000   | Slow-answer penalty threshold (15s)   |
+| `reviewWeakRatio`          | 0.6     | Adaptive mix: weak question share     |
+| `reviewMediumRatio`        | 0.3     | Adaptive mix: medium question share   |
+| `reviewRandomRatio`        | 0.1     | Adaptive mix: random question share   |
+| `reviewCooldownWindowMs`   | 300000  | Spaced repetition cooldown (5 min)    |
+| `trapPossibleThreshold`    | 0.4     | Trap detection: possible threshold    |
+| `trapConfirmedThreshold`   | 0.7     | Trap detection: confirmed threshold   |
+| `readinessSimulacroWindow` | 5       | Recent simulacros for readiness score |
 
-### Running Tests
+---
 
-```bash
-npm test          # Run tests in watch mode
-npm test -- --run # Run tests once
-```
+## IndexedDB Schema (v4)
 
-### Required Test Coverage
+| Store               | Purpose                | Key Path                                      |
+| ------------------- | ---------------------- | --------------------------------------------- |
+| `exams`             | StoredExam objects     | `id`                                          |
+| `folders`           | Folder objects         | `id`                                          |
+| `attempts`          | Attempt records        | `id`                                          |
+| `questionTelemetry` | Per-question telemetry | `id` (format: `${examId}::${questionNumber}`) |
 
-- Schema validation
-- Weighted distribution logic
-- Score calculation
-- Weakness calculation
-- Telemetry state transitions
-- Reset logic
-- Cascade deletion logic
+---
+
+## Tech Stack
+
+- **TypeScript (strict mode)**
+- **Vite**
+- **IndexedDB**
+- **Vitest — 881 tests**
+- **Playwright (E2E)**
+
+**Runtime:** zero dependencies, no frameworks, pure DOM APIs.
 
 ---
 
 ## Non-Goals
 
 - No backend integration
-- No analytics dashboard
-- No framework migration (React/Vue/etc.)
+- No framework migration (React, Vue, etc.)
 - No legacy schema compatibility
 - No telemetry mutation shortcuts
 
