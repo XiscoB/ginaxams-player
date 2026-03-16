@@ -1,4 +1,8 @@
-window.LANG_EN = {
+/**
+ * English translations
+ */
+
+export const LANG_EN = {
   appTitle: "GinaXams Player",
   practiceModeSubtitle: "Practice Mode",
   availableExams: "📚 Available Exams",
@@ -20,6 +24,12 @@ window.LANG_EN = {
   // Modes
   practiceMode: "▶️ Practice",
   reviewMode: "📖 Review All",
+  selectMode: "Select Practice Mode",
+  freeMode: "Free Mode",
+  freeModeDesc: "Practice at your own pace with full exam",
+  simulacroMode: "Simulacro",
+  simulacroModeDesc: "Timed exam simulation",
+  reviewModeDesc: "Focus on weak questions",
 
   // Stats
   questions: "questions",
@@ -35,14 +45,13 @@ window.LANG_EN = {
   // Navigation
   previous: "← Previous",
   next: "Next →",
-  finish: "Finish →",
   tryAgain: "Try Again",
   reviewAnswers: "Review Answers",
 
   // Review
   filterAll: "All",
   filterWrong: "❌ Wrong",
-  correctAnswer: "✓ Correct answer:",
+  correctAnswer: "Correct!",
   noQuestionsMatch: "No questions match this filter!",
   noWrongAnswers: "No wrong answers to review",
 
@@ -72,15 +81,10 @@ window.LANG_EN = {
   confirmDeleteFolder: "Exams will be moved to Uncategorized. Continue?",
   uncategorized: "Uncategorized",
   importFirst: "Import an exam to start.",
-  questions: "questions",
 
   // Navigation
   back: "Back",
   menu: "Menu",
-
-  // Question Status
-  mastered: "✓ Mastered",
-  needsPractice: "✗ Needs Practice",
 
   // Practice UI
   question: "Question",
@@ -101,6 +105,9 @@ window.LANG_EN = {
   errorDeletingFolder: "Failed to delete folder",
   errorDeletingExam: "Failed to delete exam",
   importFailed: "Import failed",
+  importSuccessful: "Import successful",
+  folderNotFound: "Folder not found",
+  wrongAnswer: "Incorrect",
   exportFailed: "Export failed",
   invalidExamFormat: "Invalid exam format: missing 'questions' array.",
   errorRenaming: "Failed to rename",
@@ -115,12 +122,10 @@ window.LANG_EN = {
   attempts: "attempts",
   attempt: "attempt",
   backToLibrary: "📚 Back to Library",
-  correctOutOf: "correct out of",
   reviewSummary: "Review Summary",
 
   // Score Display
   lastScore: "Last Score",
-  bestScore: "Best Score",
   notAttempted: "Not attempted yet",
 
   // Template / Format Help
@@ -169,7 +174,6 @@ window.LANG_EN = {
 
   // Help / Show Onboarding
   showOnboarding: "Show Tutorial",
-  hideHelp: "Hide Help",
 
   // AI Prompt Generator
   orGeneratePrompt: "or generate a custom AI prompt",
@@ -194,11 +198,18 @@ window.LANG_EN = {
   aiPromptNoMaterial: "Please enter your study material first!",
   materialInChatLabel:
     "<strong>I have the material as a file.</strong> I'll paste it directly in the AI chat after the prompt.",
+  // AI Prompt body (generated prompt text)
   aiPromptBody:
     "Based on the following study material, I want you to generate a multiple choice exam with {numQuestions} questions. Each question must have {numAnswers} possible answers (labeled {letters}), with ONE single correct answer per question.",
   aiPromptSchemaNote: "Please generate a JSON object in this exact format:",
-  aiPromptRules:
-    'IMPORTANT REQUIREMENTS:\n1. Questions should test comprehension, not just memorization\n2. Distractors (wrong answers) must be plausible\n3. Include a mix of question types (conceptual, application, analysis)\n4. Make sure questions match the difficulty level: {difficulty}\n5. Only ONE answer per question must have "isCorrect": true\n6. Return ONLY valid JSON, no markdown formatting or explanations',
+  aiPromptRules: `IMPORTANT REQUIREMENTS:
+1. Questions should test comprehension, not just memorization
+2. Distractors (wrong answers) must be plausible
+3. Include a mix of question types (conceptual, application, analysis)
+4. Make sure questions match the difficulty level: {difficulty}
+5. Only ONE answer per question must have "isCorrect": true
+6. The exam-level "categorias" field must contain ALL categories used across questions. Each question's "categoria" MUST be a subset of the exam-level "categorias". If a question uses "Execution", then "Execution" MUST appear in the top-level "categorias" array
+7. Return ONLY valid JSON, no markdown formatting or explanations`,
   aiPromptMaterialBelow: "Study material to create questions from:",
   aiPromptMaterialNext: "[I will paste my study material in the next message]",
   aiPromptLanguage: "English",
@@ -246,4 +257,209 @@ window.LANG_EN = {
   aiPreviewQuestions: "Questions",
   aiPreviewCategories: "Categories",
   createExamBtn: "Create Exam",
+
+  // Tarjeta Roja (Wrong Answer Feedback)
+  referenceArticle: "Reference",
+  literalCitation: "Citation",
+  explanation: "Explanation",
+
+  // Results Screen
+  scoreSummary: "Score Summary",
+  correct: "Correct",
+  wrong: "Wrong",
+  blank: "Blank",
+  score: "Score",
+  statistics: "Statistics",
+  totalQuestions: "Total Questions",
+  timeSpent: "Time Spent",
+  modeLabel: "Mode",
+  modeFree: "Free",
+  modeSimulacro: "Simulacro",
+  modeReview: "Review",
+
+  // Review Screen Navigation
+  reviewPrev: "← Prev",
+  reviewNext: "Next →",
+  reviewBack: "Back",
+
+  // Mode Card Descriptions
+  modeFreeDescription: "No telemetry tracking",
+  modeSimulacroDescription: "Configurable timer",
+  modeReviewDescription: "Adaptive practice",
+  modeStartButton: "Start",
+
+  // Simulacro Timer Configuration
+  timerConfig: "Timer Duration",
+  timerNoLimit: "No timer",
+  timer30: "30 minutes",
+  timer60: "60 minutes",
+  timer90: "90 minutes",
+  questionCountLabel: "Question Count",
+  penaltyLabel: "Penalty per wrong answer",
+  rewardLabel: "Reward per correct answer",
+
+  // Timer Visibility
+  showTimer: "Show Timer",
+  hideTimer: "Hide Timer",
+
+  // Simulacro Options
+  showFeedbackToggle: "Show feedback during exam",
+
+  // Review
+  correctAnswerLabel: "Correct answer",
+
+  // Practice UX (Phase 13)
+  flagQuestion: "Flag",
+  unflagQuestion: "Unflag",
+  examSummary: "Exam Summary",
+  answered: "Answered",
+  unanswered: "Unanswered",
+  flagged: "Flagged",
+  submitExam: "Submit Exam",
+  returnToQuestions: "Return to Questions",
+  jumpToUnanswered: "Jump to Unanswered",
+  jumpToFlagged: "Jump to Flagged",
+  navigator: "Navigator",
+
+  // Review UX (Phase 14)
+  nextWrongQuestion: "Next Wrong",
+  nextBlankQuestion: "Next Blank",
+
+  // Navigation Tabs (Phase 15.1)
+  tabLibrary: "Library",
+  tabInsights: "Insights",
+  tabTelemetry: "Telemetry",
+
+  // Insights Dashboard (Phase 16)
+  insightsTitle: "Insights",
+  insightsDescription: "Training analytics and diagnostic views.",
+  insightsCategoryMastery: "Category Mastery",
+  insightsCategoryMasteryEmpty:
+    "No category data available. Import exams to see mastery levels.",
+  insightsAccuracy: "Accuracy",
+  insightsQuestions: "Questions",
+  insightsNoCategoryQuestions: "No questions in this category.",
+  insightsWeakQuestions: "Weak Questions",
+  insightsWeakQuestionsEmpty: "No weak questions found. Great work!",
+  insightsAnswers: "Answers:",
+  insightsExplanation: "Explanation:",
+  insightsReference: "Reference",
+  insightsAllCategories: "All categories",
+  insightsTrapQuestions: "Trap Questions",
+  insightsTrapQuestionsEmpty:
+    "No trap questions detected yet. Keep practicing!",
+  insightsCategory: "Category",
+  insightsFeedback: "Feedback:",
+  insightsCitation: "Citation:",
+  insightsProgressTimeline: "Progress",
+  insightsProgressEmpty:
+    "No attempt history yet. Complete simulacros or reviews to track progress.",
+  insightsDifficultyDistribution: "Difficulty Distribution",
+  insightsDifficultyEasy: "Easy",
+  insightsDifficultyMedium: "Medium",
+  insightsDifficultyHard: "Hard",
+  insightsTotalQuestions: "Total questions",
+  insightsNoDifficultyQuestions: "No questions at this level.",
+
+  // Telemetry Dashboard (Phase 16)
+  telemetryTitle: "Telemetry",
+  telemetryDescription:
+    "Per-question performance and learning behavior analytics.",
+  telemetryQuestionPerformance: "Question Performance",
+  telemetryMostFailed: "Most Failed Questions",
+  telemetrySlowest: "Slowest Questions",
+  telemetryUnseen: "Unseen Questions",
+  telemetryNoMatchingQuestions: "No questions match the current filters.",
+  telemetryNoFailedQuestions: "No failed questions yet.",
+  telemetryNoAttemptedQuestions: "No questions have been attempted yet.",
+  telemetryAllAttempted: "All questions have been attempted!",
+  telemetryUnseenByCategory: "Unseen by category:",
+  telemetryNeverPracticed: "Questions never practiced",
+  telemetryNever: "Never",
+
+  // Telemetry Table Headers (Phase 16)
+  telemetryColQuestion: "#",
+  telemetryColCategory: "Category",
+  telemetryColSeen: "Seen",
+  telemetryColCorrect: "Correct",
+  telemetryColWrong: "Wrong",
+  telemetryColBlank: "Blank",
+  telemetryColAvgTime: "Avg Time",
+  telemetryColLastSeen: "Last Seen",
+  telemetryColStability: "Stability",
+
+  // Telemetry Sort/Filter Labels (Phase 16)
+  telemetrySortLabel: "Sort:",
+  telemetrySortMostWrong: "Most wrong",
+  telemetrySortMostSeen: "Most seen",
+  telemetrySortLeastSeen: "Least seen",
+  telemetrySortSlowest: "Slowest response",
+  telemetrySortRecent: "Recently seen",
+  telemetryFilterLabel: "Filter:",
+  telemetryFilterAll: "All",
+  telemetryFilterSeen: "Seen",
+  telemetryFilterUnseen: "Unseen",
+  telemetryCategoryLabel: "Category:",
+  telemetryCategoryAll: "All categories",
+
+  // Telemetry Empty State (Phase 16)
+  telemetryEmptyTitle: "No telemetry data available yet.",
+  telemetryEmptyMessage: "Practice questions to generate statistics.",
+
+  // Telemetry Detail Labels (Phase 16)
+  telemetryWrongCount: "Wrong",
+  telemetrySeenCount: "Seen",
+  telemetryAvgTimeLabel: "Avg Time",
+
+  // Loading & Error States (Phase 17)
+  loadingInsights: "Loading insights…",
+  loadingTelemetry: "Loading telemetry…",
+  errorGenericTitle: "Something went wrong.",
+  errorReload: "Reload",
+  appVersionLabel: "GinaXams Player v{version}",
+  // Export / Backup / Restore
+  exportExam: "Export Exam",
+  downloadJson: "Download JSON",
+  copyJson: "Copy JSON",
+  shareExam: "Share",
+  copiedToClipboard: "Copied to clipboard!",
+  shareNotSupported: "Sharing not supported on this device",
+  backupDescription:
+    "Download a full backup of all your exams, folders, telemetry and attempt history. Use it to transfer your data to another device or browser.",
+  restoreDescription:
+    "Restore a previously exported backup. This will replace ALL current data (exams, folders, telemetry, attempts) with the backup contents.",
+  restoreWarning:
+    "This will replace ALL your data (exams, folders, telemetry, attempts) with the backup contents. This cannot be undone. Continue?",
+  restoreSuccess: "Backup restored successfully!",
+  restoreFailed: "Restore failed",
+  backupCreated: "Backup downloaded!",
+  exportExamSuccess: "Exam exported!",
+  invalidBackupFile: "Invalid backup file",
+
+  // Shared Badge Labels (Phase 18)
+  questionPrefix: "Q",
+  stabilityStable: "stable",
+  stabilityUnstable: "unstable",
+  stabilityUnlearned: "unlearned",
+  stabilityUnseen: "unseen",
+  masteryWeak: "weak",
+  masteryLearning: "learning",
+  masteryMastered: "mastered",
+  weaknessPrefix: "W",
+  trapPrefix: "trap",
+  trapPossible: "possible",
+  trapConfirmed: "confirmed",
+
+  // Common UI Labels
+  error: "Error",
+  cancel: "Cancel",
+  create: "Create",
+  save: "Save",
+  createFolderFirst: "Create a folder first to move exams into it.",
+  overwrite: "Overwrite",
+  restore: "Restore",
+  clearDataFailed: "Failed to clear data. Please try again.",
+  locale: "en",
 };
+
+export type TranslationKey = keyof typeof LANG_EN;

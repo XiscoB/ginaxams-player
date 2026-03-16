@@ -196,8 +196,17 @@ window.LANG_ES = {
   aiPromptNoMaterial: "¡Por favor introduce tu material de estudio primero!",
   materialInChatLabel:
     "<strong>Tengo el material como archivo.</strong> Lo pegaré directamente en el chat de la IA después del prompt.",
-  kimiSuggestion:
-    "💡 <strong>Consejo:</strong> Este prompt fue pensado para usar con <a href='#' onclick='window.app.openExternalLink(\"https://kimi.moonshot.cn\", \"Kimi\"); return false;'>Kimi AI</a> - ¡pruébalo para obtener mejores resultados!",
+  aiPromptBody:
+    "Basándome en el siguiente material de estudio, quiero que me generes un examen de opción múltiple con {numQuestions} preguntas. Cada pregunta debe tener {numAnswers} respuestas posibles (etiquetadas {letters}), con UNA sola respuesta correcta por pregunta.",
+  aiPromptSchemaNote: "Por favor genera un objeto JSON en este formato exacto:",
+  aiPromptRules:
+    'REQUISITOS IMPORTANTES:\n1. Las preguntas deben evaluar comprensión, no solo memorización\n2. Los distractores (respuestas incorrectas) deben ser plausibles\n3. Incluye una mezcla de tipos de preguntas (conceptuales, aplicación, análisis)\n4. Asegúrate de que las preguntas correspondan al nivel de dificultad: {difficulty}\n5. Solo UNA respuesta por pregunta debe tener "isCorrect": true\n6. Devuelve SOLO el JSON, sin formato markdown ni explicaciones',
+  aiPromptMaterialBelow: "Material de estudio del que crear preguntas:",
+  aiPromptMaterialNext:
+    "[Pegaré el material de estudio en el siguiente mensaje]",
+  aiPromptLanguage: "español",
+  notebookSuggestion:
+    "💡 <strong>Consejo:</strong> Para mejores resultados, sube tu material de estudio a <a href='#' onclick='window.app.openExternalLink(\"https://notebooklm.google.com\", \"NotebookLM\"); return false;'>NotebookLM</a> como fuente y pega este prompt ahí.",
 
   // Choice Modal
   howToCreate: "¿Cómo quieres crear tu examen?",
