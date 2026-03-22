@@ -5,15 +5,12 @@ import {
 } from "../LibraryFlowController.js";
 import { DuplicateExamError } from "../../../application/examLibraryController.js";
 
-const {
-  renderLibraryListMock,
-  showConfirmModalMock,
-  showAlertModalMock,
-} = vi.hoisted(() => ({
-  renderLibraryListMock: vi.fn(),
-  showConfirmModalMock: vi.fn(),
-  showAlertModalMock: vi.fn(),
-}));
+const { renderLibraryListMock, showConfirmModalMock, showAlertModalMock } =
+  vi.hoisted(() => ({
+    renderLibraryListMock: vi.fn(),
+    showConfirmModalMock: vi.fn(),
+    showAlertModalMock: vi.fn(),
+  }));
 
 vi.mock("../../../application/examLibraryController.js", () => {
   class MockDuplicateExamError extends Error {
@@ -73,28 +70,29 @@ function createDeps(overrides?: {
     settingsService: {
       setLastOpenedTab: vi.fn().mockResolvedValue(undefined),
     } as unknown as LibraryFlowDeps["settingsService"],
-    getTranslations: () => ({
-      importSuccessful: "Import successful",
-      importFailed: "Import failed",
-      importBatchSummary:
-        "Processed {total} files: {imported} imported, {skipped} skipped, {failed} failed.",
-      confirmOverwriteExam:
-        'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?',
-      overwrite: "Overwrite",
-      cancel: "Cancel",
-      uncategorized: "Uncategorized",
-      rename: "Rename",
-      delete: "Delete",
-      move: "Move",
-      exportExam: "Export",
-      bestScore: "Best Score",
-      questions: "questions",
-      attempts: "attempts",
-      attempt: "attempt",
-      noExamsFound: "No exams",
-      importFirst: "Import first",
-      loadExampleExam: "Load example",
-    }) as unknown as ReturnType<LibraryFlowDeps["getTranslations"]>,
+    getTranslations: () =>
+      ({
+        importSuccessful: "Import successful",
+        importFailed: "Import failed",
+        importBatchSummary:
+          "Processed {total} files: {imported} imported, {skipped} skipped, {failed} failed.",
+        confirmOverwriteExam:
+          'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?',
+        overwrite: "Overwrite",
+        cancel: "Cancel",
+        uncategorized: "Uncategorized",
+        rename: "Rename",
+        delete: "Delete",
+        move: "Move",
+        exportExam: "Export",
+        bestScore: "Best Score",
+        questions: "questions",
+        attempts: "attempts",
+        attempt: "attempt",
+        noExamsFound: "No exams",
+        importFirst: "Import first",
+        loadExampleExam: "Load example",
+      }) as unknown as ReturnType<LibraryFlowDeps["getTranslations"]>,
     setView: vi.fn(),
     selectExam: vi.fn(),
   };
@@ -232,7 +230,9 @@ describe("LibraryFlowController", () => {
         name: "dup.json",
         text: vi
           .fn()
-          .mockResolvedValue('{"schema_version":"2.0","exam_id":"exam-a","title":"A"}'),
+          .mockResolvedValue(
+            '{"schema_version":"2.0","exam_id":"exam-a","title":"A"}',
+          ),
       } as unknown as File;
 
       await controller.handleFileImport([dupFile]);
@@ -260,7 +260,9 @@ describe("LibraryFlowController", () => {
         name: "dup.json",
         text: vi
           .fn()
-          .mockResolvedValue('{"schema_version":"2.0","exam_id":"exam-a","title":"A"}'),
+          .mockResolvedValue(
+            '{"schema_version":"2.0","exam_id":"exam-a","title":"A"}',
+          ),
       } as unknown as File;
 
       await controller.handleFileImport([dupFile]);
