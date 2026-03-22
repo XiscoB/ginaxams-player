@@ -8,7 +8,7 @@ export const LANG_EN = {
   availableExams: "📚 Available Exams",
   refresh: "↻ Refresh",
   loadExamFile: "📁 Load Exam File",
-  clickToSelect: "Click to select example_exam.json",
+  clickToSelect: "Click to select one or more JSON exam files",
   dragAndDrop: "Or drag and drop the JSON file here",
   orLoadManually: "or load manually",
   loading: "Loading...",
@@ -106,6 +106,8 @@ export const LANG_EN = {
   errorDeletingExam: "Failed to delete exam",
   importFailed: "Import failed",
   importSuccessful: "Import successful",
+  importBatchSummary:
+    "Processed {total} files: {imported} imported, {skipped} skipped, {failed} failed.",
   folderNotFound: "Folder not found",
   wrongAnswer: "Incorrect",
   exportFailed: "Export failed",

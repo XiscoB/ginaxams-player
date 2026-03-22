@@ -281,7 +281,9 @@ export class App {
     fileInput?.addEventListener("change", (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files && files.length > 0) {
-        this.libraryFlow.handleFileImport(files[0]);
+        this.libraryFlow.handleFileImport(files);
+        // Allow importing the same file(s) again if needed.
+        (e.target as HTMLInputElement).value = "";
       }
     });
 
@@ -298,7 +300,7 @@ export class App {
       dropZone.classList.remove("drag-over");
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
-        this.libraryFlow.handleFileImport(files[0]);
+        this.libraryFlow.handleFileImport(files);
       }
     });
 

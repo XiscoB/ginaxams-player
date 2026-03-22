@@ -8,7 +8,8 @@ export const LANG_ES = {
   availableExams: "📚 Exámenes Disponibles",
   refresh: "↻ Actualizar",
   loadExamFile: "📁 Cargar Archivo de Examen",
-  clickToSelect: "Haz clic para seleccionar example_exam.json",
+  clickToSelect:
+    "Haz clic para seleccionar uno o varios archivos JSON de examen",
   dragAndDrop: "O arrastra y suelta el archivo JSON aquí",
   orLoadManually: "o cargar manualmente",
   loading: "Cargando...",
@@ -107,6 +108,8 @@ export const LANG_ES = {
   errorDeletingExam: "Error al eliminar examen",
   importFailed: "Error al importar",
   importSuccessful: "Importación exitosa",
+  importBatchSummary:
+    "Procesados {total} archivos: {imported} importados, {skipped} omitidos, {failed} fallidos.",
   folderNotFound: "Carpeta no encontrada",
   wrongAnswer: "Incorrecto",
   exportFailed: "Error al exportar",

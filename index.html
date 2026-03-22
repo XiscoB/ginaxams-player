@@ -4439,7 +4439,11 @@
             </div>
           </div>
 
-          <div class="file-input-area" data-testid="file-drop-zone">
+          <div
+            class="file-input-area"
+            id="dropZone"
+            data-testid="file-drop-zone"
+          >
             <button
               id="helpToggleBtn"
               class="help-btn-inline"
@@ -4471,7 +4475,13 @@
                 <span id="txtExamFormatBtn">Create Exam</span>
               </button>
             </div>
-            <input type="file" id="fileInput" accept=".json" class="hidden" />
+            <input
+              type="file"
+              id="fileInput"
+              accept=".json"
+              multiple
+              class="hidden"
+            />
             <label for="fileInput" class="file-label">
               <span class="upload-icon">📂</span>
               <div class="upload-main-text" id="txtLoadExamFile">
