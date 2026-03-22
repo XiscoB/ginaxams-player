@@ -218,12 +218,21 @@ export class App {
     this._currentLang = lang;
     this.translations = getTranslations(lang);
 
-    const langEn = document.getElementById("langEn");
-    const langEs = document.getElementById("langEs");
-    langEn?.classList.toggle("active", lang === "en");
-    langEs?.classList.toggle("active", lang === "es");
+    this.syncLanguageButtons(lang);
 
     updatePageText(this.translations);
+  }
+
+  private syncLanguageButtons(lang: LanguageCode): void {
+    const langEn = document.getElementById("langEn");
+    const langEs = document.getElementById("langEs");
+    const onboardingLangEn = document.getElementById("onboardingLangEn");
+    const onboardingLangEs = document.getElementById("onboardingLangEs");
+
+    langEn?.classList.toggle("active", lang === "en");
+    langEs?.classList.toggle("active", lang === "es");
+    onboardingLangEn?.classList.toggle("active", lang === "en");
+    onboardingLangEs?.classList.toggle("active", lang === "es");
   }
 
   private setLanguage(lang: LanguageCode): void {
@@ -237,10 +246,7 @@ export class App {
         console.warn("Failed to persist language setting:", e),
       );
 
-    const langEn = document.getElementById("langEn");
-    const langEs = document.getElementById("langEs");
-    langEn?.classList.toggle("active", lang === "en");
-    langEs?.classList.toggle("active", lang === "es");
+    this.syncLanguageButtons(lang);
 
     updatePageText(this.translations);
 
@@ -438,6 +444,10 @@ export class App {
 
   showModeScreen(): void {
     this.setView("library");
+  }
+
+  switchLanguage(lang: LanguageCode): void {
+    this.setLanguage(lang);
   }
 
   showFileScreen(): void {

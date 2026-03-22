@@ -2,9 +2,18 @@
  * i18n module unit tests
  */
 
-import { describe, it, expect } from "vitest";
-import { getTranslations, t, createTranslator } from "../index.js";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import {
+  getTranslations,
+  t,
+  createTranslator,
+  detectBrowserLanguage,
+} from "../index.js";
 import { LANG_EN } from "../en.js";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("i18n", () => {
   describe("t() function", () => {
@@ -65,6 +74,28 @@ describe("i18n", () => {
     it("falls back to English for unknown language", () => {
       const T = getTranslations("en"); // Only en/es exist
       expect(T.appTitle).toBe("GinaXams Player");
+    });
+  });
+
+  describe("detectBrowserLanguage()", () => {
+    it("returns es for Spanish variants", () => {
+      vi.spyOn(navigator, "languages", "get").mockReturnValue([
+        "es-MX",
+        "en-US",
+      ]);
+      vi.spyOn(navigator, "language", "get").mockReturnValue("es-ES");
+
+      expect(detectBrowserLanguage()).toBe("es");
+    });
+
+    it("returns en for non-Spanish languages", () => {
+      vi.spyOn(navigator, "languages", "get").mockReturnValue([
+        "fr-FR",
+        "en-US",
+      ]);
+      vi.spyOn(navigator, "language", "get").mockReturnValue("fr-FR");
+
+      expect(detectBrowserLanguage()).toBe("en");
     });
   });
 });

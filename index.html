@@ -2595,6 +2595,37 @@
         font-size: 1.05em;
       }
 
+      .onboarding-language-picker {
+        margin: -6px auto 24px;
+        max-width: 360px;
+        padding: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .onboarding-language-title {
+        font-size: 0.9em;
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      .onboarding-language-text {
+        font-size: 0.82em;
+        color: var(--text-secondary);
+        margin: 4px 0 12px;
+      }
+
+      .onboarding-language-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .onboarding-lang-btn {
+        min-width: 112px;
+      }
+
       .onboarding-steps {
         display: flex;
         justify-content: center;
@@ -2796,6 +2827,16 @@
         }
         .onboarding-text {
           font-size: 0.95em;
+        }
+        .onboarding-language-picker {
+          margin-bottom: 18px;
+          padding: 12px;
+        }
+        .onboarding-language-buttons {
+          flex-direction: column;
+        }
+        .onboarding-lang-btn {
+          width: 100%;
         }
         .onboarding-buttons {
           flex-direction: column;
@@ -3831,6 +3872,33 @@
             <h2 class="onboarding-title" id="txtOnboardingWelcomeTitle">
               Welcome to Ginaxams
             </h2>
+            <div class="onboarding-language-picker">
+              <div
+                class="onboarding-language-title"
+                id="txtOnboardingLanguageTitle"
+              >
+                Language
+              </div>
+              <p class="onboarding-language-text" id="txtOnboardingLanguageText">
+                You can change this now or later from the header.
+              </p>
+              <div class="onboarding-language-buttons">
+                <button
+                  id="onboardingLangEn"
+                  class="lang-btn onboarding-lang-btn"
+                  onclick="window.app.switchLanguage('en')"
+                >
+                  English
+                </button>
+                <button
+                  id="onboardingLangEs"
+                  class="lang-btn onboarding-lang-btn"
+                  onclick="window.app.switchLanguage('es')"
+                >
+                  Espanol
+                </button>
+              </div>
+            </div>
             <p class="onboarding-text" id="txtOnboardingWelcomeText">
               Your personal exam practice companion. Import exams, practice with
               different modes, and track your progress over time.

@@ -99,6 +99,10 @@ export function updatePageText(T: Translations): void {
   setText("txtOnboardingSkip", T.onboardingSkip);
   setText("txtOnboardingBack", T.onboardingBack);
   setText("txtOnboardingNext", T.onboardingNext);
+  setText("txtOnboardingLanguageTitle", T.onboardingLanguageTitle);
+  setText("txtOnboardingLanguageText", T.onboardingLanguageText);
+  setText("onboardingLangEn", T.onboardingLanguageEnglish);
+  setText("onboardingLangEs", T.onboardingLanguageSpanish);
   setText("txtOnboardingWelcomeTitle", T.onboardingWelcomeTitle);
   setText("txtOnboardingWelcomeText", T.onboardingWelcomeText);
   setText("txtOnboardingStorageTitle", T.onboardingStorageTitle);

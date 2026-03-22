@@ -149,6 +149,11 @@ export const LANG_EN = {
   onboardingBack: "Back",
   onboardingNext: "Next",
   onboardingFinish: "Get Started",
+  onboardingLanguageTitle: "Language",
+  onboardingLanguageText:
+    "Choose your preferred language now. You can also change it later from the header.",
+  onboardingLanguageEnglish: "English",
+  onboardingLanguageSpanish: "Spanish",
   onboardingWelcomeTitle: "Welcome to GinaXams Player",
   onboardingWelcomeText:
     "Your personal exam practice companion. Import exams, practice with different modes, and track your progress over time.",

@@ -13,6 +13,7 @@ import { AttemptController } from "./application/attemptController.js";
 import { ExamLibraryController } from "./application/examLibraryController.js";
 import { SettingsService } from "./application/settingsService.js";
 import { App } from "./core/app.js";
+import { detectBrowserLanguage } from "./i18n/index.js";
 
 /** Timeout (ms) for IndexedDB to become ready before showing recovery UI */
 const DB_READY_TIMEOUT_MS = 8000;
@@ -53,7 +54,7 @@ function showDatabaseErrorRecovery(errorMessage: string): void {
   if (!overlay) return;
 
   // Translate overlay using localStorage lang (storage may be broken)
-  const lang = localStorage.getItem("ginaxams_lang") || "en";
+  const lang = localStorage.getItem("ginaxams_lang") || detectBrowserLanguage();
   const isEs = lang === "es";
   const titleEl = document.getElementById("dbErrorTitle");
   if (titleEl)
