@@ -40,3 +40,8 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 test-db.html
+
+# covering own exams
+examenes/*
+examenes/**
+

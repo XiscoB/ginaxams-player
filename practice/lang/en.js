@@ -198,7 +198,7 @@ window.LANG_EN = {
     "Based on the following study material, I want you to generate a multiple choice exam with {numQuestions} questions. Each question must have {numAnswers} possible answers (labeled {letters}), with ONE single correct answer per question.",
   aiPromptSchemaNote: "Please generate a JSON object in this exact format:",
   aiPromptRules:
-    'IMPORTANT REQUIREMENTS:\n1. Questions should test comprehension, not just memorization\n2. Distractors (wrong answers) must be plausible\n3. Include a mix of question types (conceptual, application, analysis)\n4. Make sure questions match the difficulty level: {difficulty}\n5. Only ONE answer per question must have "isCorrect": true\n6. Return ONLY valid JSON, no markdown formatting or explanations',
+    'IMPORTANT REQUIREMENTS:\n1. Questions should test comprehension, not just memorization\n2. Distractors (wrong answers) must be plausible\n3. Include a mix of question types (conceptual, application, analysis)\n4. Make sure questions match the difficulty level: {difficulty}\n5. Only ONE answer per question must have "isCorrect": true\n6. Return ONLY valid JSON, no markdown formatting or explanations\n7. Generate valid JSON. Important:\n- Escape ALL line breaks in text strings as \\n\n- Never use literal line breaks (Enter) inside strings\n- Validate the JSON before delivering (use jsonlint.com)',
   aiPromptMaterialBelow: "Study material to create questions from:",
   aiPromptMaterialNext: "[I will paste my study material in the next message]",
   aiPromptLanguage: "English",

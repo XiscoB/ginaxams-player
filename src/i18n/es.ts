@@ -211,7 +211,11 @@ export const LANG_ES = {
 4. Asegúrate de que las preguntas correspondan al nivel de dificultad: {difficulty}
 5. Solo UNA respuesta por pregunta debe tener "isCorrect": true
 6. El campo "categorias" del examen debe contener TODAS las categorías que uses. Cada pregunta tiene un campo "categoria" que DEBE ser un subconjunto de "categorias" del examen. Si una pregunta usa "Ejecución", entonces "Ejecución" DEBE estar en la lista "categorias" del nivel del examen
-7. Devuelve SOLO el JSON, sin formato markdown ni explicaciones`,
+7. Devuelve SOLO el JSON, sin formato markdown ni explicaciones
+8. Genera JSON válido. Importante:
+- Escapa TODOS los saltos de línea en cadenas de texto como \\n
+- Nunca uses saltos de línea literales (Enter) dentro de strings
+- Valida el JSON antes de entregar (usa jsonlint.com)`,
   aiPromptMaterialBelow: "Material de estudio del que crear preguntas:",
   aiPromptMaterialNext:
     "[Pegaré el material de estudio en el siguiente mensaje]",
