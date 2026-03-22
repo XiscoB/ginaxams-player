@@ -72,7 +72,9 @@ export function detectBrowserLanguage(): LanguageCode {
     navigator.language,
     nav.userLanguage,
     nav.browserLanguage,
-  ].filter((lang): lang is string => typeof lang === "string" && lang.length > 0);
+  ].filter(
+    (lang): lang is string => typeof lang === "string" && lang.length > 0,
+  );
 
   const hasSpanish = preferredLanguages.some((lang) => {
     const normalized = lang.toLowerCase().replace("_", "-");
