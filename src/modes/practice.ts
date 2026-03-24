@@ -27,6 +27,7 @@ import type {
   QuestionResultView,
 } from "../application/viewState.js";
 import type { Translations } from "../i18n/index.js";
+import { renderMarkdown } from "../ui/renderMarkdown.js";
 import {
   computeNavigatorItems,
   renderNavigator,
@@ -110,7 +111,7 @@ export class PracticeManager {
     // Render question
     const questionText = document.getElementById("questionText");
     if (questionText) {
-      questionText.textContent = state.questionText;
+      questionText.innerHTML = renderMarkdown(state.questionText);
     }
 
     const questionNumber = document.getElementById("questionNumber");

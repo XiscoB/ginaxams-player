@@ -835,6 +835,44 @@
         margin-bottom: 25px;
       }
 
+      /* ─── Markdown Tables Inside Question Text ──────────── */
+      .md-table-scroll {
+        overflow-x: auto;
+        margin: 1rem 0 1.5rem;
+      }
+
+      .question-text table {
+        border-collapse: collapse;
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+        font-size: 0.85em;
+      }
+
+      .question-text th,
+      .question-text td {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 10px 14px;
+        text-align: left;
+      }
+
+      .question-text th {
+        background: rgba(255, 255, 255, 0.06);
+        font-weight: 600;
+        color: var(--accent-primary);
+        text-transform: uppercase;
+        font-size: 0.85em;
+        letter-spacing: 0.5px;
+      }
+
+      .question-text tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .question-text tr:hover {
+        background: rgba(0, 212, 255, 0.05);
+      }
+
       .question-images {
         margin: 15px 0;
         text-align: center;
@@ -2988,6 +3026,13 @@
         }
         .question-text {
           font-size: 1.1em;
+        }
+        .question-text table {
+          font-size: 0.75em;
+        }
+        .question-text th,
+        .question-text td {
+          padding: 6px 8px;
         }
         .mode-btn {
           padding: 12px 20px;

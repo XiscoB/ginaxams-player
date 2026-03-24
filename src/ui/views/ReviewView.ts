@@ -7,6 +7,7 @@
 
 import type { Translations } from "../../i18n/index.js";
 import type { QuestionResultView } from "../../application/viewState.js";
+import { renderMarkdown } from "../renderMarkdown.js";
 import {
   computeReviewNavigatorItems,
   renderReviewNavigator as renderNavGrid,
@@ -87,7 +88,7 @@ export function renderReviewQuestion(
 
   const questionText = document.getElementById("reviewQuestionText");
   if (questionText) {
-    questionText.textContent = q.questionText;
+    questionText.innerHTML = renderMarkdown(q.questionText);
   }
 
   const correctText = document.getElementById("correctAnswerText");
