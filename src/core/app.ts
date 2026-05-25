@@ -573,6 +573,9 @@ export class App {
   generateAIPrompt(): void {
     this.libraryFlow.generateAIPrompt();
   }
+  setSourceType(type: string): void {
+    this.libraryFlow.setSourceType(type as "study" | "exam");
+  }
   copyGeneratedPrompt(): Promise<void> {
     return this.libraryFlow.copyGeneratedPrompt();
   }

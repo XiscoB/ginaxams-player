@@ -52,3 +52,95 @@ TASK TO EXECUTE NOW: read the file in .github/tasks/tasks.md and focus only and 
 - Browser MCP: navigate to `http://localhost:3000`, import an exam, open the config screen, confirm both selectors are visible and options are correct.
 
 **Risk:** low
+
+---
+
+## [002] Source-type toggle in the AI Prompt Generator modal
+
+**Module:** `index.html`, `src/core/controllers/LibraryFlowController.ts`, `src/i18n/en.ts`, `src/i18n/es.ts`, `src/ui/updatePageText.ts`
+
+**Description:** The AI Prompt Generator modal currently assumes the user always works from *study material* they wrote themselves. A second common workflow is converting an *official exam with an existing answer key* into the GinaXams JSON format — in that case the AI must transcribe and mirror all questions verbatim rather than invent new ones. Add a two-option toggle (styled radio group) at the top of the modal form that lets the user choose between these two source types. The toggle must drive two distinct behaviors:
+
+1. **Study material** (default — existing behavior): the prompt opens with `aiPromptBody` ("Based on the following study material…"), keeps the *Number of questions*, *Answers per question*, and *Difficulty* fields visible, and uses `aiPromptRules`.
+2. **Official exam (with answers)**: the prompt opens with a new `aiPromptBodyExam` intro ("Based on the following official exam and its answer key, your task is to transcribe and structure ALL questions exactly as they appear in the original document."), **hides** the *Number of questions*, *Answers per question*, and *Difficulty* fields (they are irrelevant — the AI must include every question from the source), and uses a new `aiPromptRulesExam` ruleset that enforces verbatim transcription and full inclusion.
+
+**Exact files to touch (no others):**
+
+1. **`src/i18n/en.ts`** — Add the following keys (place them in the `// AI Prompt Generator` block, after the existing `aiPromptRules` key):
+   - `sourceTypeLabel: "Source Type"`
+   - `sourceTypeStudyMaterial: "Study Material"`
+   - `sourceTypeOfficialExam: "Official Exam (with answers)"`
+   - `aiPromptBodyExam: "Based on the following official exam and its answer key, your task is to transcribe and structure ALL questions exactly as they appear in the original document."`
+   - `aiPromptRulesExam` (multiline template literal):
+     ```
+     IMPORTANT REQUIREMENTS:
+     1. Include ALL questions from the source document, without exception — do NOT skip any
+     2. Transcribe question text verbatim — do NOT rephrase or rewrite
+     3. Transcribe answer options exactly as they appear in the source
+     4. Use the answer key to set exactly ONE "isCorrect": true per question
+     5. For feedback.cita_literal: quote the relevant law article or provide a technical definition
+     6. For feedback.explicacion_fallo: write a brief explanation of why the correct answer is right
+     7. The total_questions field must equal the exact count of questions transcribed
+     8. Return ONLY valid JSON, no markdown formatting or explanations
+     9. Escape ALL line breaks in text strings as \n — never use literal line breaks inside strings
+     ```
+
+2. **`src/i18n/es.ts`** — Add the same keys with Spanish translations (same location):
+   - `sourceTypeLabel: "Tipo de fuente"`
+   - `sourceTypeStudyMaterial: "Material de estudio"`
+   - `sourceTypeOfficialExam: "Examen oficial (con respuestas)"`
+   - `aiPromptBodyExam: "Basándome en el siguiente examen oficial y su plantilla de respuestas, tu tarea es transcribir y estructurar TODAS las preguntas exactamente como aparecen en el documento original."`
+   - `aiPromptRulesExam` (multiline template literal, Spanish):
+     ```
+     REQUISITOS IMPORTANTES:
+     1. Incluye TODAS las preguntas del documento fuente, sin excepción — no omitas ninguna
+     2. Transcribe el texto de cada pregunta literalmente — NO reformules ni reescribas
+     3. Transcribe las opciones de respuesta exactamente como aparecen en la fuente
+     4. Usa la plantilla de respuestas para asignar exactamente UN "isCorrect": true por pregunta
+     5. En feedback.cita_literal: cita el artículo de ley correspondiente o la definición técnica
+     6. En feedback.explicacion_fallo: escribe una breve explicación de por qué la respuesta correcta es la correcta
+     7. El campo total_questions debe ser igual al número exacto de preguntas transcritas
+     8. Devuelve SOLO el JSON, sin formato markdown ni explicaciones
+     9. Escapa TODOS los saltos de línea en cadenas de texto como \n — nunca uses saltos de línea literales dentro de strings
+     ```
+
+3. **`index.html`** — In the `#aiPromptModal` form (`.ai-prompt-form`), insert a new `div.ai-prompt-field` with id `aiSourceTypeField` as the **first** child of `.ai-prompt-form`, before the exam-name field. It must contain:
+   - A `<label>` with `id="txtSourceTypeLabel"` (text: "Source Type")
+   - A `<div class="ai-source-toggle">` containing two `<button>` elements:
+     - `id="btnSourceStudyMaterial"`, `class="ai-source-btn active"`, `data-testid="source-type-study"`, `onclick="window.app.setSourceType('study')"`, text element `id="txtSourceTypeStudyMaterial"`
+     - `id="btnSourceOfficialExam"`, `class="ai-source-btn"`, `data-testid="source-type-exam"`, `onclick="window.app.setSourceType('exam')"`, text element `id="txtSourceTypeOfficialExam"`
+   - Wrap the three generation-specific fields (`aiNumQuestionsField`, `aiNumAnswersField`, `aiDifficultyField`) in a `<div id="aiStudyMaterialFields">` so they can be shown/hidden as a unit. Give each inner `div.ai-prompt-field` a matching `id`: `aiNumQuestionsField`, `aiNumAnswersField`, `aiDifficultyField`.
+
+4. **`src/core/controllers/LibraryFlowController.ts`** — In `generateAIPrompt()`:
+   - Read the active source type from whichever button has class `active` among `#btnSourceStudyMaterial` / `#btnSourceOfficialExam`, or read a data attribute (implementation detail — pick the simpler approach).
+   - If source type is `"exam"`, use `T.aiPromptBodyExam` as the body (no `{numQuestions}`/`{numAnswers}`/`{letters}` substitutions needed) and `T.aiPromptRulesExam` as the rules.
+   - If source type is `"study"`, keep the existing logic unchanged.
+   - Add a `setSourceType(type: "study" | "exam"): void` method that: toggles the `active` class between the two buttons, and shows/hides `#aiStudyMaterialFields` (`classList.remove("hidden")` for study, `classList.add("hidden")` for exam).
+   - Expose `setSourceType` on `LibraryFlowController` and wire it through `app.ts` as `setSourceType(type: string): void` (cast to `"study" | "exam"` inside the controller).
+   - Reset the toggle to `"study"` (re-show fields, restore `active` on study button) inside `showAIPromptGenerator()` so reopening the modal always starts in study-material mode.
+
+5. **`src/ui/updatePageText.ts`** — Add `setText` calls for the three new label IDs:
+   - `setText("txtSourceTypeLabel", T.sourceTypeLabel)`
+   - `setText("txtSourceTypeStudyMaterial", T.sourceTypeStudyMaterial)`
+   - `setText("txtSourceTypeOfficialExam", T.sourceTypeOfficialExam)`
+
+**Constraints:**
+- Do NOT modify `src/domain/types.ts`, `src/domain/defaults.ts`, `src/storage/db.ts`, or `AGENTS.md`.
+- Do NOT touch `practice/lang/en.js` or `practice/lang/es.js` (legacy standalone tool — out of scope).
+- The toggle must be two visually distinct buttons (not a native `<select>`), styled with `class="ai-source-toggle"` / `class="ai-source-btn"` — no new CSS classes need to be invented beyond those names; the task executor must add minimal inline styles if needed or rely on existing `.btn` patterns.
+- Existing behavior for study-material mode must be unchanged.
+- The `data-testid` attributes on the toggle buttons are the E2E contract — do not omit them.
+
+**Acceptance Criteria:**
+- The modal shows a "Source Type" toggle with two options as its first field.
+- Default selection is "Study Material"; the three generation fields (num questions, num answers, difficulty) are visible.
+- Selecting "Official Exam (with answers)" hides those three fields.
+- Switching back to "Study Material" restores them.
+- Generating a prompt in study-material mode produces the same output as before this change.
+- Generating a prompt in official-exam mode produces a prompt that begins with `aiPromptBodyExam` and uses `aiPromptRulesExam` (does not mention num questions or difficulty).
+- Closing and reopening the modal resets the toggle to "Study Material".
+- Language switching (EN ↔ ES) correctly updates all toggle labels.
+- `npm test` passes (no unit test regressions).
+- Browser MCP: navigate to `http://localhost:3000`, open the AI Prompt Generator, confirm both `data-testid="source-type-study"` and `data-testid="source-type-exam"` are present, click exam mode and confirm the three fields are hidden, generate a prompt and confirm the output starts with the exam intro text.
+
+**Risk:** medium

@@ -147,6 +147,9 @@ export function updatePageText(T: Translations): void {
   // AI Prompt Generator
   setText("txtAIPromptTitle", T.aiPromptTitle);
   setText("txtAIPromptSubtitle", T.aiPromptSubtitle);
+  setText("txtSourceTypeLabel", T.sourceTypeLabel);
+  setText("txtSourceTypeStudyMaterial", T.sourceTypeStudyMaterial);
+  setText("txtSourceTypeOfficialExam", T.sourceTypeOfficialExam);
   setText("txtNumQuestionsLabel", T.numQuestionsLabel);
   setText("txtNumAnswersLabel", T.numAnswersLabel);
   setText("txtDifficultyLabel", T.difficultyLabel);

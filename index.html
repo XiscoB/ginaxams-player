@@ -1802,6 +1802,47 @@
         font-size: 0.95em;
       }
 
+      .ai-source-toggle {
+        display: flex;
+        gap: 8px;
+      }
+
+      .ai-source-btn {
+        flex: 1;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+      }
+
+      .ai-source-btn:hover {
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+      }
+
+      .ai-source-btn.active {
+        border-color: var(--accent-primary);
+        background: rgba(0, 212, 255, 0.1);
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      #aiStudyMaterialFields {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      #aiStudyMaterialFields.hidden {
+        display: none;
+      }
+
       .ai-prompt-input,
       .ai-prompt-select {
         background: var(--bg-primary);
@@ -4085,6 +4126,24 @@
         </div>
 
         <div class="ai-prompt-form">
+          <div class="ai-prompt-field" id="aiSourceTypeField">
+            <label id="txtSourceTypeLabel">Source Type</label>
+            <div class="ai-source-toggle">
+              <button
+                id="btnSourceStudyMaterial"
+                class="ai-source-btn active"
+                data-testid="source-type-study"
+                onclick="window.app.setSourceType('study')"
+              ><span id="txtSourceTypeStudyMaterial">Study Material</span></button>
+              <button
+                id="btnSourceOfficialExam"
+                class="ai-source-btn"
+                data-testid="source-type-exam"
+                onclick="window.app.setSourceType('exam')"
+              ><span id="txtSourceTypeOfficialExam">Official Exam (with answers)</span></button>
+            </div>
+          </div>
+
           <div class="ai-prompt-field">
             <label id="txtAiExamNameLabel">Exam name</label>
             <input
@@ -4096,42 +4155,44 @@
             <div id="aiExamNameStatus" class="ai-exam-name-status hidden"></div>
           </div>
 
-          <div class="ai-prompt-field">
-            <label id="txtNumQuestionsLabel">Number of questions</label>
-            <input
-              type="number"
-              id="aiNumQuestions"
-              min="1"
-              max="100"
-              value="10"
-              class="ai-prompt-input"
-            />
-          </div>
+          <div id="aiStudyMaterialFields">
+            <div class="ai-prompt-field" id="aiNumQuestionsField">
+              <label id="txtNumQuestionsLabel">Number of questions</label>
+              <input
+                type="number"
+                id="aiNumQuestions"
+                min="1"
+                max="100"
+                value="10"
+                class="ai-prompt-input"
+              />
+            </div>
 
-          <div class="ai-prompt-field">
-            <label id="txtNumAnswersLabel">Answers per question</label>
-            <input
-              type="number"
-              id="aiNumAnswers"
-              min="2"
-              max="6"
-              value="4"
-              class="ai-prompt-input"
-            />
-          </div>
+            <div class="ai-prompt-field" id="aiNumAnswersField">
+              <label id="txtNumAnswersLabel">Answers per question</label>
+              <input
+                type="number"
+                id="aiNumAnswers"
+                min="2"
+                max="6"
+                value="4"
+                class="ai-prompt-input"
+              />
+            </div>
 
-          <div class="ai-prompt-field">
-            <label id="txtDifficultyLabel">Difficulty level</label>
-            <select id="aiDifficulty" class="ai-prompt-select">
-              <option value="easy" id="txtDifficultyEasy">Easy</option>
-              <option value="medium" id="txtDifficultyMedium" selected>
-                Medium
-              </option>
-              <option value="hard" id="txtDifficultyHard">Hard</option>
-              <option value="mixed" id="txtDifficultyMixed">
-                Mixed (varied levels)
-              </option>
-            </select>
+            <div class="ai-prompt-field" id="aiDifficultyField">
+              <label id="txtDifficultyLabel">Difficulty level</label>
+              <select id="aiDifficulty" class="ai-prompt-select">
+                <option value="easy" id="txtDifficultyEasy">Easy</option>
+                <option value="medium" id="txtDifficultyMedium" selected>
+                  Medium
+                </option>
+                <option value="hard" id="txtDifficultyHard">Hard</option>
+                <option value="mixed" id="txtDifficultyMixed">
+                  Mixed (varied levels)
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="ai-prompt-source-note">

@@ -895,6 +895,8 @@ export class LibraryFlowController {
         nameStatus.classList.add("hidden");
         nameStatus.className = "ai-exam-name-status hidden";
       }
+      // Reset source type toggle to "study" every time the modal opens
+      this.setSourceType("study");
     }
   }
 
@@ -932,45 +934,100 @@ export class LibraryFlowController {
       return;
     }
 
-    const difficultyText: Record<string, string> = {
-      easy: T.difficultyEasy || "Easy",
-      medium: T.difficultyMedium || "Medium",
-      hard: T.difficultyHard || "Hard",
-      mixed: T.difficultyMixed || "Mixed",
-    };
-
-    const numAns = parseInt(numAnswers, 10) || 4;
-    const letters = Array.from({ length: numAns }, (_, i) =>
-      String.fromCharCode(65 + i),
-    );
-    const lettersStr = letters.join(", ");
-
-    const body = (T.aiPromptBody || "")
-      .replace("{numQuestions}", numQuestions)
-      .replace("{numAnswers}", numAnswers)
-      .replace("{letters}", lettersStr);
-
-    const diffLabel = difficultyText[difficulty] || difficulty;
     const lang = T.aiPromptLanguage || "English";
-
-    const exampleAnswers = letters
-      .map(
-        (l, i) =>
-          `        {"letter": "${l}", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": ${i === 0}}`,
-      )
-      .join(",\n");
-
     const safeExamId = examName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
-
     const schemaNote =
       T.aiPromptSchemaNote ||
       "Please generate a JSON object in this exact format:";
-    const rules = (T.aiPromptRules || "").replace("{difficulty}", diffLabel);
 
-    const prompt = `${body}
+    // Detect active source type
+    const isExamMode = document
+      .getElementById("btnSourceOfficialExam")
+      ?.classList.contains("active") ?? false;
+
+    let prompt: string;
+
+    if (isExamMode) {
+      // Official exam mode — no numQuestions/numAnswers/difficulty
+      const body = T.aiPromptBodyExam || "";
+      const rules = T.aiPromptRulesExam || "";
+
+      const exampleAnswers = [
+        `        {"letter": "A", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": true}`,
+        `        {"letter": "B", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": false}`,
+        `        {"letter": "C", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": false}`,
+        `        {"letter": "D", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": false}`,
+      ].join(",\n");
+
+      prompt = `${body}
+
+IDIOMA / LANGUAGE: ${lang}
+
+${schemaNote}
+
+{
+  "schema_version": "2.0",
+  "exam_id": "${safeExamId}",
+  "title": "${examName}",
+  "categorias": ["${lang === "español" ? "Categoría1" : "Category1"}", "${lang === "español" ? "Categoría2" : "Category2"}"],
+  "total_questions": 0,
+  "questions": [
+    {
+      "number": 1,
+      "text": "[${lang === "español" ? "Texto de la pregunta aquí" : "Question text here"}]",
+      "categoria": ["${lang === "español" ? "Categoría1" : "Category1"}"],
+      "articulo_referencia": "${lang === "español" ? "Artículo de referencia" : "Reference article"}",
+      "feedback": {
+        "cita_literal": "${lang === "español" ? "Cita literal de la fuente" : "Literal citation from source"}",
+        "explicacion_fallo": "${lang === "español" ? "Explicación de por qué las respuestas incorrectas son erróneas" : "Explanation of why wrong answers are wrong"}"
+      },
+      "answers": [
+${exampleAnswers}
+      ]
+    }
+  ]
+}
+
+IMPORTANT: Use "${safeExamId}" as the "exam_id" and "${examName}" as the "title". Do NOT change these values.
+IMPORTANT: The "categorias" array at the exam level MUST list EVERY category that appears in any question's "categoria" field. Every question "categoria" value MUST exist in the top-level "categorias" array.
+IMPORTANT: Set "total_questions" to the exact count of questions you transcribe.
+
+${rules}`;
+    } else {
+      // Study material mode — existing logic
+      const difficultyText: Record<string, string> = {
+        easy: T.difficultyEasy || "Easy",
+        medium: T.difficultyMedium || "Medium",
+        hard: T.difficultyHard || "Hard",
+        mixed: T.difficultyMixed || "Mixed",
+      };
+
+      const numAns = parseInt(numAnswers, 10) || 4;
+      const letters = Array.from({ length: numAns }, (_, i) =>
+        String.fromCharCode(65 + i),
+      );
+      const lettersStr = letters.join(", ");
+
+      const body = (T.aiPromptBody || "")
+        .replace("{numQuestions}", numQuestions)
+        .replace("{numAnswers}", numAnswers)
+        .replace("{letters}", lettersStr);
+
+      const diffLabel = difficultyText[difficulty] || difficulty;
+
+      const exampleAnswers = letters
+        .map(
+          (l, i) =>
+            `        {"letter": "${l}", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": ${i === 0}}`,
+        )
+        .join(",\n");
+
+      const rules = (T.aiPromptRules || "").replace("{difficulty}", diffLabel);
+
+      prompt = `${body}
 
 NIVEL DE DIFICULTAD / DIFFICULTY: ${diffLabel}
 IDIOMA / LANGUAGE: ${lang}
@@ -1004,6 +1061,7 @@ IMPORTANT: Use "${safeExamId}" as the "exam_id" and "${examName}" as the "title"
 IMPORTANT: The "categorias" array at the exam level MUST list EVERY category that appears in any question's "categoria" field. Every question "categoria" value MUST exist in the top-level "categorias" array.
 
 ${rules}`;
+    }
 
     const output = document.getElementById(
       "aiGeneratedPrompt",
@@ -1012,6 +1070,22 @@ ${rules}`;
 
     const result = document.getElementById("aiPromptResult");
     if (result) result.classList.remove("hidden");
+  }
+
+  setSourceType(type: "study" | "exam"): void {
+    const studyBtn = document.getElementById("btnSourceStudyMaterial");
+    const examBtn = document.getElementById("btnSourceOfficialExam");
+    const studyFields = document.getElementById("aiStudyMaterialFields");
+
+    if (type === "exam") {
+      studyBtn?.classList.remove("active");
+      examBtn?.classList.add("active");
+      studyFields?.classList.add("hidden");
+    } else {
+      examBtn?.classList.remove("active");
+      studyBtn?.classList.add("active");
+      studyFields?.classList.remove("hidden");
+    }
   }
 
   async copyGeneratedPrompt(): Promise<void> {

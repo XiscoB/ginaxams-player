@@ -224,6 +224,21 @@ export const LANG_ES = {
 - Escapa TODOS los saltos de línea en cadenas de texto como \\n
 - Nunca uses saltos de línea literales (Enter) dentro de strings
 - Valida el JSON antes de entregar (usa jsonlint.com)`,
+  sourceTypeLabel: "Tipo de fuente",
+  sourceTypeStudyMaterial: "Material de estudio",
+  sourceTypeOfficialExam: "Examen oficial (con respuestas)",
+  aiPromptBodyExam:
+    "Basándome en el siguiente examen oficial y su plantilla de respuestas, tu tarea es transcribir y estructurar TODAS las preguntas exactamente como aparecen en el documento original.",
+  aiPromptRulesExam: `REQUISITOS IMPORTANTES:
+1. Incluye TODAS las preguntas del documento fuente, sin excepción — no omitas ninguna
+2. Transcribe el texto de cada pregunta literalmente — NO reformules ni reescribas
+3. Transcribe las opciones de respuesta exactamente como aparecen en la fuente
+4. Usa la plantilla de respuestas para asignar exactamente UN "isCorrect": true por pregunta
+5. En feedback.cita_literal: cita el artículo de ley correspondiente o la definición técnica
+6. En feedback.explicacion_fallo: escribe una breve explicación de por qué la respuesta correcta es la correcta
+7. El campo total_questions debe ser igual al número exacto de preguntas transcritas
+8. Devuelve SOLO el JSON, sin formato markdown ni explicaciones
+9. Escapa TODOS los saltos de línea en cadenas de texto como \\n — nunca uses saltos de línea literales dentro de strings`,
   aiPromptMaterialBelow: "Material de estudio del que crear preguntas:",
   aiPromptMaterialNext:
     "[Pegaré el material de estudio en el siguiente mensaje]",

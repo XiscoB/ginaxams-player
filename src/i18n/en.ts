@@ -221,6 +221,21 @@ export const LANG_EN = {
 - Escape ALL line breaks in text strings as \\n
 - Never use literal line breaks (Enter) inside strings
 - Validate the JSON before delivering (use jsonlint.com)`,
+  sourceTypeLabel: "Source Type",
+  sourceTypeStudyMaterial: "Study Material",
+  sourceTypeOfficialExam: "Official Exam (with answers)",
+  aiPromptBodyExam:
+    "Based on the following official exam and its answer key, your task is to transcribe and structure ALL questions exactly as they appear in the original document.",
+  aiPromptRulesExam: `IMPORTANT REQUIREMENTS:
+1. Include ALL questions from the source document, without exception — do NOT skip any
+2. Transcribe question text verbatim — do NOT rephrase or rewrite
+3. Transcribe answer options exactly as they appear in the source
+4. Use the answer key to set exactly ONE "isCorrect": true per question
+5. For feedback.cita_literal: quote the relevant law article or provide a technical definition
+6. For feedback.explicacion_fallo: write a brief explanation of why the correct answer is right
+7. The total_questions field must equal the exact count of questions transcribed
+8. Return ONLY valid JSON, no markdown formatting or explanations
+9. Escape ALL line breaks in text strings as \\n — never use literal line breaks inside strings`,
   aiPromptMaterialBelow: "Study material to create questions from:",
   aiPromptMaterialNext: "[I will paste my study material in the next message]",
   aiPromptLanguage: "English",

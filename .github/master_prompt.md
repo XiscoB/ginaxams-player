@@ -83,4 +83,4 @@ Once you provide this plan and I give you the "OK" — or if it is a trivial, is
 ---
 
 **TASK TO EXECUTE NOW**: read the file in `.github/tasks/tasks.md` and focus only and exclusively in solving the next task:
-[TASK_NUMBER] = 001
+[TASK_NUMBER] = 002
