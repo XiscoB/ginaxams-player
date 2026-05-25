@@ -835,6 +835,44 @@
         margin-bottom: 25px;
       }
 
+      /* ─── Markdown Tables Inside Question Text ──────────── */
+      .md-table-scroll {
+        overflow-x: auto;
+        margin: 1rem 0 1.5rem;
+      }
+
+      .question-text table {
+        border-collapse: collapse;
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+        font-size: 0.85em;
+      }
+
+      .question-text th,
+      .question-text td {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 10px 14px;
+        text-align: left;
+      }
+
+      .question-text th {
+        background: rgba(255, 255, 255, 0.06);
+        font-weight: 600;
+        color: var(--accent-primary);
+        text-transform: uppercase;
+        font-size: 0.85em;
+        letter-spacing: 0.5px;
+      }
+
+      .question-text tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .question-text tr:hover {
+        background: rgba(0, 212, 255, 0.05);
+      }
+
       .question-images {
         margin: 15px 0;
         text-align: center;
@@ -1764,6 +1802,47 @@
         font-size: 0.95em;
       }
 
+      .ai-source-toggle {
+        display: flex;
+        gap: 8px;
+      }
+
+      .ai-source-btn {
+        flex: 1;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+      }
+
+      .ai-source-btn:hover {
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+      }
+
+      .ai-source-btn.active {
+        border-color: var(--accent-primary);
+        background: rgba(0, 212, 255, 0.1);
+        color: var(--accent-primary);
+        font-weight: 600;
+      }
+
+      #aiStudyMaterialFields {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      #aiStudyMaterialFields.hidden {
+        display: none;
+      }
+
       .ai-prompt-input,
       .ai-prompt-select {
         background: var(--bg-primary);
@@ -2595,6 +2674,37 @@
         font-size: 1.05em;
       }
 
+      .onboarding-language-picker {
+        margin: -6px auto 24px;
+        max-width: 360px;
+        padding: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .onboarding-language-title {
+        font-size: 0.9em;
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      .onboarding-language-text {
+        font-size: 0.82em;
+        color: var(--text-secondary);
+        margin: 4px 0 12px;
+      }
+
+      .onboarding-language-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .onboarding-lang-btn {
+        min-width: 112px;
+      }
+
       .onboarding-steps {
         display: flex;
         justify-content: center;
@@ -2797,6 +2907,16 @@
         .onboarding-text {
           font-size: 0.95em;
         }
+        .onboarding-language-picker {
+          margin-bottom: 18px;
+          padding: 12px;
+        }
+        .onboarding-language-buttons {
+          flex-direction: column;
+        }
+        .onboarding-lang-btn {
+          width: 100%;
+        }
         .onboarding-buttons {
           flex-direction: column;
           gap: 10px;
@@ -2947,6 +3067,13 @@
         }
         .question-text {
           font-size: 1.1em;
+        }
+        .question-text table {
+          font-size: 0.75em;
+        }
+        .question-text th,
+        .question-text td {
+          padding: 6px 8px;
         }
         .mode-btn {
           padding: 12px 20px;
@@ -3831,6 +3958,36 @@
             <h2 class="onboarding-title" id="txtOnboardingWelcomeTitle">
               Welcome to Ginaxams
             </h2>
+            <div class="onboarding-language-picker">
+              <div
+                class="onboarding-language-title"
+                id="txtOnboardingLanguageTitle"
+              >
+                Language
+              </div>
+              <p
+                class="onboarding-language-text"
+                id="txtOnboardingLanguageText"
+              >
+                You can change this now or later from the header.
+              </p>
+              <div class="onboarding-language-buttons">
+                <button
+                  id="onboardingLangEn"
+                  class="lang-btn onboarding-lang-btn"
+                  onclick="window.app.switchLanguage('en')"
+                >
+                  English
+                </button>
+                <button
+                  id="onboardingLangEs"
+                  class="lang-btn onboarding-lang-btn"
+                  onclick="window.app.switchLanguage('es')"
+                >
+                  Espanol
+                </button>
+              </div>
+            </div>
             <p class="onboarding-text" id="txtOnboardingWelcomeText">
               Your personal exam practice companion. Import exams, practice with
               different modes, and track your progress over time.
@@ -3969,6 +4126,24 @@
         </div>
 
         <div class="ai-prompt-form">
+          <div class="ai-prompt-field" id="aiSourceTypeField">
+            <label id="txtSourceTypeLabel">Source Type</label>
+            <div class="ai-source-toggle">
+              <button
+                id="btnSourceStudyMaterial"
+                class="ai-source-btn active"
+                data-testid="source-type-study"
+                onclick="window.app.setSourceType('study')"
+              ><span id="txtSourceTypeStudyMaterial">Study Material</span></button>
+              <button
+                id="btnSourceOfficialExam"
+                class="ai-source-btn"
+                data-testid="source-type-exam"
+                onclick="window.app.setSourceType('exam')"
+              ><span id="txtSourceTypeOfficialExam">Official Exam (with answers)</span></button>
+            </div>
+          </div>
+
           <div class="ai-prompt-field">
             <label id="txtAiExamNameLabel">Exam name</label>
             <input
@@ -3980,42 +4155,44 @@
             <div id="aiExamNameStatus" class="ai-exam-name-status hidden"></div>
           </div>
 
-          <div class="ai-prompt-field">
-            <label id="txtNumQuestionsLabel">Number of questions</label>
-            <input
-              type="number"
-              id="aiNumQuestions"
-              min="1"
-              max="100"
-              value="10"
-              class="ai-prompt-input"
-            />
-          </div>
+          <div id="aiStudyMaterialFields">
+            <div class="ai-prompt-field" id="aiNumQuestionsField">
+              <label id="txtNumQuestionsLabel">Number of questions</label>
+              <input
+                type="number"
+                id="aiNumQuestions"
+                min="1"
+                max="100"
+                value="10"
+                class="ai-prompt-input"
+              />
+            </div>
 
-          <div class="ai-prompt-field">
-            <label id="txtNumAnswersLabel">Answers per question</label>
-            <input
-              type="number"
-              id="aiNumAnswers"
-              min="2"
-              max="6"
-              value="4"
-              class="ai-prompt-input"
-            />
-          </div>
+            <div class="ai-prompt-field" id="aiNumAnswersField">
+              <label id="txtNumAnswersLabel">Answers per question</label>
+              <input
+                type="number"
+                id="aiNumAnswers"
+                min="2"
+                max="6"
+                value="4"
+                class="ai-prompt-input"
+              />
+            </div>
 
-          <div class="ai-prompt-field">
-            <label id="txtDifficultyLabel">Difficulty level</label>
-            <select id="aiDifficulty" class="ai-prompt-select">
-              <option value="easy" id="txtDifficultyEasy">Easy</option>
-              <option value="medium" id="txtDifficultyMedium" selected>
-                Medium
-              </option>
-              <option value="hard" id="txtDifficultyHard">Hard</option>
-              <option value="mixed" id="txtDifficultyMixed">
-                Mixed (varied levels)
-              </option>
-            </select>
+            <div class="ai-prompt-field" id="aiDifficultyField">
+              <label id="txtDifficultyLabel">Difficulty level</label>
+              <select id="aiDifficulty" class="ai-prompt-select">
+                <option value="easy" id="txtDifficultyEasy">Easy</option>
+                <option value="medium" id="txtDifficultyMedium" selected>
+                  Medium
+                </option>
+                <option value="hard" id="txtDifficultyHard">Hard</option>
+                <option value="mixed" id="txtDifficultyMixed">
+                  Mixed (varied levels)
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="ai-prompt-source-note">
@@ -4368,7 +4545,11 @@
             </div>
           </div>
 
-          <div class="file-input-area" data-testid="file-drop-zone">
+          <div
+            class="file-input-area"
+            id="dropZone"
+            data-testid="file-drop-zone"
+          >
             <button
               id="helpToggleBtn"
               class="help-btn-inline"
@@ -4400,7 +4581,13 @@
                 <span id="txtExamFormatBtn">Create Exam</span>
               </button>
             </div>
-            <input type="file" id="fileInput" accept=".json" class="hidden" />
+            <input
+              type="file"
+              id="fileInput"
+              accept=".json"
+              multiple
+              class="hidden"
+            />
             <label for="fileInput" class="file-label">
               <span class="upload-icon">📂</span>
               <div class="upload-main-text" id="txtLoadExamFile">
@@ -4486,9 +4673,19 @@
             </div>
           </div>
 
-          <div id="examList" class="exam-list-container" data-testid="exam-list">
+          <div
+            id="examList"
+            class="exam-list-container"
+            data-testid="exam-list"
+          >
             <!-- Exam items injected here -->
-            <div class="no-exams" id="txtLoading" data-testid="loading-indicator">Loading...</div>
+            <div
+              class="no-exams"
+              id="txtLoading"
+              data-testid="loading-indicator"
+            >
+              Loading...
+            </div>
           </div>
         </div>
       </div>
@@ -4591,11 +4788,25 @@
         <div id="practiceMinimapContainer" class="question-minimap"></div>
 
         <div class="question-card">
-          <div id="questionNumber" class="question-number" data-testid="question-number">Question 1</div>
-          <div id="questionText" class="question-text" data-testid="question-text"></div>
+          <div
+            id="questionNumber"
+            class="question-number"
+            data-testid="question-number"
+          >
+            Question 1
+          </div>
+          <div
+            id="questionText"
+            class="question-text"
+            data-testid="question-text"
+          ></div>
           <div id="questionImages" class="question-images"></div>
 
-          <div id="answersContainer" class="answers" data-testid="answers-container"></div>
+          <div
+            id="answersContainer"
+            class="answers"
+            data-testid="answers-container"
+          ></div>
 
           <!-- Feedback Section - rendered dynamically by PracticeManager -->
           <div id="feedbackSection" class="hidden"></div>
@@ -4614,7 +4825,12 @@
           <button id="nextBtn" class="nav-btn next" data-testid="next-button">
             <span id="txtNext">Next</span>
           </button>
-          <button id="finishBtn" class="nav-btn next" style="display: none" data-testid="finish-button">
+          <button
+            id="finishBtn"
+            class="nav-btn next"
+            style="display: none"
+            data-testid="finish-button"
+          >
             <span id="txtFinish">Finish</span>
           </button>
         </div>
@@ -4646,7 +4862,12 @@
           <!-- Main Score Circle -->
           <div class="score-circle-container">
             <div class="score-circle" id="scoreCircle">
-              <span class="score-percentage" id="finalScore" data-testid="final-score">0%</span>
+              <span
+                class="score-percentage"
+                id="finalScore"
+                data-testid="final-score"
+                >0%</span
+              >
               <span class="score-label" id="scoreDetails">0 correct</span>
             </div>
           </div>

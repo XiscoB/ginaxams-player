@@ -8,7 +8,7 @@ export const LANG_EN = {
   availableExams: "📚 Available Exams",
   refresh: "↻ Refresh",
   loadExamFile: "📁 Load Exam File",
-  clickToSelect: "Click to select example_exam.json",
+  clickToSelect: "Click to select one or more JSON exam files",
   dragAndDrop: "Or drag and drop the JSON file here",
   orLoadManually: "or load manually",
   loading: "Loading...",
@@ -106,6 +106,8 @@ export const LANG_EN = {
   errorDeletingExam: "Failed to delete exam",
   importFailed: "Import failed",
   importSuccessful: "Import successful",
+  importBatchSummary:
+    "Processed {total} files: {imported} imported, {skipped} skipped, {failed} failed.",
   folderNotFound: "Folder not found",
   wrongAnswer: "Incorrect",
   exportFailed: "Export failed",
@@ -149,6 +151,11 @@ export const LANG_EN = {
   onboardingBack: "Back",
   onboardingNext: "Next",
   onboardingFinish: "Get Started",
+  onboardingLanguageTitle: "Language",
+  onboardingLanguageText:
+    "Choose your preferred language now. You can also change it later from the header.",
+  onboardingLanguageEnglish: "English",
+  onboardingLanguageSpanish: "Spanish",
   onboardingWelcomeTitle: "Welcome to GinaXams Player",
   onboardingWelcomeText:
     "Your personal exam practice companion. Import exams, practice with different modes, and track your progress over time.",
@@ -209,7 +216,26 @@ export const LANG_EN = {
 4. Make sure questions match the difficulty level: {difficulty}
 5. Only ONE answer per question must have "isCorrect": true
 6. The exam-level "categorias" field must contain ALL categories used across questions. Each question's "categoria" MUST be a subset of the exam-level "categorias". If a question uses "Execution", then "Execution" MUST appear in the top-level "categorias" array
-7. Return ONLY valid JSON, no markdown formatting or explanations`,
+7. Return ONLY valid JSON, no markdown formatting or explanations
+8. Generate valid JSON. Important:
+- Escape ALL line breaks in text strings as \\n
+- Never use literal line breaks (Enter) inside strings
+- Validate the JSON before delivering (use jsonlint.com)`,
+  sourceTypeLabel: "Source Type",
+  sourceTypeStudyMaterial: "Study Material",
+  sourceTypeOfficialExam: "Official Exam (with answers)",
+  aiPromptBodyExam:
+    "Based on the following official exam and its answer key, your task is to transcribe and structure ALL questions exactly as they appear in the original document.",
+  aiPromptRulesExam: `IMPORTANT REQUIREMENTS:
+1. Include ALL questions from the source document, without exception — do NOT skip any
+2. Transcribe question text verbatim — do NOT rephrase or rewrite
+3. Transcribe answer options exactly as they appear in the source
+4. Use the answer key to set exactly ONE "isCorrect": true per question
+5. For feedback.cita_literal: quote the relevant law article or provide a technical definition
+6. For feedback.explicacion_fallo: write a brief explanation of why the correct answer is right
+7. The total_questions field must equal the exact count of questions transcribed
+8. Return ONLY valid JSON, no markdown formatting or explanations
+9. Escape ALL line breaks in text strings as \\n — never use literal line breaks inside strings`,
   aiPromptMaterialBelow: "Study material to create questions from:",
   aiPromptMaterialNext: "[I will paste my study material in the next message]",
   aiPromptLanguage: "English",

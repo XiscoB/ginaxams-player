@@ -200,7 +200,7 @@ window.LANG_ES = {
     "Basándome en el siguiente material de estudio, quiero que me generes un examen de opción múltiple con {numQuestions} preguntas. Cada pregunta debe tener {numAnswers} respuestas posibles (etiquetadas {letters}), con UNA sola respuesta correcta por pregunta.",
   aiPromptSchemaNote: "Por favor genera un objeto JSON en este formato exacto:",
   aiPromptRules:
-    'REQUISITOS IMPORTANTES:\n1. Las preguntas deben evaluar comprensión, no solo memorización\n2. Los distractores (respuestas incorrectas) deben ser plausibles\n3. Incluye una mezcla de tipos de preguntas (conceptuales, aplicación, análisis)\n4. Asegúrate de que las preguntas correspondan al nivel de dificultad: {difficulty}\n5. Solo UNA respuesta por pregunta debe tener "isCorrect": true\n6. Devuelve SOLO el JSON, sin formato markdown ni explicaciones',
+    'REQUISITOS IMPORTANTES:\n1. Las preguntas deben evaluar comprensión, no solo memorización\n2. Los distractores (respuestas incorrectas) deben ser plausibles\n3. Incluye una mezcla de tipos de preguntas (conceptuales, aplicación, análisis)\n4. Asegúrate de que las preguntas correspondan al nivel de dificultad: {difficulty}\n5. Solo UNA respuesta por pregunta debe tener "isCorrect": true\n6. Devuelve SOLO el JSON, sin formato markdown ni explicaciones\n7. Genera JSON válido. Importante:\n- Escapa TODOS los saltos de línea en cadenas de texto como \\n\n- Nunca uses saltos de línea literales (Enter) dentro de strings\n- Valida el JSON antes de entregar (usa jsonlint.com)',
   aiPromptMaterialBelow: "Material de estudio del que crear preguntas:",
   aiPromptMaterialNext:
     "[Pegaré el material de estudio en el siguiente mensaje]",

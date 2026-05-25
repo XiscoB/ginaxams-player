@@ -37,6 +37,15 @@ Thumbs.db
 # Coverage
 coverage/
 
+# Playwright
+test-results/
+playwright-report/
+
 # TypeScript
 *.tsbuildinfo
 test-db.html
+
+# covering own exams
+examenes/*
+examenes/**
+

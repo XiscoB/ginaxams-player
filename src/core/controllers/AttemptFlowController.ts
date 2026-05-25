@@ -39,6 +39,7 @@ import {
 import {
   createAttemptConfigScreen,
   showAttemptConfigScreen,
+  removeAttemptConfigScreen,
 } from "../../ui/views/AttemptConfigView.js";
 import {
   showExecutionScreen,
@@ -67,6 +68,7 @@ import {
 interface PendingAttempt {
   examId: string;
   examTitle: string;
+  totalQuestions: number;
 }
 
 type AppView = "library" | "attemptConfig" | "attemptExecution" | "results";
@@ -122,7 +124,11 @@ export class AttemptFlowController {
       );
       return;
     }
-    this.pendingAttempt = { examId, examTitle: exam.title };
+    this.pendingAttempt = {
+      examId,
+      examTitle: exam.title,
+      totalQuestions: exam.questionCount,
+    };
     this.deps.setView("attemptConfig");
   }
 
@@ -144,16 +150,18 @@ export class AttemptFlowController {
       return;
     }
 
-    let configScreen = document.getElementById("attemptConfigScreen");
-    if (!configScreen) {
-      configScreen = createAttemptConfigScreen(this.deps.getTranslations(), {
+    removeAttemptConfigScreen();
+    createAttemptConfigScreen(
+      this.deps.getTranslations(),
+      {
         onStartMode: (mode) => this.startAttempt(mode),
         onBack: () => {
           this.pendingAttempt = null;
           this.deps.setView("library");
         },
-      });
-    }
+      },
+      this.pendingAttempt.totalQuestions,
+    );
 
     showAttemptConfigScreen(this.pendingAttempt.examTitle);
   }
@@ -219,6 +227,7 @@ export class AttemptFlowController {
     try {
       let timeLimitMs = 3600000;
       let showExplanations = false;
+      let simulacroQuestionCount = this.pendingAttempt.totalQuestions;
       if (mode === "simulacro") {
         const timerSelect = document.getElementById(
           "simulacroTimerSelect",
@@ -232,6 +241,22 @@ export class AttemptFlowController {
         if (explCheckbox) {
           showExplanations = explCheckbox.checked;
         }
+        const simCountSelect = document.getElementById(
+          "simulacroQuestionCountSelect",
+        ) as HTMLSelectElement | null;
+        if (simCountSelect) {
+          simulacroQuestionCount = parseInt(simCountSelect.value, 10);
+        }
+      }
+
+      let reviewQuestionCount = this.pendingAttempt.totalQuestions;
+      if (mode === "review") {
+        const reviewCountSelect = document.getElementById(
+          "reviewQuestionCountSelect",
+        ) as HTMLSelectElement | null;
+        if (reviewCountSelect) {
+          reviewQuestionCount = parseInt(reviewCountSelect.value, 10);
+        }
       }
 
       const viewState = await this.deps.attemptController.startAttempt({
@@ -240,13 +265,15 @@ export class AttemptFlowController {
         config:
           mode === "simulacro"
             ? {
-                questionCount: 60,
+                questionCount: simulacroQuestionCount,
                 timeLimitMs,
                 penalty: 0,
                 reward: 1,
                 showExplanations,
               }
-            : undefined,
+            : mode === "review"
+              ? { reviewQuestionCount }
+              : undefined,
       });
 
       this.currentAttemptView = viewState;

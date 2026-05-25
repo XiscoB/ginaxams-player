@@ -20,6 +20,8 @@ import {
 } from "../../application/exportUtils.js";
 
 export interface LibraryCallbacks {
+  isFolderCollapsed: (folderId: string) => boolean;
+  onToggleFolderCollapse: (folderId: string) => void;
   onSelectExam: (examId: string) => void;
   onDeleteExam: (examId: string) => void;
   onRenameExam: (examId: string) => void;
@@ -102,11 +104,13 @@ function renderFolderSection(
 ): HTMLElement {
   const icon = folderId === "uncategorized" ? "📂" : "📁";
   const isUncat = folderId === "uncategorized";
+  const isCollapsed = callbacks.isFolderCollapsed(folderId);
 
   const section = document.createElement("div");
   section.className = "category-section";
   section.id = `cat-${folderId}`;
   section.dataset.folderId = folderId;
+  section.classList.toggle("collapsed", isCollapsed);
 
   // Header
   const header = document.createElement("div");
@@ -130,9 +134,20 @@ function renderFolderSection(
   countSpan.className = "category-count";
   countSpan.textContent = String(exams.length);
 
+  const toggleSpan = document.createElement("span");
+  toggleSpan.className = "category-toggle";
+  toggleSpan.textContent = "▾";
+
   headerLeft.appendChild(iconSpan);
   headerLeft.appendChild(nameSpan);
   headerLeft.appendChild(countSpan);
+  headerLeft.appendChild(toggleSpan);
+
+  headerLeft.addEventListener("click", (e) => {
+    e.stopPropagation();
+    callbacks.onToggleFolderCollapse(folderId);
+  });
+
   header.appendChild(headerLeft);
 
   if (!isUncat) {

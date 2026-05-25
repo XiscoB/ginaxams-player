@@ -62,12 +62,26 @@ export function createTranslator(
  * @returns Detected language code
  */
 export function detectBrowserLanguage(): LanguageCode {
-  const browserLang =
-    navigator.language ||
-    (navigator as { userLanguage?: string }).userLanguage ||
-    "en";
-  const langCode = browserLang.toLowerCase().split("-")[0];
-  return langCode === "es" ? "es" : "en";
+  const nav = navigator as Navigator & {
+    userLanguage?: string;
+    browserLanguage?: string;
+  };
+
+  const preferredLanguages: string[] = [
+    ...(Array.isArray(navigator.languages) ? navigator.languages : []),
+    navigator.language,
+    nav.userLanguage,
+    nav.browserLanguage,
+  ].filter(
+    (lang): lang is string => typeof lang === "string" && lang.length > 0,
+  );
+
+  const hasSpanish = preferredLanguages.some((lang) => {
+    const normalized = lang.toLowerCase().replace("_", "-");
+    return normalized.startsWith("es");
+  });
+
+  return hasSpanish ? "es" : "en";
 }
 
 export { LANG_EN, LANG_ES };

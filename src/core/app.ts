@@ -218,12 +218,21 @@ export class App {
     this._currentLang = lang;
     this.translations = getTranslations(lang);
 
-    const langEn = document.getElementById("langEn");
-    const langEs = document.getElementById("langEs");
-    langEn?.classList.toggle("active", lang === "en");
-    langEs?.classList.toggle("active", lang === "es");
+    this.syncLanguageButtons(lang);
 
     updatePageText(this.translations);
+  }
+
+  private syncLanguageButtons(lang: LanguageCode): void {
+    const langEn = document.getElementById("langEn");
+    const langEs = document.getElementById("langEs");
+    const onboardingLangEn = document.getElementById("onboardingLangEn");
+    const onboardingLangEs = document.getElementById("onboardingLangEs");
+
+    langEn?.classList.toggle("active", lang === "en");
+    langEs?.classList.toggle("active", lang === "es");
+    onboardingLangEn?.classList.toggle("active", lang === "en");
+    onboardingLangEs?.classList.toggle("active", lang === "es");
   }
 
   private setLanguage(lang: LanguageCode): void {
@@ -237,10 +246,7 @@ export class App {
         console.warn("Failed to persist language setting:", e),
       );
 
-    const langEn = document.getElementById("langEn");
-    const langEs = document.getElementById("langEs");
-    langEn?.classList.toggle("active", lang === "en");
-    langEs?.classList.toggle("active", lang === "es");
+    this.syncLanguageButtons(lang);
 
     updatePageText(this.translations);
 
@@ -275,7 +281,9 @@ export class App {
     fileInput?.addEventListener("change", (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files && files.length > 0) {
-        this.libraryFlow.handleFileImport(files[0]);
+        this.libraryFlow.handleFileImport(files);
+        // Allow importing the same file(s) again if needed.
+        (e.target as HTMLInputElement).value = "";
       }
     });
 
@@ -292,7 +300,7 @@ export class App {
       dropZone.classList.remove("drag-over");
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
-        this.libraryFlow.handleFileImport(files[0]);
+        this.libraryFlow.handleFileImport(files);
       }
     });
 
@@ -440,6 +448,10 @@ export class App {
     this.setView("library");
   }
 
+  switchLanguage(lang: LanguageCode): void {
+    this.setLanguage(lang);
+  }
+
   showFileScreen(): void {
     this.attemptFlow.abortAttempt();
     this.libraryFlow.activeLibraryTab = "library";
@@ -560,6 +572,9 @@ export class App {
   }
   generateAIPrompt(): void {
     this.libraryFlow.generateAIPrompt();
+  }
+  setSourceType(type: string): void {
+    this.libraryFlow.setSourceType(type as "study" | "exam");
   }
   copyGeneratedPrompt(): Promise<void> {
     return this.libraryFlow.copyGeneratedPrompt();

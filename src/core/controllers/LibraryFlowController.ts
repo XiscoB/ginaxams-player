@@ -59,6 +59,7 @@ export class LibraryFlowController {
 
   // State
   private libraryState: LibraryViewState | null = null;
+  private collapsedFolderIds = new Set<string>();
   activeLibraryTab: "library" | "insights" | "telemetry" = "library";
 
   // Onboarding
@@ -95,8 +96,27 @@ export class LibraryFlowController {
     const listEl = document.getElementById("examList");
     if (!listEl || !this.libraryState) return;
 
+    // Keep only collapse entries for folders that still exist.
+    const existingFolderIds = new Set(
+      this.libraryState.exams.map((exam) => exam.folderId || "uncategorized"),
+    );
+    for (const folderId of this.collapsedFolderIds) {
+      if (!existingFolderIds.has(folderId)) {
+        this.collapsedFolderIds.delete(folderId);
+      }
+    }
+
     const T = this.deps.getTranslations();
     renderLibraryList(listEl, this.libraryState, T, {
+      isFolderCollapsed: (id) => this.collapsedFolderIds.has(id),
+      onToggleFolderCollapse: (id) => {
+        if (this.collapsedFolderIds.has(id)) {
+          this.collapsedFolderIds.delete(id);
+        } else {
+          this.collapsedFolderIds.add(id);
+        }
+        this.renderLibrary();
+      },
       onSelectExam: (id) => this.deps.selectExam(id),
       onDeleteExam: (id) => this.deleteExam(id),
       onRenameExam: (id) => this.promptRenameExam(id),
@@ -371,82 +391,123 @@ export class LibraryFlowController {
   // File Import/Export
   // ==========================================================================
 
-  async handleFileImport(file: File): Promise<void> {
+  async handleFileImport(files: FileList | File[]): Promise<void> {
     const T = this.deps.getTranslations();
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      const examId = await this.deps.libraryController.importExam(data);
-      await this.refreshLibrary();
+    const queue = Array.from(files);
+    if (queue.length === 0) return;
 
-      const imported = this.libraryState?.exams.find((e) => e.id === examId);
-      const title = imported?.title ?? "Exam";
+    let importedCount = 0;
+    let skippedCount = 0;
+    const importedTitles: string[] = [];
+    const failures: string[] = [];
+
+    for (const file of queue) {
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text) as { title?: unknown };
+        await this.deps.libraryController.importExam(data);
+
+        const title =
+          typeof data.title === "string" && data.title.trim().length > 0
+            ? data.title
+            : file.name;
+        importedTitles.push(title);
+        importedCount++;
+      } catch (e) {
+        if (e instanceof DuplicateExamError) {
+          const msg = (
+            T.confirmOverwriteExam ||
+            'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?'
+          )
+            .replace("{examId}", e.examId)
+            .replace("{title}", e.existingTitle);
+
+          const overwrite = await showConfirmModal({
+            title: T.confirmOverwriteExam
+              ? (T.importFailed ?? "Duplicate")
+              : "Duplicate Exam",
+            message: `${file.name}\n\n${msg}`,
+            confirmLabel: T.overwrite ?? "Overwrite",
+            cancelLabel: T.cancel ?? "Cancel",
+            variant: "warning",
+            icon: "⚠️",
+          });
+
+          if (!overwrite) {
+            skippedCount++;
+            continue;
+          }
+
+          try {
+            const text = await file.text();
+            const data = JSON.parse(text) as { title?: unknown };
+            await this.deps.libraryController.importExam(
+              data,
+              "uncategorized",
+              true,
+            );
+
+            const title =
+              typeof data.title === "string" && data.title.trim().length > 0
+                ? data.title
+                : file.name;
+            importedTitles.push(title);
+            importedCount++;
+          } catch (e2) {
+            const message = e2 instanceof Error ? e2.message : "Unknown error";
+            failures.push(`${file.name}: ${message}`);
+          }
+          continue;
+        }
+
+        const message = e instanceof Error ? e.message : "Unknown error";
+        failures.push(`${file.name}: ${message}`);
+      }
+    }
+
+    if (importedCount > 0) {
+      await this.refreshLibrary();
+    }
+
+    if (queue.length === 1 && importedCount === 1 && failures.length === 0) {
+      const title = importedTitles[0] ?? "Exam";
       showAlertModal(
         T.importSuccessful || "Import successful",
         `${T.importSuccessful || "Import successful"}: ${title}`,
         "success",
         "✅",
       );
-    } catch (e) {
-      if (e instanceof DuplicateExamError) {
-        const msg = (
-          T.confirmOverwriteExam ||
-          'An exam with ID "{examId}" already exists ("{title}"). Do you want to overwrite it?'
-        )
-          .replace("{examId}", e.examId)
-          .replace("{title}", e.existingTitle);
-        const overwrite = await showConfirmModal({
-          title: T.confirmOverwriteExam
-            ? (T.importFailed ?? "Duplicate")
-            : "Duplicate Exam",
-          message: msg,
-          confirmLabel: T.overwrite ?? "Overwrite",
-          cancelLabel: T.cancel ?? "Cancel",
-          variant: "warning",
-          icon: "⚠️",
-        });
-        if (overwrite) {
-          try {
-            const text = await file.text();
-            const data = JSON.parse(text);
-            const examId = await this.deps.libraryController.importExam(
-              data,
-              "uncategorized",
-              true,
-            );
-            await this.refreshLibrary();
-            const imported = this.libraryState?.exams.find(
-              (ex) => ex.id === examId,
-            );
-            const title = imported?.title ?? "Exam";
-            showAlertModal(
-              T.importSuccessful || "Import successful",
-              `${T.importSuccessful || "Import successful"}: ${title}`,
-              "success",
-              "✅",
-            );
-          } catch (e2) {
-            console.error("Import failed:", e2);
-            const message = e2 instanceof Error ? e2.message : "Unknown error";
-            showAlertModal(
-              T.importFailed ?? "Import failed",
-              `${T.importFailed}: ${message}`,
-              "danger",
-              "❌",
-            );
-          }
-        }
-        return;
-      }
-      console.error("Import failed:", e);
-      const message = e instanceof Error ? e.message : "Unknown error";
-      showAlertModal(
-        T.importFailed ?? "Import failed",
-        `${T.importFailed}: ${message}`,
-        "danger",
-        "❌",
-      );
+      return;
     }
+
+    const summaryTemplate =
+      T.importBatchSummary ??
+      "Processed {total} files: {imported} imported, {skipped} skipped, {failed} failed.";
+    const summary = summaryTemplate
+      .replace("{total}", String(queue.length))
+      .replace("{imported}", String(importedCount))
+      .replace("{skipped}", String(skippedCount))
+      .replace("{failed}", String(failures.length));
+
+    if (failures.length === 0) {
+      showAlertModal(
+        T.importSuccessful || "Import successful",
+        summary,
+        "success",
+        "✅",
+      );
+      return;
+    }
+
+    const details = failures.slice(0, 5).join("\n");
+    const extra =
+      failures.length > 5 ? `\n... +${failures.length - 5} more` : "";
+    showAlertModal(
+      T.importFailed ?? "Import failed",
+      `${summary}\n\n${details}${extra}`,
+      importedCount > 0 ? "warning" : "danger",
+      importedCount > 0 ? "⚠️" : "❌",
+    );
   }
 
   async exportLibrary(): Promise<void> {
@@ -834,6 +895,8 @@ export class LibraryFlowController {
         nameStatus.classList.add("hidden");
         nameStatus.className = "ai-exam-name-status hidden";
       }
+      // Reset source type toggle to "study" every time the modal opens
+      this.setSourceType("study");
     }
   }
 
@@ -871,45 +934,100 @@ export class LibraryFlowController {
       return;
     }
 
-    const difficultyText: Record<string, string> = {
-      easy: T.difficultyEasy || "Easy",
-      medium: T.difficultyMedium || "Medium",
-      hard: T.difficultyHard || "Hard",
-      mixed: T.difficultyMixed || "Mixed",
-    };
-
-    const numAns = parseInt(numAnswers, 10) || 4;
-    const letters = Array.from({ length: numAns }, (_, i) =>
-      String.fromCharCode(65 + i),
-    );
-    const lettersStr = letters.join(", ");
-
-    const body = (T.aiPromptBody || "")
-      .replace("{numQuestions}", numQuestions)
-      .replace("{numAnswers}", numAnswers)
-      .replace("{letters}", lettersStr);
-
-    const diffLabel = difficultyText[difficulty] || difficulty;
     const lang = T.aiPromptLanguage || "English";
-
-    const exampleAnswers = letters
-      .map(
-        (l, i) =>
-          `        {"letter": "${l}", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": ${i === 0}}`,
-      )
-      .join(",\n");
-
     const safeExamId = examName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
-
     const schemaNote =
       T.aiPromptSchemaNote ||
       "Please generate a JSON object in this exact format:";
-    const rules = (T.aiPromptRules || "").replace("{difficulty}", diffLabel);
 
-    const prompt = `${body}
+    // Detect active source type
+    const isExamMode = document
+      .getElementById("btnSourceOfficialExam")
+      ?.classList.contains("active") ?? false;
+
+    let prompt: string;
+
+    if (isExamMode) {
+      // Official exam mode — no numQuestions/numAnswers/difficulty
+      const body = T.aiPromptBodyExam || "";
+      const rules = T.aiPromptRulesExam || "";
+
+      const exampleAnswers = [
+        `        {"letter": "A", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": true}`,
+        `        {"letter": "B", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": false}`,
+        `        {"letter": "C", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": false}`,
+        `        {"letter": "D", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": false}`,
+      ].join(",\n");
+
+      prompt = `${body}
+
+IDIOMA / LANGUAGE: ${lang}
+
+${schemaNote}
+
+{
+  "schema_version": "2.0",
+  "exam_id": "${safeExamId}",
+  "title": "${examName}",
+  "categorias": ["${lang === "español" ? "Categoría1" : "Category1"}", "${lang === "español" ? "Categoría2" : "Category2"}"],
+  "total_questions": 0,
+  "questions": [
+    {
+      "number": 1,
+      "text": "[${lang === "español" ? "Texto de la pregunta aquí" : "Question text here"}]",
+      "categoria": ["${lang === "español" ? "Categoría1" : "Category1"}"],
+      "articulo_referencia": "${lang === "español" ? "Artículo de referencia" : "Reference article"}",
+      "feedback": {
+        "cita_literal": "${lang === "español" ? "Cita literal de la fuente" : "Literal citation from source"}",
+        "explicacion_fallo": "${lang === "español" ? "Explicación de por qué las respuestas incorrectas son erróneas" : "Explanation of why wrong answers are wrong"}"
+      },
+      "answers": [
+${exampleAnswers}
+      ]
+    }
+  ]
+}
+
+IMPORTANT: Use "${safeExamId}" as the "exam_id" and "${examName}" as the "title". Do NOT change these values.
+IMPORTANT: The "categorias" array at the exam level MUST list EVERY category that appears in any question's "categoria" field. Every question "categoria" value MUST exist in the top-level "categorias" array.
+IMPORTANT: Set "total_questions" to the exact count of questions you transcribe.
+
+${rules}`;
+    } else {
+      // Study material mode — existing logic
+      const difficultyText: Record<string, string> = {
+        easy: T.difficultyEasy || "Easy",
+        medium: T.difficultyMedium || "Medium",
+        hard: T.difficultyHard || "Hard",
+        mixed: T.difficultyMixed || "Mixed",
+      };
+
+      const numAns = parseInt(numAnswers, 10) || 4;
+      const letters = Array.from({ length: numAns }, (_, i) =>
+        String.fromCharCode(65 + i),
+      );
+      const lettersStr = letters.join(", ");
+
+      const body = (T.aiPromptBody || "")
+        .replace("{numQuestions}", numQuestions)
+        .replace("{numAnswers}", numAnswers)
+        .replace("{letters}", lettersStr);
+
+      const diffLabel = difficultyText[difficulty] || difficulty;
+
+      const exampleAnswers = letters
+        .map(
+          (l, i) =>
+            `        {"letter": "${l}", "text": "[${lang === "español" ? "Texto de respuesta" : "Answer text"}]", "isCorrect": ${i === 0}}`,
+        )
+        .join(",\n");
+
+      const rules = (T.aiPromptRules || "").replace("{difficulty}", diffLabel);
+
+      prompt = `${body}
 
 NIVEL DE DIFICULTAD / DIFFICULTY: ${diffLabel}
 IDIOMA / LANGUAGE: ${lang}
@@ -943,6 +1061,7 @@ IMPORTANT: Use "${safeExamId}" as the "exam_id" and "${examName}" as the "title"
 IMPORTANT: The "categorias" array at the exam level MUST list EVERY category that appears in any question's "categoria" field. Every question "categoria" value MUST exist in the top-level "categorias" array.
 
 ${rules}`;
+    }
 
     const output = document.getElementById(
       "aiGeneratedPrompt",
@@ -951,6 +1070,22 @@ ${rules}`;
 
     const result = document.getElementById("aiPromptResult");
     if (result) result.classList.remove("hidden");
+  }
+
+  setSourceType(type: "study" | "exam"): void {
+    const studyBtn = document.getElementById("btnSourceStudyMaterial");
+    const examBtn = document.getElementById("btnSourceOfficialExam");
+    const studyFields = document.getElementById("aiStudyMaterialFields");
+
+    if (type === "exam") {
+      studyBtn?.classList.remove("active");
+      examBtn?.classList.add("active");
+      studyFields?.classList.add("hidden");
+    } else {
+      examBtn?.classList.remove("active");
+      studyBtn?.classList.add("active");
+      studyFields?.classList.remove("hidden");
+    }
   }
 
   async copyGeneratedPrompt(): Promise<void> {
