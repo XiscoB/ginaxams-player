@@ -944,9 +944,10 @@ export class LibraryFlowController {
       "Please generate a JSON object in this exact format:";
 
     // Detect active source type
-    const isExamMode = document
-      .getElementById("btnSourceOfficialExam")
-      ?.classList.contains("active") ?? false;
+    const isExamMode =
+      document
+        .getElementById("btnSourceOfficialExam")
+        ?.classList.contains("active") ?? false;
 
     let prompt: string;
 
