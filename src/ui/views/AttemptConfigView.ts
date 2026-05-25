@@ -21,10 +21,28 @@ export interface AttemptConfigCallbacks {
 export function createAttemptConfigScreen(
   T: Translations,
   callbacks: AttemptConfigCallbacks,
+  totalQuestions: number,
 ): HTMLElement {
   const screen = document.createElement("div");
   screen.id = "attemptConfigScreen";
   screen.className = "screen hidden";
+
+  /** Generate <option> tags in steps of 10 up to totalQuestions, always including totalQuestions itself. */
+  function buildCountOptions(total: number): string {
+    const values: number[] = [];
+    for (let n = 10; n < total; n += 10) {
+      values.push(n);
+    }
+    values.push(total);
+    return values
+      .map(
+        (n) =>
+          `<option value="${n}"${n === total ? " selected" : ""}>${n}</option>`,
+      )
+      .join("");
+  }
+
+  const countOptions = buildCountOptions(totalQuestions);
 
   screen.innerHTML = `
     <div class="container">
@@ -53,6 +71,10 @@ export function createAttemptConfigScreen(
             <span style="color: var(--text-muted); font-size: 0.85em;">${T.modeSimulacroDescription || "Configurable timer"}</span>
           </div>
           <div class="mode-card__config" style="margin-top: var(--space-sm);">
+            <label style="display: block; margin-bottom: var(--space-xs); color: var(--text-secondary); font-size: 0.85em;">${T.questionCountLabel || "Question Count"}</label>
+            <select id="simulacroQuestionCountSelect" class="config-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-size: 0.9em; margin-bottom: var(--space-sm);">
+              ${countOptions}
+            </select>
             <label style="display: block; margin-bottom: var(--space-xs); color: var(--text-secondary); font-size: 0.85em;">${T.timerConfig || "Timer Duration"}</label>
             <select id="simulacroTimerSelect" class="config-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-size: 0.9em; margin-bottom: var(--space-sm);">
               <option value="0">${T.timerNoLimit || "No timer"}</option>
@@ -77,6 +99,12 @@ export function createAttemptConfigScreen(
           <div class="mode-card__desc">
             <span>${T.reviewModeDesc || "Focus on weak questions"}</span>
             <span style="color: var(--text-muted); font-size: 0.85em;">${T.modeReviewDescription || "Adaptive practice"}</span>
+          </div>
+          <div class="mode-card__config" style="margin-top: var(--space-sm);">
+            <label style="display: block; margin-bottom: var(--space-xs); color: var(--text-secondary); font-size: 0.85em;">${T.questionCountLabel || "Question Count"}</label>
+            <select id="reviewQuestionCountSelect" class="config-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-size: 0.9em; margin-bottom: var(--space-sm);">
+              ${countOptions}
+            </select>
           </div>
           <div class="mode-card__actions">
             <button id="btnReviewMode" class="btn btn--primary">${T.modeStartButton || "Start"}</button>
