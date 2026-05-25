@@ -59,10 +59,10 @@ TASK TO EXECUTE NOW: read the file in .github/tasks/tasks.md and focus only and 
 
 **Module:** `index.html`, `src/core/controllers/LibraryFlowController.ts`, `src/i18n/en.ts`, `src/i18n/es.ts`, `src/ui/updatePageText.ts`
 
-**Description:** The AI Prompt Generator modal currently assumes the user always works from *study material* they wrote themselves. A second common workflow is converting an *official exam with an existing answer key* into the GinaXams JSON format — in that case the AI must transcribe and mirror all questions verbatim rather than invent new ones. Add a two-option toggle (styled radio group) at the top of the modal form that lets the user choose between these two source types. The toggle must drive two distinct behaviors:
+**Description:** The AI Prompt Generator modal currently assumes the user always works from _study material_ they wrote themselves. A second common workflow is converting an _official exam with an existing answer key_ into the GinaXams JSON format — in that case the AI must transcribe and mirror all questions verbatim rather than invent new ones. Add a two-option toggle (styled radio group) at the top of the modal form that lets the user choose between these two source types. The toggle must drive two distinct behaviors:
 
-1. **Study material** (default — existing behavior): the prompt opens with `aiPromptBody` ("Based on the following study material…"), keeps the *Number of questions*, *Answers per question*, and *Difficulty* fields visible, and uses `aiPromptRules`.
-2. **Official exam (with answers)**: the prompt opens with a new `aiPromptBodyExam` intro ("Based on the following official exam and its answer key, your task is to transcribe and structure ALL questions exactly as they appear in the original document."), **hides** the *Number of questions*, *Answers per question*, and *Difficulty* fields (they are irrelevant — the AI must include every question from the source), and uses a new `aiPromptRulesExam` ruleset that enforces verbatim transcription and full inclusion.
+1. **Study material** (default — existing behavior): the prompt opens with `aiPromptBody` ("Based on the following study material…"), keeps the _Number of questions_, _Answers per question_, and _Difficulty_ fields visible, and uses `aiPromptRules`.
+2. **Official exam (with answers)**: the prompt opens with a new `aiPromptBodyExam` intro ("Based on the following official exam and its answer key, your task is to transcribe and structure ALL questions exactly as they appear in the original document."), **hides** the _Number of questions_, _Answers per question_, and _Difficulty_ fields (they are irrelevant — the AI must include every question from the source), and uses a new `aiPromptRulesExam` ruleset that enforces verbatim transcription and full inclusion.
 
 **Exact files to touch (no others):**
 
@@ -125,6 +125,7 @@ TASK TO EXECUTE NOW: read the file in .github/tasks/tasks.md and focus only and 
    - `setText("txtSourceTypeOfficialExam", T.sourceTypeOfficialExam)`
 
 **Constraints:**
+
 - Do NOT modify `src/domain/types.ts`, `src/domain/defaults.ts`, `src/storage/db.ts`, or `AGENTS.md`.
 - Do NOT touch `practice/lang/en.js` or `practice/lang/es.js` (legacy standalone tool — out of scope).
 - The toggle must be two visually distinct buttons (not a native `<select>`), styled with `class="ai-source-toggle"` / `class="ai-source-btn"` — no new CSS classes need to be invented beyond those names; the task executor must add minimal inline styles if needed or rely on existing `.btn` patterns.
@@ -132,6 +133,7 @@ TASK TO EXECUTE NOW: read the file in .github/tasks/tasks.md and focus only and 
 - The `data-testid` attributes on the toggle buttons are the E2E contract — do not omit them.
 
 **Acceptance Criteria:**
+
 - The modal shows a "Source Type" toggle with two options as its first field.
 - Default selection is "Study Material"; the three generation fields (num questions, num answers, difficulty) are visible.
 - Selecting "Official Exam (with answers)" hides those three fields.
